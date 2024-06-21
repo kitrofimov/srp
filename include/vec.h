@@ -6,6 +6,8 @@
 /** @file
  *  `vec2`, vec2d, vec3, vec3d, vec4, vec4d */
 
+/** @todo macros to cast vectors to arrays? */
+
 #include <stdint.h>
 
 /** @ingroup Vector
@@ -17,8 +19,11 @@
 typedef struct vec2 { float x, y; } vec2;
 /** Represents a 2D vector of `double`s */
 typedef struct vec2d { double x, y; } vec2d;
+/** Represents a 2D vector of `int`s */
+typedef struct vec2i { int x, y; } vec2i;
 #define VEC2_ZERO (vec2) {0, 0}
 #define VEC2D_ZERO (vec2d) {0, 0}
+#define VEC2I_ZERO (vec2i) {0, 0}
 
 /** Represents a 3D vector of `float`s */
 typedef struct vec3 { float x, y, z; } vec3;

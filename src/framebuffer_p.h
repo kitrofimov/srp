@@ -33,7 +33,7 @@ void srpFramebufferDrawPixel(
  *                   position after the call. The z-component is the same as
  *                   z-component of NDC coordinates. */
 void srpFramebufferNDCToScreenSpace
-	(const SRPFramebuffer* this, const double* NDC, double* SS);
+	(const SRPFramebuffer* this, const double NDC[2], int SS[2]);
 
 /** @} */  // ingroup Framebuffer
 
