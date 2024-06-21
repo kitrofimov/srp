@@ -41,6 +41,11 @@ typedef struct vec4d { double x, y, z, w; } vec4d;
 
 #pragma pack(pop)
 
+/** Subtract two `vec2i`s
+ *  @param[in] a First vector @param[in] b Second vector
+ *  @return The difference between first and second vectors */
+vec2i vec2iSubtract(vec2i a, vec2i b);
+
 /** Subtract two `vec3d`s
  *  @param[in] a First vector @param[in] b Second vector
  *  @return The difference between first and second vectors */

@@ -5,6 +5,14 @@
 #include "defines.h"
 #include "vec.h"
 
+SRP_FORCEINLINE vec2i vec2iSubtract(vec2i a, vec2i b)
+{
+	return (vec2i) {
+		a.x - b.x,
+		a.y - b.y
+	};
+}
+
 SRP_FORCEINLINE vec3d vec3dSubtract(vec3d a, vec3d b)
 {
 	return (vec3d) {
