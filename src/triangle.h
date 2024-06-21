@@ -3,11 +3,11 @@
 
 #pragma once
 
-/** @file
- *  Triangle rasterization functions */
-
 #include "framebuffer.h"
 #include "shaders.h"
+
+/** @file
+ *  Triangle rasterization functions */
 
 /** @ingroup Rasterization
  *  @{ */

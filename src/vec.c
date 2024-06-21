@@ -3,11 +3,11 @@
 
 #include "message_callback_p.h"
 #include "defines.h"
-#include "vec.h"
+#include "vec_p.h"
 
-SRP_FORCEINLINE vec2i vec2iSubtract(vec2i a, vec2i b)
+SRP_FORCEINLINE vec2fix_56_8 vec2fp_56_8_subtract(vec2fix_56_8 a, vec2fix_56_8 b)
 {
-	return (vec2i) {
+	return (vec2fix_56_8) {
 		a.x - b.x,
 		a.y - b.y
 	};

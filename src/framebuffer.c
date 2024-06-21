@@ -74,11 +74,11 @@ void srpFramebufferDrawPixel(
 }
 
 void srpFramebufferNDCToScreenSpace(
-	const SRPFramebuffer* this, const double NDC[2], int SS[2]
+	const SRPFramebuffer* this, const double NDC[2], double SS[2]
 )
 {
-	SS[0] = floor( (((double) this->width  - 1) / 2) * (NDC[0] + 1));
-	SS[1] = floor(-(((double) this->height - 1) / 2) * (NDC[1] - 1));
+	SS[0] =  (((double) this->width  - 1) / 2) * (NDC[0] + 1);
+	SS[1] = -(((double) this->height - 1) / 2) * (NDC[1] - 1);
 }
 
 void framebufferClear(const SRPFramebuffer* this)
