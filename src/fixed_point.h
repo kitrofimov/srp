@@ -29,5 +29,6 @@ typedef int32_t fixed_24_8;
 #define FIXED_24_8_FLOOR(x)        ( (x) & FIXED_24_8_INTEGER_MASK )
 #define FIXED_24_8_FRACTIONAL(x)   ( (x) & FIXED_24_8_FRACTIONAL_MASK )
 
-#define FIXED_24_8_MULTIPLY(x, y)  ( (fixed_24_8) (((int64_t) (x) * (int64_t) (y)) >> 8) )
+#define FIXED_24_8_MULTIPLY(x, y)  ( (fixed_24_8) ( ((int64_t) (x) * (int64_t) (y)) >> 8 ) )
+#define FIXED_24_8_DIVIDE(x, y)    ( (fixed_24_8) ( ((int64_t) (x) << 8) / (y) ) )
 

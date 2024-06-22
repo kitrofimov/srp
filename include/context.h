@@ -12,6 +12,23 @@
 /** @ingroup Context
  *  @{ */
 
+/** What face to cull @see SRPFrontFace */
+typedef enum SRPCullFace
+{
+	SRP_CULL_FACE_BACK,            /** Cull only the back face. Default */
+	SRP_CULL_FACE_FRONT,           /** Cull only the front face */
+	SRP_CULL_FACE_FRONT_AND_BACK   /** Cull both back and front face */
+} SRPCullFace;
+
+/** What face to consider the "front" one */
+typedef enum SRPFrontFace
+{
+	/** If vertex order is counterclockwise, consider this a front face. Default */
+	SRP_FRONT_FACE_COUNTERCLOCKWISE,
+	/** If vertex order is clockwise, consider this a front face */
+	SRP_FRONT_FACE_CLOCKWISE
+} SRPFrontFace;
+
 /** Available attribute interpolation types */
 typedef enum SRPInterpolationMode
 {
@@ -29,8 +46,16 @@ typedef struct SRPContext
 	/** User pointer to pass to message callback function
 	 *  @see SRPContext.messageCallback */
 	void* messageCallbackUserParameter;
-	/** How to interpolate vertex attributes inside the primitive */
+	
+	/** How to interpolate vertex attributes inside the primitive
+	 *  @todo Deprecated! Should make something like this:
+	 *  https://www.khronos.org/opengl/wiki/Type_Qualifier_(GLSL)#Interpolation_qualifiers */
 	SRPInterpolationMode interpolationMode;
+
+	/** What face to cull */
+	SRPCullFace cullFace;
+	/** What face to consider the "front" one */
+	SRPFrontFace frontFace;
 } SRPContext;
 
 /** Possible arguments to `srpContextSet...` */
@@ -38,7 +63,11 @@ typedef enum SRPContextParameter
 {
 	SRP_CONTEXT_MESSAGE_CALLBACK,
 	SRP_CONTEXT_MESSAGE_CALLBACK_USER_PARAMETER,
-	SRP_CONTEXT_INTERPOLATION_MODE
+
+	SRP_CONTEXT_INTERPOLATION_MODE,
+
+	SRP_CONTEXT_CULL_FACE,
+	SRP_CONTEXT_FRONT_FACE
 } SRPContextParameter;
 
 /** Initialize the context
