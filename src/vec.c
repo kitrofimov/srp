@@ -5,9 +5,9 @@
 #include "defines.h"
 #include "vec_p.h"
 
-SRP_FORCEINLINE vec2fix_56_8 vec2fp_56_8_subtract(vec2fix_56_8 a, vec2fix_56_8 b)
+SRP_FORCEINLINE vec2fix_24_8 vec2fp_24_8_subtract(vec2fix_24_8 a, vec2fix_24_8 b)
 {
-	return (vec2fix_56_8) {
+	return (vec2fix_24_8) {
 		a.x - b.x,
 		a.y - b.y
 	};
