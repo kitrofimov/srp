@@ -4,7 +4,11 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "color.h"
+#include "message_callback_p.h"
+#include "type.h"
+#include "utils.h"
 #include "vec_p.h"
 #include "context.h"
 #include "triangle.h"
@@ -12,6 +16,7 @@
 #include "shaders.h"
 #include "fixed_point.h"
 #include "math_utils.h"
+#include "vertex.h"
 
 /** @file
  *  Triangle rasteization & data interpolation */
@@ -110,6 +115,25 @@ static void calculateDeterminantsForPoint(
 static void calculateDeterminantDeltas
 	(const vec2fix_24_8 edges[3], fixed_24_8 d_dx[3], fixed_24_8 d_dy[3]);
 
+static double calculateTriangleAreaX2(const vec2fix_24_8 edges[3]);
+
+static void calculateBarycentricCoordinates
+	(const fixed_24_8 w[3], double triangleAreaX2, double b[3]);
+
+static void calculateBarycentricDeltas(
+	const fixed_24_8 dw_dx[3], const fixed_24_8 dw_dy[3], double triangleAreaX2,
+	double db_dx[3], double db_dy[3]
+);
+
+static void interpolationInitialize(
+	const SRPvsOutput vertices[3], const SRPShaderProgram* sp,
+	const double b[3], const double db_dx[3], const double db_dy[3],
+	void* iVarBuffer, void* div_dx_buffer, void* div_dy_buffer
+);
+
+static void interpolationStep
+	(const SRPShaderProgram* sp, void* iVarBuffer, const void* d_iv_dx_buffer);
+
 /** @} */  // ingroup Rasterization
 
 void drawTriangle(
@@ -117,16 +141,22 @@ void drawTriangle(
 	const SRPShaderProgram* restrict sp, size_t primitiveID
 )
 {
-	/** All calculations related to inside/outside test are done in fixed-point
-	 *  24-8 format to achieve more *calculation* precision as compared to
-	 *  floating point (if used floating point, there would take place gaps
-	 *  between triangles which would be a result of *calculation* precision
-	 *  errors)
-	 *
-	 *  The algorithm used is described by Juan Pineda in his paper called
+	/** The algorithm used is described by Juan Pineda in his paper called
 	 *  "A Parallel Algorithm for Polygon Rasterization", 1988 (see the "see
 	 *  "also" section)
 	 *  @see https://www.cs.drexel.edu/~deb39/Classes/Papers/comp175-06-pineda.pdf
+	 *
+	 *  All calculations related to inside/outside test are done in fixed-point
+	 *  24-8, but all calculations related to data interpolation (barycentric
+	 *  coordinates & etc.) are performed in double format.
+	 *
+	 *  Why not to use barycentric coordinates both for interpolation and
+	 *  inside-outside tests? The answer is simple: inside-outside tests
+	 *  require precision in calculations (solution: fixed-point arithmetic),
+	 *  while interpolation (and barycentric coordiantes) in precise require
+	 *  numerical precision for values near zero (solution: floating point OR
+	 *  fixed-point with A LOT of bits for fractional part; but I do not want
+	 *  to mess with arbitrary-precision integers to handle these many bits)
 	 *
 	 *  Read the documentation for functions called by this one to get more
 	 *  information about the implementation */
@@ -148,46 +178,48 @@ void drawTriangle(
 	calculateDeterminantsForPoint(positions, edges, bias, min, wLeft);
 	calculateDeterminantDeltas(edges, dw_dx, dw_dy);
 
-	// Barycentric coordinates at the start point
-	const double triangleAreaX2 = FIXED_24_8_TO_DOUBLE(abs(calculateDeterminant(edges[0], edges[2])));
-	const double bStart[3] = {
-		FIXED_24_8_TO_DOUBLE(wLeft[0]) / triangleAreaX2,
-		FIXED_24_8_TO_DOUBLE(wLeft[1]) / triangleAreaX2,
-		FIXED_24_8_TO_DOUBLE(wLeft[2]) / triangleAreaX2
-	};
+	double bStart[3];           // Barycentric coordinates evaluated at `min` point
+	double db_dx[3], db_dy[3];  // How much does barycoords change if 1 is added to x (y)?
+	const double triangleAreaX2 = FIXED_24_8_TO_DOUBLE(calculateTriangleAreaX2(edges));
+	calculateBarycentricCoordinates(wLeft, triangleAreaX2, bStart);
+	calculateBarycentricDeltas(dw_dx, dw_dy, triangleAreaX2, db_dx, db_dy);
 
-	// Debug/test code
-	double aVertex[3] = {  // Attribute value of each vertex
-		*(double*) vertices[0].pOutputVariables,
-		*(double*) vertices[1].pOutputVariables,
-		*(double*) vertices[2].pOutputVariables
-	};
-	// Attribute value at the start of each line
-	double aLeft = bStart[0] * aVertex[0] + bStart[1] * aVertex[1] + bStart[2] * aVertex[2];
-	
-	// GOOD UNTIL HERE
-
-	double da_dx = \
-		FIXED_24_8_TO_DOUBLE(dw_dx[0]) / triangleAreaX2 * aVertex[0] + \
-		FIXED_24_8_TO_DOUBLE(dw_dx[1]) / triangleAreaX2 * aVertex[1] + \
-		FIXED_24_8_TO_DOUBLE(dw_dx[2]) / triangleAreaX2 * aVertex[2];
-	double da_dy = \
-		FIXED_24_8_TO_DOUBLE(dw_dy[0]) / triangleAreaX2 * aVertex[0] + \
-		FIXED_24_8_TO_DOUBLE(dw_dy[1]) / triangleAreaX2 * aVertex[1] + \
-		FIXED_24_8_TO_DOUBLE(dw_dy[2]) / triangleAreaX2 * aVertex[2];
+	uint8_t iVariablesLeft[sp->vs->nBytesPerOutputVariables];
+	uint8_t d_iv_dx[sp->vs->nBytesPerOutputVariables];
+	uint8_t d_iv_dy[sp->vs->nBytesPerOutputVariables];
+	interpolationInitialize
+		(vertices, sp, bStart, db_dx, db_dy, iVariablesLeft, d_iv_dx, d_iv_dy);
 
 	for (fixed_24_8 y = min.y; y <= max.y; y += FIXED_24_8_ONE)
 	{
 		// Determinants for current pixel
 		fixed_24_8 w[3] = {wLeft[0], wLeft[1], wLeft[2]};
-		// Attribute for current pixel
-		double a = aLeft;
+		// Interpolated variables for current pixel
+		uint8_t iVariables[sp->vs->nBytesPerOutputVariables];
+		memcpy(iVariables, iVariablesLeft, sp->vs->nBytesPerOutputVariables);
 
 		for (fixed_24_8 x = min.x; x <= max.x; x += FIXED_24_8_ONE)
 		{
 			if ((w[0] | w[1] | w[2]) >= 0)
 			{
-				SRPColor color = {a * 255., 0, 0, 255}; 
+				SRPfsInput fsIn = {
+					.uniform = sp->uniform,
+					.interpolated = (SRPInterpolated*) iVariables,
+					.fragCoord = {0, 0, 0, 0},
+					.frontFacing = true,
+					.primitiveID = primitiveID
+				};
+				SRPfsOutput fsOut = {0};
+
+				sp->fs->shader(&fsIn, &fsOut);
+
+				SRPColor color = {
+					fsOut.color[0] * 255,
+					fsOut.color[1] * 255,
+					fsOut.color[2] * 255,
+					fsOut.color[3] * 255
+				};
+
 				srpFramebufferDrawPixel(
 					fb, FIXED_24_8_TO_INT(FIXED_24_8_FLOOR(x)),
 					FIXED_24_8_TO_INT(FIXED_24_8_FLOOR(y)), 0,
@@ -198,14 +230,12 @@ void drawTriangle(
 			w[0] += dw_dx[0];
 			w[1] += dw_dx[1];
 			w[2] += dw_dx[2];
-
-			a += da_dx;
+			interpolationStep(sp, iVariables, d_iv_dx);
 		}
 		wLeft[0] += dw_dy[0];
 		wLeft[1] += dw_dy[1];
 		wLeft[2] += dw_dy[2];
-
-		aLeft += da_dy;
+		interpolationStep(sp, iVariablesLeft, d_iv_dy);
 	}
 }
 
@@ -309,6 +339,151 @@ static void calculateDeterminantDeltas
 	d_dy[0] = -edges[1].x;
 	d_dy[1] = -edges[2].x;
 	d_dy[2] = -edges[0].x;
+}
+
+static double calculateTriangleAreaX2(const vec2fix_24_8 edges[3])
+{
+	return abs(calculateDeterminant(edges[0], edges[2]));
+}
+
+static void calculateBarycentricCoordinates
+	(const fixed_24_8 w[3], double triangleAreaX2, double b[3])
+{
+	b[0] = FIXED_24_8_TO_DOUBLE(w[0]) / triangleAreaX2;
+	b[1] = FIXED_24_8_TO_DOUBLE(w[1]) / triangleAreaX2;
+	b[2] = FIXED_24_8_TO_DOUBLE(w[2]) / triangleAreaX2;
+}
+
+static void calculateBarycentricDeltas(
+	const fixed_24_8 dw_dx[3], const fixed_24_8 dw_dy[3], double triangleAreaX2,
+	double db_dx[3], double db_dy[3]
+)
+{
+	db_dx[0] = FIXED_24_8_TO_DOUBLE(dw_dx[0]) / triangleAreaX2;
+	db_dx[1] = FIXED_24_8_TO_DOUBLE(dw_dx[1]) / triangleAreaX2;
+	db_dx[2] = FIXED_24_8_TO_DOUBLE(dw_dx[2]) / triangleAreaX2;
+
+	db_dy[0] = FIXED_24_8_TO_DOUBLE(dw_dy[0]) / triangleAreaX2;
+	db_dy[1] = FIXED_24_8_TO_DOUBLE(dw_dy[1]) / triangleAreaX2;
+	db_dy[2] = FIXED_24_8_TO_DOUBLE(dw_dy[2]) / triangleAreaX2;
+}
+
+static void interpolationInitialize(
+	const SRPvsOutput vertices[3], const SRPShaderProgram* sp,
+	const double b[3], const double db_dx[3], const double db_dy[3],
+	void* iVarBuffer, void* d_iv_dx_buffer, void* d_iv_dy_buffer
+)
+{
+	// Postfixed with `_void` to indicate that these do not have type information
+	// (as opposed to variables without `_void` postfix)
+
+	// Pointer to the value of current variable of 0th, 1st and 2nd vertices
+	const void* var_0_void = vertices[0].pOutputVariables;
+	const void* var_1_void = vertices[1].pOutputVariables;
+	const void* var_2_void = vertices[2].pOutputVariables;
+	// Pointer to the interpolated value of current variable
+	void* i_var_void = iVarBuffer;
+	// How much does the interpolated value of current variable change,
+	// if 1 is added to x (or y)?
+	void* d_iv_dx_void = d_iv_dx_buffer;
+	void* d_iv_dy_void = d_iv_dy_buffer;
+
+	for (size_t varI = 0; varI < sp->vs->nOutputVariables; varI++)
+	{
+		SRPVertexVariableInformation* info = &sp->vs->outputVariablesInfo[varI];
+		size_t elemSize = 0;
+
+		switch (info->type)
+		{
+		case TYPE_DOUBLE:
+		{
+			elemSize = sizeof(double);
+
+			// Assign type information to pointers we work with
+			const double* var_0 = var_0_void;
+			const double* var_1 = var_1_void;
+			const double* var_2 = var_2_void;
+			double* i_var   = i_var_void;
+			double* d_iv_dx = d_iv_dx_void;
+			double* d_iv_dy = d_iv_dy_void;
+
+			// Calculate the interpolated value and deltas for every element
+			// of current variable
+			for (size_t elemI = 0; elemI < info->nItems; elemI++)
+			{
+				i_var[elemI] = \
+					var_0[elemI] * b[0] + var_1[elemI] * b[1] + var_2[elemI] * b[2];
+				d_iv_dx[elemI] = \
+					var_0[elemI] * db_dx[0] + var_1[elemI] * db_dx[1] + var_2[elemI] * db_dx[2];
+				d_iv_dy[elemI] = \
+					var_0[elemI] * db_dy[0] + var_1[elemI] * db_dy[1] + var_2[elemI] * db_dy[2];
+			}
+
+			break;
+		}
+		default:
+			srpMessageCallbackHelper(
+				SRP_MESSAGE_ERROR, SRP_MESSAGE_SEVERITY_HIGH, __func__,
+				"Unexpected type (%i)\n", info->type
+			);
+			return;
+		}
+
+		// Update pointers
+		var_0_void   = ADD_VOID_PTR(  var_0_void, info->nItems * elemSize);
+		var_1_void   = ADD_VOID_PTR(  var_1_void, info->nItems * elemSize);
+		var_2_void   = ADD_VOID_PTR(  var_2_void, info->nItems * elemSize);
+		i_var_void   = ADD_VOID_PTR(  i_var_void, info->nItems * elemSize);
+		d_iv_dx_void = ADD_VOID_PTR(d_iv_dx_void, info->nItems * elemSize);
+		d_iv_dy_void = ADD_VOID_PTR(d_iv_dy_void, info->nItems * elemSize);
+	}
+}
+
+static void interpolationStep
+	(const SRPShaderProgram* sp, void* iVarBuffer, const void* d_iv_buffer)
+{
+	// Postfixed with `_void` to indicate that these do not have type information
+	// (as opposed to variables without `_void` postfix)
+
+	// Pointer to the interpolated value of current variable
+	void* i_var_void = iVarBuffer;
+	// Pointer to the current interpolated variable's derivative
+	const void* d_iv_void = d_iv_buffer;
+
+	for (size_t varI = 0; varI < sp->vs->nOutputVariables; varI++)
+	{
+		SRPVertexVariableInformation* info = &sp->vs->outputVariablesInfo[varI];
+		size_t elemSize = 0;
+
+		switch (info->type)
+		{
+		case TYPE_DOUBLE:
+		{
+			elemSize = sizeof(double);
+
+			// Assign type information to pointers we work with
+			double* i_var   = i_var_void;
+			const double* d_iv = d_iv_void;
+
+			// Calculate the interpolated value and deltas for every element
+			// of current variable
+			for (size_t elemI = 0; elemI < info->nItems; elemI++)
+				i_var[elemI] += d_iv[elemI];
+
+			break;
+		}
+		default:
+			srpMessageCallbackHelper(
+				SRP_MESSAGE_ERROR, SRP_MESSAGE_SEVERITY_HIGH, __func__,
+				"Unexpected type (%i)\n", info->type
+			);
+			return;
+		}
+
+		// Update pointers
+		i_var_void = ADD_VOID_PTR(i_var_void, info->nItems * elemSize);
+		d_iv_void  = ADD_VOID_PTR( d_iv_void, info->nItems * elemSize);
+	}
 }
 
 static fixed_24_8 calculateDeterminant(vec2fix_24_8 ab, vec2fix_24_8 ap)
