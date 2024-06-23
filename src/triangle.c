@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include "color.h"
 #include "vec_p.h"
 #include "context.h"
 #include "triangle.h"
@@ -146,26 +148,64 @@ void drawTriangle(
 	calculateDeterminantsForPoint(positions, edges, bias, min, wLeft);
 	calculateDeterminantDeltas(edges, dw_dx, dw_dy);
 
+	// Barycentric coordinates at the start point
+	const double triangleAreaX2 = FIXED_24_8_TO_DOUBLE(abs(calculateDeterminant(edges[0], edges[2])));
+	const double bStart[3] = {
+		FIXED_24_8_TO_DOUBLE(wLeft[0]) / triangleAreaX2,
+		FIXED_24_8_TO_DOUBLE(wLeft[1]) / triangleAreaX2,
+		FIXED_24_8_TO_DOUBLE(wLeft[2]) / triangleAreaX2
+	};
+
+	// Debug/test code
+	double aVertex[3] = {  // Attribute value of each vertex
+		*(double*) vertices[0].pOutputVariables,
+		*(double*) vertices[1].pOutputVariables,
+		*(double*) vertices[2].pOutputVariables
+	};
+	// Attribute value at the start of each line
+	double aLeft = bStart[0] * aVertex[0] + bStart[1] * aVertex[1] + bStart[2] * aVertex[2];
+	
+	// GOOD UNTIL HERE
+
+	double da_dx = \
+		FIXED_24_8_TO_DOUBLE(dw_dx[0]) / triangleAreaX2 * aVertex[0] + \
+		FIXED_24_8_TO_DOUBLE(dw_dx[1]) / triangleAreaX2 * aVertex[1] + \
+		FIXED_24_8_TO_DOUBLE(dw_dx[2]) / triangleAreaX2 * aVertex[2];
+	double da_dy = \
+		FIXED_24_8_TO_DOUBLE(dw_dy[0]) / triangleAreaX2 * aVertex[0] + \
+		FIXED_24_8_TO_DOUBLE(dw_dy[1]) / triangleAreaX2 * aVertex[1] + \
+		FIXED_24_8_TO_DOUBLE(dw_dy[2]) / triangleAreaX2 * aVertex[2];
+
 	for (fixed_24_8 y = min.y; y <= max.y; y += FIXED_24_8_ONE)
 	{
 		// Determinants for current pixel
 		fixed_24_8 w[3] = {wLeft[0], wLeft[1], wLeft[2]};
+		// Attribute for current pixel
+		double a = aLeft;
 
 		for (fixed_24_8 x = min.x; x <= max.x; x += FIXED_24_8_ONE)
 		{
 			if ((w[0] | w[1] | w[2]) >= 0)
+			{
+				SRPColor color = {a * 255., 0, 0, 255}; 
 				srpFramebufferDrawPixel(
 					fb, FIXED_24_8_TO_INT(FIXED_24_8_FLOOR(x)),
-					FIXED_24_8_TO_INT(FIXED_24_8_FLOOR(y)), 0, 0xFFFFFFFF
+					FIXED_24_8_TO_INT(FIXED_24_8_FLOOR(y)), 0,
+					SRP_COLOR_TO_UINT32_T(color)
 				);
+			}
 
 			w[0] += dw_dx[0];
 			w[1] += dw_dx[1];
 			w[2] += dw_dx[2];
+
+			a += da_dx;
 		}
 		wLeft[0] += dw_dy[0];
 		wLeft[1] += dw_dy[1];
 		wLeft[2] += dw_dy[2];
+
+		aLeft += da_dy;
 	}
 }
 
@@ -193,7 +233,7 @@ static bool cullTriangle(const vec2fix_24_8 edges[3])
 {
 	// Cross(e0, e2) == -Cross(e0, e2) == -Cross(v0->v1, v0->v2)
 	fixed_24_8 orientation = -calculateDeterminant(edges[0], edges[2]);
-	bool clockwise = orientation < 0;
+	bool clockwise = orientation > 0;
 
 	if (orientation == 0)  // degenerate
 		return true;
@@ -252,11 +292,11 @@ static void calculateDeterminantsForPoint(
 	// If we bias a determinant once, there is no need to "rebias" it again if
 	// it is computed incrementally
 	determinants[0] = \
-		calculateDeterminant(edges[1], vec2fp_24_8_subtract(point, positions[1])) - bias[1];
+		calculateDeterminant(vec2fp_24_8_subtract(point, positions[1]), edges[1]) - bias[1];
 	determinants[1] = \
-		calculateDeterminant(edges[2], vec2fp_24_8_subtract(point, positions[2])) - bias[2];
+		calculateDeterminant(vec2fp_24_8_subtract(point, positions[2]), edges[2]) - bias[2];
 	determinants[2] = \
-		calculateDeterminant(edges[0], vec2fp_24_8_subtract(point, positions[0])) - bias[0];
+		calculateDeterminant(vec2fp_24_8_subtract(point, positions[0]), edges[0]) - bias[0];
 }
 
 static void calculateDeterminantDeltas
@@ -273,7 +313,7 @@ static void calculateDeterminantDeltas
 
 static fixed_24_8 calculateDeterminant(vec2fix_24_8 ab, vec2fix_24_8 ap)
 {
-	return FIXED_24_8_MULTIPLY(ab.y, ap.x) - FIXED_24_8_MULTIPLY(ab.x, ap.y);
+	return FIXED_24_8_MULTIPLY(ab.x, ap.y) - FIXED_24_8_MULTIPLY(ab.y, ap.x);
 }
 
 static bool isEdgeFlatTopOrLeft(vec2fix_24_8 edge)
