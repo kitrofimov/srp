@@ -106,10 +106,11 @@ static void drawBuffer(
 			sp->vs->shader(&vsIn[j], &vsOut[j]);
 
 			// Perspective divide
-			vsOut[j].position[0] = vsOut[j].position[0] / vsOut[j].position[3],
+			// See https://stackoverflow.com/questions/10389040/what-does-the-1-w-coordinate-stand-for-in-gl-fragcoord
+			vsOut[j].position[0] = vsOut[j].position[0] / vsOut[j].position[3];
 			vsOut[j].position[1] = vsOut[j].position[1] / vsOut[j].position[3];
 			vsOut[j].position[2] = vsOut[j].position[2] / vsOut[j].position[3];
-			vsOut[j].position[3] = 1.;
+			vsOut[j].position[3] =                   1. / vsOut[j].position[3];
 		}
 		drawTriangle(fb, vsOut, sp, primitiveID);
 		primitiveID++;
