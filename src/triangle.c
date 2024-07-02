@@ -24,6 +24,28 @@
 /** @ingroup Rasterization
  *  @{ */
 
+/** Static; represents the determinant value in triangle draw call
+ *  Uses SoA (https://en.wikipedia.org/wiki/AoS_and_SoA) to make use of SIMD
+ *  @see drawTriangle(), Barycentrics */
+typedef struct Determinants
+{
+	fixed_24_8 value[3];  /**< Current values */
+	fixed_24_8 left [3];  /**< Values at the start of the current scanline */
+	fixed_24_8 d_dx [3];  /**< How much does the values change if 1 is added to X */
+	fixed_24_8 d_dy [3];  /**< How much does the values change if 1 is added to Y */
+} Determinants;
+
+/** Static; represents the barycentric coordinate value in triangle draw call
+ *  Uses SoA (https://en.wikipedia.org/wiki/AoS_and_SoA) to make use of SIMD
+ *  @see drawTriangle(), Determinants */
+typedef struct Barycentrics
+{
+	double value[3];  /**< Current values */
+	double left [3];  /**< Values at the start of the current scanline */
+	double d_dx [3];  /**< How much does the values change if 1 is added to X */
+	double d_dy [3];  /**< How much does the values change if 1 is added to Y */
+} Barycentrics;
+
 /** Calculate the determinant value (effectively a signed area of a
  *  parallelogram formed by two vectors) for a point and an edge using an edge
  *  vector (A->B) and a vertex-to-point vector (A->P).
@@ -86,10 +108,11 @@ static void calculateBoundingBox
  *                   values after this call */
 static void calculateDeterminantBiases(const vec2fix_24_8 edges[3], fixed_24_8 bias[3]);
 
-/** Calculate the determinant values for a given point
+/*  Calculate the determinant values for a given point
  *  Determinant values are needed to determine the position of a point in
  *  comparison with edge vector: it is zero on the edge, negative on one side
  *  and positive on the other.
+ *  @todo update docs
  *  @param[in] positions A pointer to 3-element array of fixed-point vertex
  *                       positions, as returned from calculateFixedPointPositions()
  *  @param[in] edges A pointer to 3-element array containing fixed-point edge
@@ -101,34 +124,19 @@ static void calculateDeterminantBiases(const vec2fix_24_8 edges[3], fixed_24_8 b
  *                           determinants after this call */
 static void calculateDeterminantsForPoint(
 	const vec2fix_24_8 positions[3], const vec2fix_24_8 edges[3],
-	const fixed_24_8 bias[3], vec2fix_24_8 point, fixed_24_8 determinants[3]
+	vec2fix_24_8 point, Determinants* d
 );
 
-/** Calculate the delta values for determinants
- *  Those answer the question "how much does the determinants change if a 1 is added to x/y?"
- *  @param[in] edges A pointer to 3-element array containing fixed-point edge
- *                   vectors, as returned from calculateFixedPointEdges()
- *  @param[in] d_dx A pointer to 3-element array that will contain the delta X
- *                  value for determinants
- *  @param[in] d_dx A pointer to 3-element array that will contain the delta Y
- *                  value for determinants */
-static void calculateDeterminantDeltas
-	(const vec2fix_24_8 edges[3], fixed_24_8 d_dx[3], fixed_24_8 d_dy[3]);
+static void determinantsStep(fixed_24_8 values[3], const fixed_24_8 deltas[3]);
 
 static double calculateTriangleAreaX2(const vec2fix_24_8 edges[3]);
 
 static void calculateBarycentricCoordinates
-	(const fixed_24_8 w[3], double triangleAreaX2, double b[3]);
-
-static void calculateBarycentricDeltas(
-	const fixed_24_8 dw_dx[3], const fixed_24_8 dw_dy[3], double triangleAreaX2,
-	double db_dx[3], double db_dy[3]
-);
+	(const Determinants* d, const vec2fix_24_8 edges[3], Barycentrics* b);
 
 static void interpolationInitialize(
-	const SRPvsOutput vertices[3], const SRPShaderProgram* sp,
-	const double b[3], const double db_dx[3], const double db_dy[3],
-	void* iVarBuffer, void* div_dx_buffer, void* div_dy_buffer
+	const SRPvsOutput vertices[3], const SRPShaderProgram* sp, const Barycentrics* b,
+	void* iVarBuffer, void* d_iv_dx_buffer, void* d_iv_dy_buffer
 );
 
 static void interpolationStep
@@ -171,36 +179,27 @@ void drawTriangle(
 	vec2fix_24_8 min, max;
 	calculateBoundingBox(positions, &min, &max);
 
-	fixed_24_8 bias[3];             // Determinants' biases: needed for top-left fill convention
-	fixed_24_8 wLeft[3];            // Determinants at the start of each line
-	fixed_24_8 dw_dx[3], dw_dy[3];  // How much does determinants change if 1 is added to x (y)?
-	calculateDeterminantBiases(edges, bias);
-	calculateDeterminantsForPoint(positions, edges, bias, min, wLeft);
-	calculateDeterminantDeltas(edges, dw_dx, dw_dy);
-
-	double bStart[3];           // Barycentric coordinates evaluated at `min` point
-	double db_dx[3], db_dy[3];  // How much does barycoords change if 1 is added to x (y)?
-	const double triangleAreaX2 = FIXED_24_8_TO_DOUBLE(calculateTriangleAreaX2(edges));
-	calculateBarycentricCoordinates(wLeft, triangleAreaX2, bStart);
-	calculateBarycentricDeltas(dw_dx, dw_dy, triangleAreaX2, db_dx, db_dy);
+	Determinants d;
+	Barycentrics b;
+	calculateDeterminantsForPoint(positions, edges, min, &d);
+	calculateBarycentricCoordinates(&d, edges, &b);
 
 	uint8_t iVariablesLeft[sp->vs->nBytesPerOutputVariables];
 	uint8_t d_iv_dx[sp->vs->nBytesPerOutputVariables];
 	uint8_t d_iv_dy[sp->vs->nBytesPerOutputVariables];
-	interpolationInitialize
-		(vertices, sp, bStart, db_dx, db_dy, iVariablesLeft, d_iv_dx, d_iv_dy);
+	interpolationInitialize(vertices, sp, &b, iVariablesLeft, d_iv_dx, d_iv_dy);
 
 	for (fixed_24_8 y = min.y; y <= max.y; y += FIXED_24_8_ONE)
 	{
-		// Determinants for current pixel
-		fixed_24_8 w[3] = {wLeft[0], wLeft[1], wLeft[2]};
+		memcpy(d.value, d.left, sizeof(d.left));
+
 		// Interpolated variables for current pixel
 		uint8_t iVariables[sp->vs->nBytesPerOutputVariables];
 		memcpy(iVariables, iVariablesLeft, sp->vs->nBytesPerOutputVariables);
 
 		for (fixed_24_8 x = min.x; x <= max.x; x += FIXED_24_8_ONE)
 		{
-			if ((w[0] | w[1] | w[2]) >= 0)
+			if ((d.value[0] | d.value[1] | d.value[2]) >= 0)
 			{
 				SRPfsInput fsIn = {
 					.uniform = sp->uniform,
@@ -227,16 +226,13 @@ void drawTriangle(
 				);
 			}
 
-			w[0] += dw_dx[0];
-			w[1] += dw_dx[1];
-			w[2] += dw_dx[2];
+			determinantsStep(d.value, d.d_dx);
 			interpolationStep(sp, iVariables, d_iv_dx);
-		}
-		wLeft[0] += dw_dy[0];
-		wLeft[1] += dw_dy[1];
-		wLeft[2] += dw_dy[2];
+		}  // X traversal
+
+		determinantsStep(d.left, d.d_dy);
 		interpolationStep(sp, iVariablesLeft, d_iv_dy);
-	}
+	}  // Y traversal
 }
 
 static void calculateFixedPointPositions
@@ -316,29 +312,36 @@ static void calculateDeterminantBiases(const vec2fix_24_8 edges[3], fixed_24_8 b
 
 static void calculateDeterminantsForPoint(
 	const vec2fix_24_8 positions[3], const vec2fix_24_8 edges[3],
-	const fixed_24_8 bias[3], vec2fix_24_8 point, fixed_24_8 determinants[3]
+	vec2fix_24_8 point, Determinants* det
 )
 {
+	// Calculate values
+	fixed_24_8 bias[3];  // Needed for fill convention
+	calculateDeterminantBiases(edges, bias);
+
 	// If we bias a determinant once, there is no need to "rebias" it again if
 	// it is computed incrementally
-	determinants[0] = \
+	det->left[0] = \
 		calculateDeterminant(vec2fp_24_8_subtract(point, positions[1]), edges[1]) - bias[1];
-	determinants[1] = \
+	det->left[1] = \
 		calculateDeterminant(vec2fp_24_8_subtract(point, positions[2]), edges[2]) - bias[2];
-	determinants[2] = \
+	det->left[2] = \
 		calculateDeterminant(vec2fp_24_8_subtract(point, positions[0]), edges[0]) - bias[0];
+
+	// Calculate deltas
+	det->d_dx[0] =  edges[1].y;
+	det->d_dx[1] =  edges[2].y;
+	det->d_dx[2] =  edges[0].y;
+	det->d_dy[0] = -edges[1].x;
+	det->d_dy[1] = -edges[2].x;
+	det->d_dy[2] = -edges[0].x;
 }
 
-static void calculateDeterminantDeltas
-	(const vec2fix_24_8 edges[3], fixed_24_8 d_dx[3], fixed_24_8 d_dy[3])
+static void determinantsStep(fixed_24_8 values[3], const fixed_24_8 deltas[3])
 {
-	d_dx[0] =  edges[1].y;
-	d_dx[1] =  edges[2].y;
-	d_dx[2] =  edges[0].y;
-
-	d_dy[0] = -edges[1].x;
-	d_dy[1] = -edges[2].x;
-	d_dy[2] = -edges[0].x;
+	values[0] += deltas[0];
+	values[1] += deltas[1];
+	values[2] += deltas[2];
 }
 
 static double calculateTriangleAreaX2(const vec2fix_24_8 edges[3])
@@ -347,30 +350,25 @@ static double calculateTriangleAreaX2(const vec2fix_24_8 edges[3])
 }
 
 static void calculateBarycentricCoordinates
-	(const fixed_24_8 w[3], double triangleAreaX2, double b[3])
+	(const Determinants* det, const vec2fix_24_8 edges[3], Barycentrics* bar)
 {
-	b[0] = FIXED_24_8_TO_DOUBLE(w[0]) / triangleAreaX2;
-	b[1] = FIXED_24_8_TO_DOUBLE(w[1]) / triangleAreaX2;
-	b[2] = FIXED_24_8_TO_DOUBLE(w[2]) / triangleAreaX2;
-}
+	// Calculate values
+	const double triangleAreaX2 = FIXED_24_8_TO_DOUBLE(calculateTriangleAreaX2(edges));
+	bar->left[0] = FIXED_24_8_TO_DOUBLE(det->left[0]) / triangleAreaX2;
+	bar->left[1] = FIXED_24_8_TO_DOUBLE(det->left[1]) / triangleAreaX2;
+	bar->left[2] = FIXED_24_8_TO_DOUBLE(det->left[2]) / triangleAreaX2;
 
-static void calculateBarycentricDeltas(
-	const fixed_24_8 dw_dx[3], const fixed_24_8 dw_dy[3], double triangleAreaX2,
-	double db_dx[3], double db_dy[3]
-)
-{
-	db_dx[0] = FIXED_24_8_TO_DOUBLE(dw_dx[0]) / triangleAreaX2;
-	db_dx[1] = FIXED_24_8_TO_DOUBLE(dw_dx[1]) / triangleAreaX2;
-	db_dx[2] = FIXED_24_8_TO_DOUBLE(dw_dx[2]) / triangleAreaX2;
-
-	db_dy[0] = FIXED_24_8_TO_DOUBLE(dw_dy[0]) / triangleAreaX2;
-	db_dy[1] = FIXED_24_8_TO_DOUBLE(dw_dy[1]) / triangleAreaX2;
-	db_dy[2] = FIXED_24_8_TO_DOUBLE(dw_dy[2]) / triangleAreaX2;
+	// Calculate deltas
+	bar->d_dx[0] = FIXED_24_8_TO_DOUBLE(det->d_dx[0]) / triangleAreaX2;
+	bar->d_dx[1] = FIXED_24_8_TO_DOUBLE(det->d_dx[1]) / triangleAreaX2;
+	bar->d_dx[2] = FIXED_24_8_TO_DOUBLE(det->d_dx[2]) / triangleAreaX2;
+	bar->d_dy[0] = FIXED_24_8_TO_DOUBLE(det->d_dy[0]) / triangleAreaX2;
+	bar->d_dy[1] = FIXED_24_8_TO_DOUBLE(det->d_dy[1]) / triangleAreaX2;
+	bar->d_dy[2] = FIXED_24_8_TO_DOUBLE(det->d_dy[2]) / triangleAreaX2;
 }
 
 static void interpolationInitialize(
-	const SRPvsOutput vertices[3], const SRPShaderProgram* sp,
-	const double b[3], const double db_dx[3], const double db_dy[3],
+	const SRPvsOutput vertices[3], const SRPShaderProgram* sp, const Barycentrics* b,
 	void* iVarBuffer, void* d_iv_dx_buffer, void* d_iv_dy_buffer
 )
 {
@@ -411,12 +409,21 @@ static void interpolationInitialize(
 			// of current variable
 			for (size_t elemI = 0; elemI < info->nItems; elemI++)
 			{
-				i_var[elemI] = \
-					var_0[elemI] * b[0] + var_1[elemI] * b[1] + var_2[elemI] * b[2];
-				d_iv_dx[elemI] = \
-					var_0[elemI] * db_dx[0] + var_1[elemI] * db_dx[1] + var_2[elemI] * db_dx[2];
-				d_iv_dy[elemI] = \
-					var_0[elemI] * db_dy[0] + var_1[elemI] * db_dy[1] + var_2[elemI] * db_dy[2];
+				i_var[elemI] = (
+					var_0[elemI] * b->left[0] + \
+					var_1[elemI] * b->left[1] + \
+					var_2[elemI] * b->left[2]
+				);
+				d_iv_dx[elemI] = (
+					var_0[elemI] * b->d_dx[0] + \
+					var_1[elemI] * b->d_dx[1] + \
+					var_2[elemI] * b->d_dx[2]
+				);
+				d_iv_dy[elemI] = (
+					var_0[elemI] * b->d_dy[0] + \
+					var_1[elemI] * b->d_dy[1] + \
+					var_2[elemI] * b->d_dy[2]
+				);
 			}
 
 			break;
