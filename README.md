@@ -1,17 +1,30 @@
 # srp
 
-(stands for **s**oftware **r**endering **p**ipeline)
-
-Highly inspired by OpenGL API and made only for learning purposes, this is my first serious project in C (still WIP at the moment) and my first project in the field of computer graphics. The only dependency is [`stb_image`](https://github.com/nothings/stb/blob/master/stb_image.h). You probably *do not* want to use this in production code!
-
-This is a rendering pipeline written fully in software that uses only the CPU for computation. It features:
+A **s**oftware **r**endering **p**ipeline using only CPU computation that features:
 - Fully programmable vertex and fragment shaders
 - A small math library with vector and matrix structures to use in shader programming
 - Texture mapping
 - Shader uniforms
 - Affine attribute interpolation
 
-Read the documentation for `master` branch [here](https://fahlerile.github.io/srp/), or build the documentation yourself (see Building section)
+Highly inspired by OpenGL API and made mostly for learning purposes, this is my first serious project in C (WIP at the moment) and my first project in the field of computer graphics. The only dependency is [`stb_image`](https://github.com/nothings/stb/blob/master/stb_image.h).
+
+You probably *do not* want to use this in production code! If you need to, see [this awesome project](https://github.com/rswinkle/PortableGL).
+
+Read the documentation for `master` branch [here](https://kitrofimov.github.io/srp/), or build the documentation yourself (see [Building](#building))
+
+## Goals of this project
+- Create a general-purpose rendering library (primary use case: CPU-only devices)
+- Apply the fundamentals of software design patterns to a real-world case
+- Learn basics of computer graphics
+- Learn C programming language thoroughly & acquire experience working with it
+
+## What I learned from this project so far (a section for my portfolio)
+- Advanced C programming techniques, library design
+- Importance of having a plan & an end goal (this project started as something completely different from what it is now)
+- Git workflow (+ the importance of atomic commits and meaningful commit names)
+- Premature optimization *really* is the root of all evil
+- Importance of writing clean code & adding comments
 
 ## Building
 
@@ -66,14 +79,3 @@ And many, many more, all of which I will not find anymore...
 - [ ] Are `vec` and `mat` functions inlined by the compiler? Should they be? Are `mat` or `vec` ever passed by-value?
 - [ ] Use a profiler to find bottlenecks in frequently-used functions
 - [ ] Draw primitives in parallel (OpenMP)
-
-## What I learned
-This is a section specially for my portfolio, so feel free to skip it. Well, I learned:
-- Some C programming techniques and library design
-- Importance of having a plan, an end goal:
-    - This project started as something completely different from what it is now
-- Basic Git workflow
-- The importance of atomic (if it is possible) commits and meaningful commit names
-- Premature optimization and optimization without measuring *really* is the root of all evil
-- Importance of readable code and comments where they are needed
-
