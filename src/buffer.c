@@ -167,7 +167,7 @@ static SRPVertex* indexVertexBuffer(const SRPVertexBuffer* this, size_t index)
 SRPIndexBuffer* srpNewIndexBuffer()
 {
 	SRPIndexBuffer* this = SRP_MALLOC(sizeof(SRPIndexBuffer));
-	this->indicesType = TYPE_UINT8;
+	this->indicesType = TYPE_UINT8;  // Default value, will be overwritten in `srpIndexBufferCopyData`
 	this->nBytesPerIndex = srpSizeofType(this->indicesType);
 	this->nIndices = 0;
 	this->nBytesAllocated = 0;

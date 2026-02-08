@@ -13,6 +13,7 @@
  *  @{ */
 
 /** Specifies primitives that can be drawn
+ *	@todo implement primitives other than triangles
  *  @see srpDrawVertexBuffer() srpDrawIndexBuffer() */
 typedef enum SRPPrimitive
 {
