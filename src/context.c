@@ -11,7 +11,7 @@ void srpNewContext(SRPContext* pContext)
 	pContext->interpolationMode = SRP_INTERPOLATION_MODE_PERSPECTIVE;
 }
 
-void srpContextSetP(SRPContextParameter contextParameter, const void* data)
+void srpContextSetP(SRPContextParameter contextParameter, void* data)
 {
 	switch (contextParameter)
 	{
@@ -19,8 +19,7 @@ void srpContextSetP(SRPContextParameter contextParameter, const void* data)
 		srpContext.messageCallback = data;
 		return;
 	case SRP_CONTEXT_MESSAGE_CALLBACK_USER_PARAMETER:
-		/** @todo Is this cast OK? */
-		srpContext.messageCallbackUserParameter = (void*) data;
+		srpContext.messageCallbackUserParameter = data;
 		return;
 	default:
 		srpMessageCallbackHelper(

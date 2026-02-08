@@ -48,7 +48,7 @@ void srpNewContext(SRPContext* pContext);
 /** Set a pointer parameter in the context
  *  @param[in] contextParameter The context parameter you want to modify
  *  @param[in] data The pointer you want to assign to specified context parameter */
-void srpContextSetP(SRPContextParameter contextParameter, const void* data);
+void srpContextSetP(SRPContextParameter contextParameter, void* data);
 
 /** Set an integer/enum parameter in the context
  *  @param[in] contextParameter The context parameter you want to modify
