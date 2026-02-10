@@ -63,11 +63,19 @@ And a lot more... Here I mentioned only those projects on which I looked at as a
 And many, many more, all of which I will not find anymore...
 
 ## TODO
-### Features
 - [x] Add interpolation with perspective correction
 - [x] Split the construction and rasterization of triangles in the pipeline
-- [ ] Fix rasterization rules (see the gaps between triangles in `03_spinning_textured_cube` example)
+- [x] Fix rasterization rules (see the gaps between triangles in `03_spinning_textured_cube` example)
+- [ ] Fix unnecessary allocations in `assembleTriangles()`
+- [ ] Refactor / rewrite initial barycentric calculations
+- [ ] Fix overly late backface culling
+- [ ] Make CW/CCW vertex order configurable (check: is it configurable in OpenGL/Vulkan?)
+- [ ] Refactor / rewrite interpolation logic
+- [ ] Check for bottlenecks
 - [ ] Implement other primitives (lines, points, lines/triangles strip/adjacency etc.)
+- [ ] Image-based testing framework?
+- [ ] Implement single-threaded binning and tile system
+- [ ] Scale to multiple threads
 
 - [ ] Implement interpolation for types other than `double` (shouldn't it just be `double` and `float`?)
 - [ ] Add multisampling
@@ -76,8 +84,3 @@ And many, many more, all of which I will not find anymore...
     - [ ] Mipmapping
     - [ ] Anisotropic filtering
     - [ ] Transparent textures?
-
-### Optimization
-- [ ] Are `vec` and `mat` functions inlined by the compiler? Should they be? Are `mat` or `vec` ever passed by-value?
-- [ ] Use a profiler to find bottlenecks in frequently-used functions
-- [ ] Draw primitives in parallel (OpenMP)

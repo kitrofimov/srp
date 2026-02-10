@@ -90,17 +90,17 @@ void setupTriangle(
 		tri->edge[i] = vec3dSubtract(tri->ss[(i+1) % 3], tri->ss[i]);
 
 	tri->minBP = (vec2d) {
-		MIN(tri->ss[0].x, MIN(tri->ss[1].x, tri->ss[2].x)),
-		MIN(tri->ss[0].y, MIN(tri->ss[1].y, tri->ss[2].y))
+		floor(MIN(tri->ss[0].x, MIN(tri->ss[1].x, tri->ss[2].x))),
+		floor(MIN(tri->ss[0].y, MIN(tri->ss[1].y, tri->ss[2].y)))
 	};
 	tri->maxBP = (vec2d) {
-		MAX(tri->ss[0].x, MAX(tri->ss[1].x, tri->ss[2].x)),
-		MAX(tri->ss[0].y, MAX(tri->ss[1].y, tri->ss[2].y))
+		ceil(MAX(tri->ss[0].x, MAX(tri->ss[1].x, tri->ss[2].x))),
+		ceil(MAX(tri->ss[0].y, MAX(tri->ss[1].y, tri->ss[2].y)))
 	};
 
+	vec2d start = {tri->minBP.x + 0.5, tri->minBP.y + 0.5};
 	calculateBarycentricCoordinatesForPointAndBarycentricDeltas(
-		tri->ss, tri->edge, tri->minBP,
-		tri->lambda, tri->dldx, tri->dldy
+		tri->ss, tri->edge, start, tri->lambda, tri->dldx, tri->dldy
 	);
 
 	for (uint8_t i = 0; i < 3; i++)
@@ -116,7 +116,7 @@ void rasterizeTriangle(
 )
 {
 	// Do not traverse triangles with clockwise vertices
-	/** @todo Why compute these two edge vectors twice? */
+	/** @todo Should have discarded this triangle back in assembleTriangles() */
 	vec3d e0 = vec3dSubtract(*tri->p_ndc[1], *tri->p_ndc[0]);
 	vec3d e1 = vec3dSubtract(*tri->p_ndc[2], *tri->p_ndc[1]);
 	double normal = signedAreaParallelogram(&e0, &e1);
@@ -129,8 +129,7 @@ void rasterizeTriangle(
 		{
 			for (uint8_t i = 0; i < 3; i++)
 			{
-				/** @todo Are rasterization rules working? Rough equality here? */
-				if (tri->lambda[i] == 0 && !tri->edgeTL[i])
+				if (ROUGHLY_ZERO(tri->lambda[i]) && !tri->edgeTL[i])
 					goto nextPixel;
 			}
 
@@ -233,7 +232,6 @@ static void calculateBarycentricCoordinatesForPointAndBarycentricDeltas(
 	barycentricDeltaY[2] = -edgeVectors[0].x / areaX2;
 }
 
-/** @todo is it really `edgeVector->y < 0` here? not `>`? */
 static bool triangleIsEdgeFlatTopOrLeft(const vec3d* restrict edgeVector)
 {
 	return ((edgeVector->x > 0) && (edgeVector->y == 0)) || (edgeVector->y < 0);

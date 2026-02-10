@@ -37,5 +37,9 @@
 /** Get the fractional part of `float` or `double` */
 #define FRACTIONAL(x) ( (x) - floor(x) )
 
+#define EPSILON 1e-9
+#define ROUGHLY_EQUAL(a, b) (fabs((a) - (b)) <= EPSILON)
+#define ROUGHLY_ZERO(x) (fabs(x) <= EPSILON)
+
 /** @} */  // ingroup Various_internal
 
