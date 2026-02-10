@@ -42,9 +42,10 @@ static SRPVertex* indexVertexBuffer(const SRPVertexBuffer* this, size_t index);
 
 /** @} */
 
-static void drawBuffer(
+static bool assembleTriangles(
 	const SRPIndexBuffer* ib, const SRPVertexBuffer* vb, const SRPFramebuffer* fb,
-	const SRPShaderProgram* sp, SRPPrimitive primitive, size_t startIndex, size_t count
+	const SRPShaderProgram* sp, SRPPrimitive primitive, size_t startIndex, size_t count,
+	size_t* outTriangleCount, SRPTriangle** outTriangles
 )
 {
 	const bool isDrawingIndexBuffer = (ib != NULL);
@@ -55,7 +56,15 @@ static void drawBuffer(
 			SRP_MESSAGE_ERROR, SRP_MESSAGE_SEVERITY_HIGH, __func__,
 			"Only triangles are implemented"
 		);
-		return;
+		return false;
+	}
+
+	if (count % 3 != 0)
+	{
+		srpMessageCallbackHelper(
+			SRP_MESSAGE_WARNING, SRP_MESSAGE_SEVERITY_LOW, __func__,
+			"Vertex count not divisible by 3. The last %i vertex/vertices will be ignored", count % 3
+		);
 	}
 
 	// Index of the last vertex that will be touched
@@ -71,51 +80,81 @@ static void drawBuffer(
 			SRP_MESSAGE_ERROR, SRP_MESSAGE_SEVERITY_HIGH, __func__,
 			errorMessage, startIndex, endIndex, bufferSize
 		);
-		return;
+		return false;
 	}
 
-	// Allocate memory for three vertex shader output variables (triangle = 3 vertices)
-	SRPVertexVariable* outputVertexVariables = SRP_MALLOC(sp->vs->nBytesPerOutputVariables * 3);
+	size_t triangleCount = count / 3;
+	SRPTriangle* triangles = SRP_MALLOC(sizeof(SRPTriangle) * triangleCount);
 	size_t primitiveID = 0;
 
 	for (size_t i = startIndex; i <= endIndex; i += 3)
 	{
-		SRPvsInput vsIn[3];
-		SRPvsOutput vsOut[3];
+		SRPTriangle* tri = &triangles[primitiveID];
+
 		for (uint8_t j = 0; j < 3; j++)
 		{
-			size_t vertexIndex;
-			if (isDrawingIndexBuffer)
-				vertexIndex = indexIndexBuffer(ib, i+j);
-			else
-				vertexIndex = i+j;
+			size_t vertexIndex = isDrawingIndexBuffer ? indexIndexBuffer(ib, i+j) : (i+j);
 			SRPVertex* pVertex = indexVertexBuffer(vb, vertexIndex);
-			SRPVertexVariable* pOutputVertexVariables = (SRPVertexVariable*) \
-				INDEX_VOID_PTR(outputVertexVariables, j, sp->vs->nBytesPerOutputVariables);
 
-			vsIn[j] = (SRPvsInput) {
-				.vertexID = i+j,
-				.pVertex = pVertex,
-				.uniform = sp->uniform
+			SRPvsInput vsIn = {
+				.vertexID = vertexIndex,
+				.pVertex  = pVertex,
+				.uniform  = sp->uniform
 			};
-			vsOut[j] = (SRPvsOutput) {
+			tri->v[j] = (SRPvsOutput) {
 				.position = {0},
-				.pOutputVariables = pOutputVertexVariables
+				/** @todo Too many allocations. Optimize to arena allocator later */
+				.pOutputVariables = SRP_MALLOC(sp->vs->nBytesPerOutputVariables)
 			};
 
-			sp->vs->shader(&vsIn[j], &vsOut[j]);
+			sp->vs->shader(&vsIn, &tri->v[j]);
 
 			// Perspective divide
-			vsOut[j].position[0] = vsOut[j].position[0] / vsOut[j].position[3],
-			vsOut[j].position[1] = vsOut[j].position[1] / vsOut[j].position[3];
-			vsOut[j].position[2] = vsOut[j].position[2] / vsOut[j].position[3];
-			vsOut[j].position[3] = 1.;
+			tri->v[j].position[0] /= tri->v[j].position[3];
+			tri->v[j].position[1] /= tri->v[j].position[3];
+			tri->v[j].position[2] /= tri->v[j].position[3];
+			tri->v[j].position[3] = 1.0f;
 		}
-		drawTriangle(fb, vsOut, sp, primitiveID);
+
+		setupTriangle(tri, fb);
+
+		tri->id = primitiveID;
 		primitiveID++;
 	}
 
-	SRP_FREE(outputVertexVariables);
+	*outTriangleCount = triangleCount;
+	*outTriangles = triangles;
+	return true;
+}
+
+static void cleanUpTriangles(size_t triangleCount, SRPTriangle* triangles)
+{
+	for (size_t i = 0; i < triangleCount; i++)
+	{
+		for (uint8_t j = 0; j < 3; j++)
+			SRP_FREE(triangles[i].v[j].pOutputVariables);
+	}
+	SRP_FREE(triangles);
+}
+
+static void drawBuffer(
+	const SRPIndexBuffer* ib, const SRPVertexBuffer* vb, const SRPFramebuffer* fb,
+	const SRPShaderProgram* sp, SRPPrimitive primitive, size_t startIndex, size_t count
+)
+{
+	size_t triangleCount;
+	SRPTriangle* triangles;
+	bool success = assembleTriangles(
+		ib, vb, fb, sp, primitive, startIndex, count,
+		&triangleCount, &triangles
+	);
+	if (!success)
+		return;
+
+	for (size_t i = 0; i < triangleCount; i++)
+		rasterizeTriangle(&triangles[i], fb, sp);
+
+	cleanUpTriangles(triangleCount, triangles);
 }
 
 SRPVertexBuffer* srpNewVertexBuffer()

@@ -66,7 +66,9 @@ And many, many more, all of which I will not find anymore...
 ### Features
 - [x] Add interpolation with perspective correction
 - [ ] Fix rasterization rules (see the gaps between triangles in `03_spinning_textured_cube` example)
+- [ ] Split the construction and rasterization of triangles in the pipeline
 - [ ] Implement other primitives (lines, points, lines/triangles strip/adjacency etc.)
+
 - [ ] Implement interpolation for types other than `double` (shouldn't it just be `double` and `float`?)
 - [ ] Add multisampling
 - [ ] Advanced texture techniques:

@@ -74,80 +74,74 @@ static void triangleInterpolatePositionAndVertexVariables(
 
 /** @} */  // ingroup Rasterization
 
-void drawTriangle(
-	const SRPFramebuffer* fb, const SRPvsOutput vertices[3],
-	const SRPShaderProgram* restrict sp, size_t primitiveID
+void setupTriangle(
+	SRPTriangle* tri, const SRPFramebuffer* fb
 )
 {
-	vec3d NDCPositions[3];
+	// vec3d is tightly packed, so this is safe
 	for (uint8_t i = 0; i < 3; i++)
-		NDCPositions[i] = (vec3d) {
-			vertices[i].position[0],
-			vertices[i].position[1],
-			vertices[i].position[2]
-		};
+		tri->p_ndc[i] = (vec3d*) tri->v[i].position;
 
+	for (size_t i = 0; i < 3; i++)
+		srpFramebufferNDCToScreenSpace(
+			fb, (double*) tri->p_ndc[i], (double*) &tri->ss[i]
+		);
+	for (size_t i = 0; i < 3; i++)
+		tri->edge[i] = vec3dSubtract(tri->ss[(i+1) % 3], tri->ss[i]);
+
+	tri->minBP = (vec2d) {
+		MIN(tri->ss[0].x, MIN(tri->ss[1].x, tri->ss[2].x)),
+		MIN(tri->ss[0].y, MIN(tri->ss[1].y, tri->ss[2].y))
+	};
+	tri->maxBP = (vec2d) {
+		MAX(tri->ss[0].x, MAX(tri->ss[1].x, tri->ss[2].x)),
+		MAX(tri->ss[0].y, MAX(tri->ss[1].y, tri->ss[2].y))
+	};
+
+	calculateBarycentricCoordinatesForPointAndBarycentricDeltas(
+		tri->ss, tri->edge, tri->minBP,
+		tri->lambda, tri->dldx, tri->dldy
+	);
+
+	for (uint8_t i = 0; i < 3; i++)
+	{
+		tri->lambda_row[i] = tri->lambda[i];
+		tri->edgeTL[i] = triangleIsEdgeFlatTopOrLeft(&tri->edge[i]);
+	}
+}
+
+void rasterizeTriangle(
+	SRPTriangle* tri, const SRPFramebuffer* fb,
+	const SRPShaderProgram* restrict sp
+)
+{
 	// Do not traverse triangles with clockwise vertices
 	/** @todo Why compute these two edge vectors twice? */
-	vec3d e0 = vec3dSubtract(NDCPositions[1], NDCPositions[0]);
-	vec3d e1 = vec3dSubtract(NDCPositions[2], NDCPositions[1]);
+	vec3d e0 = vec3dSubtract(*tri->p_ndc[1], *tri->p_ndc[0]);
+	vec3d e1 = vec3dSubtract(*tri->p_ndc[2], *tri->p_ndc[1]);
 	double normal = signedAreaParallelogram(&e0, &e1);
 	if (normal < 0)
 		return;
 
-	vec3d SSPositions[3], edgeVectors[3];
-	for (size_t i = 0; i < 3; i++)
-		srpFramebufferNDCToScreenSpace(
-			fb, (double*) &NDCPositions[i], (double*) &SSPositions[i]
-		);
-	for (size_t i = 0; i < 3; i++)
-		edgeVectors[i] = vec3dSubtract(SSPositions[(i+1) % 3], SSPositions[i]);
-
-	vec2d minBoundingPoint = {
-		MIN(SSPositions[0].x, MIN(SSPositions[1].x, SSPositions[2].x)),
-		MIN(SSPositions[0].y, MIN(SSPositions[1].y, SSPositions[2].y))
-	};
-	vec2d maxBoundingPoint = {
-		MAX(SSPositions[0].x, MAX(SSPositions[1].x, SSPositions[2].x)),
-		MAX(SSPositions[0].y, MAX(SSPositions[1].y, SSPositions[2].y))
-	};
-
-	double barycentricCoordinates[3];
-	double barycentricDeltaX[3], barycentricDeltaY[3];
-	calculateBarycentricCoordinatesForPointAndBarycentricDeltas(
-		SSPositions, edgeVectors, minBoundingPoint, barycentricCoordinates,
-		barycentricDeltaX, barycentricDeltaY
-	);
-
-	double barycentricCoordinatesAtBeginningOfTheRow[3];
-	bool isEdgeNotFlatTopOrLeft[3];
-	for (uint8_t i = 0; i < 3; i++)
+	for (size_t y = tri->minBP.y; y < tri->maxBP.y; y += 1)
 	{
-		barycentricCoordinatesAtBeginningOfTheRow[i] = barycentricCoordinates[i];
-		isEdgeNotFlatTopOrLeft[i] = !triangleIsEdgeFlatTopOrLeft(&edgeVectors[i]);
-	}
-
-	for (size_t y = minBoundingPoint.y; y < maxBoundingPoint.y; y += 1)
-	{
-		for (size_t x = minBoundingPoint.x; x < maxBoundingPoint.x; x += 1)
+		for (size_t x = tri->minBP.x; x < tri->maxBP.x; x += 1)
 		{
 			for (uint8_t i = 0; i < 3; i++)
 			{
 				/** @todo Are rasterization rules working? Rough equality here? */
-				if (barycentricCoordinates[i] == 0 && isEdgeNotFlatTopOrLeft[i])
+				if (tri->lambda[i] == 0 && !tri->edgeTL[i])
 					goto nextPixel;
 			}
 
-			if (barycentricCoordinates[0] >= 0 && \
-				barycentricCoordinates[1] >= 0 && \
-				barycentricCoordinates[2] >= 0)
+			if (tri->lambda[0] >= 0 && tri->lambda[1] >= 0 && tri->lambda[2] >= 0)
 			{
 				/** @todo Avoid VLA (custom allocator?) */
 				uint8_t interpolatedBuffer[sp->vs->nBytesPerOutputVariables];
 				SRPInterpolated* pInterpolated = (SRPInterpolated*) interpolatedBuffer;
 				vec4d interpolatedPosition = {0};
 				triangleInterpolatePositionAndVertexVariables(
-					vertices, barycentricCoordinates, sp, pInterpolated,
+					tri->v, tri->lambda, sp, pInterpolated,
 					&interpolatedPosition
 				);
 
@@ -165,7 +159,7 @@ void drawTriangle(
 						interpolatedPosition.w
 					},
 					.frontFacing = true,
-					.primitiveID = primitiveID,
+					.primitiveID = tri->id,
 				};
 				SRPfsOutput fsOut = {0};
 
@@ -185,12 +179,12 @@ void drawTriangle(
 
 nextPixel:
 			for (uint8_t i = 0; i < 3; i++)
-				barycentricCoordinates[i] += barycentricDeltaX[i];
+				tri->lambda[i] += tri->dldx[i];
 		}
 		for (uint8_t i = 0; i < 3; i++)
 		{
-			barycentricCoordinatesAtBeginningOfTheRow[i] += barycentricDeltaY[i];
-			barycentricCoordinates[i] = barycentricCoordinatesAtBeginningOfTheRow[i];
+			tri->lambda_row[i] += tri->dldy[i];
+			tri->lambda[i] = tri->lambda_row[i];
 		}
 	}
 }
@@ -239,6 +233,7 @@ static void calculateBarycentricCoordinatesForPointAndBarycentricDeltas(
 	barycentricDeltaY[2] = -edgeVectors[0].x / areaX2;
 }
 
+/** @todo is it really `edgeVector->y < 0` here? not `>`? */
 static bool triangleIsEdgeFlatTopOrLeft(const vec3d* restrict edgeVector)
 {
 	return ((edgeVector->x > 0) && (edgeVector->y == 0)) || (edgeVector->y < 0);
