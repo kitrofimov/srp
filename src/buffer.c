@@ -17,6 +17,32 @@
 /** @ingroup Buffer_internal
  *  @{ */
 
+/** Call the vertex shader and assemble triangles from vertex or index buffer.
+ *  If `ib == NULL`, assembles from vertex buffer, else from index buffer.
+ *  @param[in] `ib` Pointer to index buffer, or `NULL` if assembling from vertex buffer
+ *  @param[in] `vb` Pointer to vertex buffer
+ *  @param[in] `fb` Pointer to the framebuffer to draw to (needed for NDC to screen-space conversion)
+ *  @param[in] `sp` Pointer to the shader program to use
+ *  @param[in] `primitive` Primitive type (e.g. SRP_PRIM_TRIANGLES)
+ *  @param[in] `startIndex` Index of the first vertex/index to assemble
+ *  @param[in] `count` Number of vertices/indices to assemble
+ *  @param[out] `outTriangleCount` Number of triangles assembled
+ *  @param[out] `outTriangles` Pointer to the array of assembled triangles.
+ * 				Must be freed by the caller using cleanUpTriangles()
+ *  @returns `true` if successful, `false` otherwise. If `false` is returned,
+ * 			 `*outTriangleCount` and `*outTriangles` are undefined. You shouldn't
+ * 			 call cleanUpTriangles() in this case. */
+static bool assembleTriangles(
+	const SRPIndexBuffer* ib, const SRPVertexBuffer* vb, const SRPFramebuffer* fb,
+	const SRPShaderProgram* sp, SRPPrimitive primitive, size_t startIndex, size_t count,
+	size_t* outTriangleCount, SRPTriangle** outTriangles
+);
+
+/** Free the memory allocated for triangles assembled by assembleTriangles()
+ *  @param[in] triangleCount Number of triangles in the array
+ *  @param[in] triangles Pointer to the array of triangles returned by assembleTriangles() */
+static void cleanUpTriangles(size_t triangleCount, SRPTriangle* triangles);
+
 /** Draw either SRPIndexBuffer or SRPVertexBuffer.
  *  If `ib == NULL`, draws the vertex buffer, else draws index buffer.
  *  Created because vertex and index buffer drawing are very similar,

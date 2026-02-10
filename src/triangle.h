@@ -13,6 +13,7 @@
 /** @ingroup Rasterization
  *  @{ */
 
+/** Represents a triangle and stores data needed for its rasterization */
 typedef struct SRPTriangle {
 	SRPvsOutput v[3];      /**< Output of the vertex shader */
 	vec3d* p_ndc[3];       /**< Pointer to vertices' positions in NDC */
@@ -28,6 +29,9 @@ typedef struct SRPTriangle {
 	size_t id;             /**< ID of the primitive, starting from 0 */
 } SRPTriangle;
 
+/** Calculate internal data for triangle rasterization
+ *  @param[in] `tri` The triangle to set up. Its `v` field is required to be filled
+ *  @param[in] `fb` The framebuffer to use for NDC to screen-space conversion */
 void setupTriangle(
 	SRPTriangle* tri, const SRPFramebuffer* fb
 );
