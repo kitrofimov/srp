@@ -65,8 +65,8 @@ And many, many more, all of which I will not find anymore...
 ## TODO
 ### Features
 - [x] Add interpolation with perspective correction
+- [x] Split the construction and rasterization of triangles in the pipeline
 - [ ] Fix rasterization rules (see the gaps between triangles in `03_spinning_textured_cube` example)
-- [ ] Split the construction and rasterization of triangles in the pipeline
 - [ ] Implement other primitives (lines, points, lines/triangles strip/adjacency etc.)
 
 - [ ] Implement interpolation for types other than `double` (shouldn't it just be `double` and `float`?)
