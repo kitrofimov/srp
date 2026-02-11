@@ -3,12 +3,14 @@
 
 #include "message_callback_p.h"
 #include "context.h"
+#include "arena_p.h"
 
 void srpNewContext(SRPContext* pContext)
 {
 	pContext->messageCallback = NULL;
 	pContext->messageCallbackUserParameter = NULL;
 	pContext->interpolationMode = SRP_INTERPOLATION_MODE_PERSPECTIVE;
+	pContext->arena = newArena(SRP_DEFAULT_ARENA_CAPACITY);
 }
 
 void srpContextSetP(SRPContextParameter contextParameter, void* data)

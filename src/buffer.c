@@ -3,6 +3,8 @@
 
 #include <stdio.h>
 #include <string.h>
+#include "context.h"
+#include "arena_p.h"
 #include "buffer_p.h"
 #include "message_callback_p.h"
 #include "triangle.h"
@@ -38,10 +40,8 @@ static bool assembleTriangles(
 	size_t* outTriangleCount, SRPTriangle** outTriangles
 );
 
-/** Free the memory allocated for triangles assembled by assembleTriangles()
- *  @param[in] triangleCount Number of triangles in the array
- *  @param[in] triangles Pointer to the array of triangles returned by assembleTriangles() */
-static void cleanUpTriangles(size_t triangleCount, SRPTriangle* triangles);
+/** Free the memory allocated for triangles assembled by assembleTriangles() */
+static void cleanUpTriangles();
 
 /** Draw either SRPIndexBuffer or SRPVertexBuffer.
  *  If `ib == NULL`, draws the vertex buffer, else draws index buffer.
@@ -100,8 +100,8 @@ static bool assembleTriangles(
 	if (endIndex >= bufferSize)
 	{
 		const char* errorMessage = (isDrawingIndexBuffer) ? \
-			"Attempt to OOB access index buffer (read) at indices %i-%i (size: %i)\n" : \
-			"Attempt to OOB access vertex buffer (read) at indices %i-%i (size: %i)\n";
+			"Attempt to OOB access index buffer (read) at indices %zu-%zu (size: %zu)\n" : \
+			"Attempt to OOB access vertex buffer (read) at indices %zu-%zu (size: %zu)\n";
 		srpMessageCallbackHelper(
 			SRP_MESSAGE_ERROR, SRP_MESSAGE_SEVERITY_HIGH, __func__,
 			errorMessage, startIndex, endIndex, bufferSize
@@ -109,13 +109,17 @@ static bool assembleTriangles(
 		return false;
 	}
 
+	// Allocating two buffers in one allocation to avoid possible reallocation,
+	// which would cause dangling pointers
 	size_t triangleCount = count / 3;
-	SRPTriangle* triangles = SRP_MALLOC(sizeof(SRPTriangle) * triangleCount);
-	size_t primitiveID = 0;
+	size_t trianglesBufferSize = sizeof(SRPTriangle) * triangleCount;
+	size_t varyingBufferSize = sp->vs->nBytesPerOutputVariables * 3 * triangleCount;
+	void* buffer = arenaAlloc(srpContext.arena, trianglesBufferSize + varyingBufferSize);
 
-	// Arena allocation for varying variables
-	void* varyingBuffer = SRP_MALLOC(sp->vs->nBytesPerOutputVariables * 3 * triangleCount);
-	SRPVertexVariable* pVarying = varyingBuffer;
+	SRPTriangle* triangles = (SRPTriangle*) buffer;
+	void* varyingBuffer = ADD_VOID_PTR(buffer, trianglesBufferSize);
+	void* pVarying = varyingBuffer;
+	size_t primitiveID = 0;
 
 	for (size_t i = startIndex; i <= endIndex; i += 3)
 	{
@@ -133,11 +137,9 @@ static bool assembleTriangles(
 			};
 			tri->v[j] = (SRPvsOutput) {
 				.position = {0},
-				.pOutputVariables = pVarying,
+				.pOutputVariables = pVarying
 			};
-
-			// Increment the arena allocation pointer
-			pVarying = (void*) INDEX_VOID_PTR(pVarying, 1, sp->vs->nBytesPerOutputVariables);
+			pVarying = ADD_VOID_PTR(pVarying, sp->vs->nBytesPerOutputVariables);
 
 			sp->vs->shader(&vsIn, &tri->v[j]);
 
@@ -159,9 +161,9 @@ static bool assembleTriangles(
 	return true;
 }
 
-static void cleanUpTriangles(size_t triangleCount, SRPTriangle* triangles)
+static void cleanUpTriangles()
 {
-	SRP_FREE(triangles);
+	arenaReset(srpContext.arena);
 }
 
 static void drawBuffer(
@@ -169,6 +171,9 @@ static void drawBuffer(
 	const SRPShaderProgram* sp, SRPPrimitive primitive, size_t startIndex, size_t count
 )
 {
+	if (count == 0)
+		return;
+
 	size_t triangleCount;
 	SRPTriangle* triangles;
 	bool success = assembleTriangles(
@@ -181,7 +186,7 @@ static void drawBuffer(
 	for (size_t i = 0; i < triangleCount; i++)
 		rasterizeTriangle(&triangles[i], fb, sp);
 
-	cleanUpTriangles(triangleCount, triangles);
+	cleanUpTriangles();
 }
 
 SRPVertexBuffer* srpNewVertexBuffer()

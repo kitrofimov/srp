@@ -14,6 +14,7 @@ set(
 	mat.c
 	alloc.c
 	message_callback.c
+	arena.c
 )
 
 add_library(srp STATIC ${SOURCES})

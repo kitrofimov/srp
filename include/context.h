@@ -8,6 +8,7 @@
 
 #include <stddef.h>
 #include "message_callback.h"
+#include "arena.h"
 
 /** @ingroup Context
  *  @{ */
@@ -31,6 +32,8 @@ typedef struct SRPContext
 	void* messageCallbackUserParameter;
 	/** How to interpolate vertex attributes inside the primitive */
 	SRPInterpolationMode interpolationMode;
+	/** Arena for internal allocations. Is not exposed to the user */
+	SRPArena* arena;
 } SRPContext;
 
 /** Possible arguments to `srpContextSet...` */

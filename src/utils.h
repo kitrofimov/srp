@@ -6,7 +6,7 @@
 /** @file
  *  Various utility macros */
 
-#include <stddef.h>
+#include <stdint.h>
 
 /** @ingroup Various_internal
  *  @{ */

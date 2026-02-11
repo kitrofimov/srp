@@ -66,7 +66,9 @@ And many, many more, all of which I will not find anymore...
 - [x] Add interpolation with perspective correction
 - [x] Split the construction and rasterization of triangles in the pipeline
 - [x] Fix rasterization rules (see the gaps between triangles in `03_spinning_textured_cube` example)
-- [ ] Fix unnecessary allocations in `assembleTriangles()`
+- [x] Fix unnecessary allocations in `assembleTriangles()`
+- [x] Get rid of `malloc`s in draw calls
+    - [ ] VLA inside `rasterizeTriangle()` - is it bad? should I get rid of it too?
 - [ ] Refactor / rewrite initial barycentric calculations
 - [ ] Fix overly late backface culling
 - [ ] Make CW/CCW vertex order configurable (check: is it configurable in OpenGL/Vulkan?)
