@@ -147,7 +147,12 @@ static bool assembleTriangles(
 			tri->v[j].position[3] = 1.0f;
 		}
 
-		setupTriangle(tri, fb);
+		bool success = setupTriangle(tri, fb);
+		if (!success)  // triangle was culled
+		{
+			triangleCount--;
+			continue;
+		}
 
 		tri->id = primitiveID;
 		primitiveID++;

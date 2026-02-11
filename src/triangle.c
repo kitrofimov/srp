@@ -76,14 +76,6 @@ void rasterizeTriangle(
 	const SRPShaderProgram* restrict sp, void* interpolatedBuffer
 )
 {
-	// Do not traverse triangles with clockwise vertices
-	/** @todo Should have discarded this triangle back in assembleTriangles() */
-	vec3d e0 = vec3dSubtract(*tri->p_ndc[1], *tri->p_ndc[0]);
-	vec3d e1 = vec3dSubtract(*tri->p_ndc[2], *tri->p_ndc[1]);
-	double normal = signedAreaParallelogram(&e0, &e1);
-	if (normal < 0)
-		return;
-
 	for (size_t y = tri->minBP.y; y < tri->maxBP.y; y += 1)
 	{
 		for (size_t x = tri->minBP.x; x < tri->maxBP.x; x += 1)
@@ -143,13 +135,19 @@ nextPixel:
 	}
 }
 
-void setupTriangle(
+bool setupTriangle(
 	SRPTriangle* tri, const SRPFramebuffer* fb
 )
 {
 	// vec3d is tightly packed, so this is safe
 	for (uint8_t i = 0; i < 3; i++)
 		tri->p_ndc[i] = (vec3d*) tri->v[i].position;
+
+	// Backface culling: discard CW triangles
+	vec3d e0 = vec3dSubtract(*tri->p_ndc[1], *tri->p_ndc[0]);
+	vec3d e1 = vec3dSubtract(*tri->p_ndc[2], *tri->p_ndc[1]);
+	if (signedAreaParallelogram(&e0, &e1) < 0)
+		return false;
 
 	for (size_t i = 0; i < 3; i++)
 		srpFramebufferNDCToScreenSpace(
@@ -177,6 +175,8 @@ void setupTriangle(
 
 	for (uint8_t i = 0; i < 3; i++)
 		tri->invZ[i] = 1 / ((tri->v[i].position[2] + 1) / 2);
+
+	return true;
 }
 
 static void calculateBarycentrics(SRPTriangle* tri, const vec2d point)

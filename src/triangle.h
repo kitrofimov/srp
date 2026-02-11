@@ -32,8 +32,9 @@ typedef struct SRPTriangle {
 
 /** Calculate internal data for triangle rasterization
  *  @param[in] tri The triangle to set up. Its `v` field is required to be filled
- *  @param[in] fb The framebuffer to use for NDC to screen-space conversion */
-void setupTriangle(
+ *  @param[in] fb The framebuffer to use for NDC to screen-space conversion
+ *  @return `false` if it is culled and should not be rasterized, `true` otherwise */
+bool setupTriangle(
 	SRPTriangle* tri, const SRPFramebuffer* fb
 );
 

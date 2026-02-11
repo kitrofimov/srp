@@ -71,9 +71,9 @@ And many, many more, all of which I will not find anymore...
     - [x] `malloc`s
     - [x] VLA inside `rasterizeTriangle()`
 - [x] Refactor / rewrite initial barycentric calculations
+- [x] Fix overly late backface culling
+- [ ] Make CW/CCW vertex order configurable
 - [ ] Investigate the behaviour of degenerate triangles (area = 0)
-- [ ] Fix overly late backface culling
-- [ ] Make CW/CCW vertex order configurable (check: is it configurable in OpenGL/Vulkan?)
 - [x] Refactor / rewrite interpolation logic
 - [ ] Check for bottlenecks
 - [ ] Implement other primitives (lines, points, lines/triangles strip/adjacency etc.)
