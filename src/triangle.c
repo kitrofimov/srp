@@ -171,6 +171,7 @@ void setupTriangle(
 
 static void calculateBarycentrics(SRPTriangle* tri, const vec2d point)
 {
+	/** @todo what is going to happen with degenerate triangles? (area = 0) */
 	double areaX2 = fabs(signedAreaParallelogram(&tri->edge[0], &tri->edge[2]));
 
 	vec3d AP = {
@@ -211,7 +212,7 @@ static double signedAreaParallelogram(
 
 static bool isEdgeFlatTopOrLeft(const vec3d* restrict edge)
 {
-	return ((edge->x > 0) && (edge->y == 0)) || (edge->y < 0);
+	return ((edge->x > 0) && ROUGHLY_ZERO(edge->y)) || (edge->y < 0);
 }
 
 static void triangleInterpolatePositionAndVertexVariables(

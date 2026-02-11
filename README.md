@@ -69,7 +69,8 @@ And many, many more, all of which I will not find anymore...
 - [x] Fix unnecessary allocations in `assembleTriangles()`
 - [x] Get rid of `malloc`s in draw calls
     - [ ] VLA inside `rasterizeTriangle()` - is it bad? should I get rid of it too?
-- [ ] Refactor / rewrite initial barycentric calculations
+- [x] Refactor / rewrite initial barycentric calculations
+- [ ] Investigate the behaviour of degenerate triangles (area = 0)
 - [ ] Fix overly late backface culling
 - [ ] Make CW/CCW vertex order configurable (check: is it configurable in OpenGL/Vulkan?)
 - [ ] Refactor / rewrite interpolation logic
