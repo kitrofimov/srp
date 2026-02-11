@@ -73,7 +73,7 @@ And many, many more, all of which I will not find anymore...
 - [ ] Investigate the behaviour of degenerate triangles (area = 0)
 - [ ] Fix overly late backface culling
 - [ ] Make CW/CCW vertex order configurable (check: is it configurable in OpenGL/Vulkan?)
-- [ ] Refactor / rewrite interpolation logic
+- [x] Refactor / rewrite interpolation logic
 - [ ] Check for bottlenecks
 - [ ] Implement other primitives (lines, points, lines/triangles strip/adjacency etc.)
 - [ ] Image-based testing framework?

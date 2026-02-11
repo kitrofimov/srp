@@ -43,17 +43,30 @@ static void calculateBarycentrics(SRPTriangle* tri, const vec2d point);
 static bool isEdgeFlatTopOrLeft(const vec3d* restrict edge);
 
 /** Interpolate the fragment position and vertex variables inside the triangle.
- *  @param[in] vertices A pointer to an array of 3 vertices
- *  @param[in] barycentricCoordinates Barycentric coordinates of the fragment
+ *  @param[in] tri Triangle to interpolate data for
  *  @param[in] sp A pointer to shader program to use
+ *  @param[out] pPosition A pointer to vec4d where interpolated position will appear.
  *  @param[out] pInterpolatedBuffer A pointer to the buffer where interpolated
- *              variables will appear. Must be big enough to hold all of them
- *  @param[out] interpolatedPosition A pointer to vec4d where interpolated
- *              position will appear. */
-static void triangleInterpolatePositionAndVertexVariables(
-	const SRPvsOutput vertices[3], const double barycentricCoordinates[3],
-	const SRPShaderProgram* restrict sp, SRPInterpolated* pInterpolatedBuffer,
-	vec4d* interpolatedPosition
+ *              variables will appear. Must be big enough to hold all of them */
+static void triangleInterpolateData(
+	SRPTriangle* tri, const SRPShaderProgram* restrict sp,
+	vec4d* pPosition, SRPInterpolated* pInterpolatedBuffer
+);
+
+/** Interpolate the fragment position inside the triangle.
+ *  @param[in] tri Triangle to interpolate position for
+ *  @param[out] pPosition A pointer to vec4d where interpolated position will appear. */
+static void triangleInterpolatePosition(SRPTriangle* tri, vec4d* pPosition);
+
+/** Interpolate vertex attributes inside the triangle.
+ *  @param[in] tri Triangle to interpolate attributes for
+ *  @param[in] sp A pointer to shader program to use
+ *  @param[in] pPosition A pointer to the interpolated position
+ *  @param[out] pInterpolatedBuffer A pointer to the buffer where interpolated
+ *              variables will appear. Must be big enough to hold all of them */
+static void triangleInterpolateAttributes(
+	SRPTriangle* tri, const SRPShaderProgram* restrict sp,
+	vec4d* pPosition, SRPInterpolated* pInterpolatedBuffer
 );
 
 /** @} */  // ingroup Rasterization
@@ -87,10 +100,7 @@ void rasterizeTriangle(
 				uint8_t interpolatedBuffer[sp->vs->nBytesPerOutputVariables];
 				SRPInterpolated* pInterpolated = (SRPInterpolated*) interpolatedBuffer;
 				vec4d interpolatedPosition = {0};
-				triangleInterpolatePositionAndVertexVariables(
-					tri->v, tri->lambda, sp, pInterpolated,
-					&interpolatedPosition
-				);
+				triangleInterpolateData(tri, sp, &interpolatedPosition, pInterpolated);
 
 				/** @todo fix rasterizer to accept both cw and ccw vertices
 				 *  and add correct `frontFacing` here! */
@@ -167,6 +177,9 @@ void setupTriangle(
 		tri->lambda_row[i] = tri->lambda[i];
 		tri->edgeTL[i] = isEdgeFlatTopOrLeft(&tri->edge[i]);
 	}
+
+	for (uint8_t i = 0; i < 3; i++)
+		tri->invZ[i] = 1 / ((tri->v[i].position[2] + 1) / 2);
 }
 
 static void calculateBarycentrics(SRPTriangle* tri, const vec2d point)
@@ -215,77 +228,82 @@ static bool isEdgeFlatTopOrLeft(const vec3d* restrict edge)
 	return ((edge->x > 0) && ROUGHLY_ZERO(edge->y)) || (edge->y < 0);
 }
 
-static void triangleInterpolatePositionAndVertexVariables(
-	const SRPvsOutput vertices[3], const double barycentricCoordinates[3],
-	const SRPShaderProgram* restrict sp, SRPInterpolated* pInterpolatedBuffer,
-	vec4d* pInterpolatedPosition
+static void triangleInterpolateData(
+	SRPTriangle* tri, const SRPShaderProgram* restrict sp,
+	vec4d* pPosition, SRPInterpolated* pInterpolatedBuffer
 )
 {
 	/** Let @f$ v_0, v_1, v_2 @f$ be points in space that form a triangle and
 	 *  @f$ a, b, c @f$ be barycentric coordinates for a point @f$ P @f$
 	 *  according to @f$ v_0, v_1, v_2 @f$ respectively. Then, by the property
 	 *  of barycentric coordinates @f$ P = av_0 + bv_1 + cv_2 @f$. This can be
-	 *  extrapolated to arbitrary values assigned to vertices, so this property
-	 *  lies in the core of so-called "affine" attribute interpolation.
+	 *  extrapolated to arbitrary values assigned to vertices, and this is called
+	 *  affine attribute interpolation.
      *
-	 *  But this method does not take into account that we have performed the
-	 *  perspective divide, so the texture (or whatever) will appear "skewed"
-	 *  on the primitive.
+	 *  But this method does not take the perspective divide into account, so
+	 *  the texture (for example) will look "wrong".
 	 *
 	 *  It can be shown (see the "see also" section) that perspective-correct Z
-	 *  value can be obtained by linearly interpolating between the reciprocals
-	 *  of input Z values, and similarly for arbitrary parameters. This is
-	 *  called perspective-correct attribute interpolation.
+	 *  value can be obtained by taking the reciprocal of the linear interpolation
+	 *  between the reciprocals of input Z values, and similarly for arbitrary
+	 *  parameters.
 	 *
 	 *  @see https://www.comp.nus.edu.sg/%7Elowkl/publications/lowk_persp_interp_techrep.pdf
-	 *  @see https://www.youtube.com/watch?v=F5X6S35SW2s  */
+	 *  @see https://www.youtube.com/watch?v=F5X6S35SW2s */
 
+	triangleInterpolatePosition(tri, pPosition);
+	triangleInterpolateAttributes(tri, sp, pPosition, pInterpolatedBuffer);
+}
+
+static void triangleInterpolatePosition(SRPTriangle* tri, vec4d* pPosition)
+{
+	bool perspective = (srpContext.interpolationMode == SRP_INTERPOLATION_MODE_PERSPECTIVE);
+
+	pPosition->x = \
+		tri->v[0].position[0] * tri->lambda[0] + \
+		tri->v[1].position[0] * tri->lambda[1] + \
+		tri->v[2].position[0] * tri->lambda[2];
+	pPosition->y = \
+		tri->v[0].position[1] * tri->lambda[0] + \
+		tri->v[1].position[1] * tri->lambda[1] + \
+		tri->v[2].position[1] * tri->lambda[2];
+
+	if (perspective)
+	{
+		pPosition->z = 1 / (
+			tri->invZ[0] * tri->lambda[0] + \
+			tri->invZ[1] * tri->lambda[1] + \
+			tri->invZ[2] * tri->lambda[2]
+		);
+	}
+	else  // affine
+	{
+		pPosition->z = (
+			tri->v[0].position[2] * tri->lambda[0] + \
+			tri->v[1].position[2] * tri->lambda[1] + \
+			tri->v[2].position[2] * tri->lambda[2]
+		);
+	}
+
+	pPosition->w = 1;
+}
+
+static void triangleInterpolateAttributes(
+	SRPTriangle* tri, const SRPShaderProgram* restrict sp,
+	vec4d* pPosition, SRPInterpolated* pInterpolatedBuffer
+)
+{
 	// vertices[i].pOutputVariables =
 	// (                        Vi                              )
 	// (          ViA0          )(          ViA1          ) ...
 	// (ViA0E0 ViA0E1 ... ViA0En)(ViA1E0 ViA1E1 ... ViA1En) ...
 	// [V]ertex, [A]ttribute, [E]lement
 
+	bool perspective = (srpContext.interpolationMode == SRP_INTERPOLATION_MODE_PERSPECTIVE);
+
 	// Points to current attribute in output buffer
 	void* pInterpolatedAttrVoid = pInterpolatedBuffer;
 
-	// Vertices' Z values without negatives, in preserved order
-	// Needed because perspective correction does not like negative values
-	double noNegativeZ[3];
-	if (srpContext.interpolationMode == SRP_INTERPOLATION_MODE_PERSPECTIVE)
-	{
-		noNegativeZ[0] = (vertices[0].position[2] + 1) / 2;
-		noNegativeZ[1] = (vertices[1].position[2] + 1) / 2;
-		noNegativeZ[2] = (vertices[2].position[2] + 1) / 2;
-	}
-
-	// Interpolate position
-	for (uint8_t i = 0; i < 2; i++)
-	{
-		((double*) pInterpolatedPosition)[i] = \
-			((double*) &vertices[0].position)[i] * barycentricCoordinates[0] + \
-			((double*) &vertices[1].position)[i] * barycentricCoordinates[1] + \
-			((double*) &vertices[2].position)[i] * barycentricCoordinates[2];
-	}
-	pInterpolatedPosition->w = 1;
-	if (srpContext.interpolationMode == SRP_INTERPOLATION_MODE_PERSPECTIVE)
-	{
-		pInterpolatedPosition->z = 1 / (
-			(1 / noNegativeZ[0]) * barycentricCoordinates[0] + \
-			(1 / noNegativeZ[1]) * barycentricCoordinates[1] + \
-			(1 / noNegativeZ[2]) * barycentricCoordinates[2]
-		);
-	}
-	else  // affine
-	{
-		pInterpolatedPosition->z = (
-			vertices[0].position[2] * barycentricCoordinates[0] + \
-			vertices[1].position[2] * barycentricCoordinates[1] + \
-			vertices[2].position[2] * barycentricCoordinates[2]
-		);
-	}
-
-	// Interpolate variables (attributes)
 	size_t attrOffsetBytes = 0;
 	for (size_t attrI = 0; attrI < sp->vs->nOutputVariables; attrI++)
 	{
@@ -298,32 +316,28 @@ static void triangleInterpolatePositionAndVertexVariables(
 			elemSize = sizeof(double);
 			double* pInterpolatedAttr = (double*) pInterpolatedAttrVoid;
 
-			// pointers to the current attribute of 0th, 1st and 2nd vertices
-			double* AV0 = (double*) \
-				ADD_VOID_PTR(vertices[0].pOutputVariables, attrOffsetBytes);
-			double* AV1 = (double*) \
-				ADD_VOID_PTR(vertices[1].pOutputVariables, attrOffsetBytes);
-			double* AV2 = (double*) \
-				ADD_VOID_PTR(vertices[2].pOutputVariables, attrOffsetBytes);
+			// Pointers to the current attribute of 0th, 1st and 2nd vertices
+			double* AV[3];
+			for (int i = 0; i < 3; i++)
+				AV[i] = (double*) ADD_VOID_PTR(tri->v[i].pOutputVariables, attrOffsetBytes);
 
-			for (size_t elemI = 0; elemI < attr->nItems; elemI++)
-			{
-				if (srpContext.interpolationMode == SRP_INTERPOLATION_MODE_PERSPECTIVE)
+			if (perspective)
+				for (size_t elemI = 0; elemI < attr->nItems; elemI++)
 				{
-					pInterpolatedAttr[elemI] = pInterpolatedPosition->z * (
-						(AV0[elemI] / noNegativeZ[0]) * barycentricCoordinates[0] + \
-						(AV1[elemI] / noNegativeZ[1]) * barycentricCoordinates[1] + \
-						(AV2[elemI] / noNegativeZ[2]) * barycentricCoordinates[2]
+					pInterpolatedAttr[elemI] = pPosition->z * (
+						AV[0][elemI] * tri->invZ[0] * tri->lambda[0] + \
+						AV[1][elemI] * tri->invZ[1] * tri->lambda[1] + \
+						AV[2][elemI] * tri->invZ[2] * tri->lambda[2]
 					);
 				}
-				else  // affine
+			else  // affine
+				for (size_t elemI = 0; elemI < attr->nItems; elemI++)
 				{
 					pInterpolatedAttr[elemI] = \
-						AV0[elemI] * barycentricCoordinates[0] + \
-						AV1[elemI] * barycentricCoordinates[1] + \
-						AV2[elemI] * barycentricCoordinates[2];
+						AV[0][elemI] * tri->lambda[0] + \
+						AV[1][elemI] * tri->lambda[1] + \
+						AV[2][elemI] * tri->lambda[2];
 				}
-			}
 			break;
 		}
 		default:
@@ -332,9 +346,9 @@ static void triangleInterpolatePositionAndVertexVariables(
 				"Unexpected type (%i)", attr->type
 			);
 		}
+
 		size_t attrSize = elemSize * attr->nItems;
-		pInterpolatedAttrVoid = (uint8_t*) pInterpolatedAttrVoid + attrSize;
+		pInterpolatedAttrVoid = ADD_VOID_PTR(pInterpolatedAttrVoid, attrSize);
 		attrOffsetBytes += attrSize;
 	}
 }
-
