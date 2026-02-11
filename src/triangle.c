@@ -28,11 +28,11 @@ static double signedAreaParallelogram(
 	const vec3d* restrict a, const vec3d* restrict b
 );
 
-/** Determine if a triangle should be culled, based on related fields of SRPContext.
+/** Determine if a triangle should be culled (back-face culling)
  *  @param[in] tri Triangle to check. Must have its `p_ndc` field initialized.
  *  @param[out] isCCW Whether or not the triangle's vertices are in counter-clockwise order
  *  @return Whether or not the triangle should be culled */
-static bool shouldCullTriangle(const SRPTriangle* tri, bool* isCCW);
+static bool isBackface(const SRPTriangle* tri, bool* isCCW);
 
 /** Change the winding order of a triangle.
  *  @param[in] tri Triangle to change the winding order of. Must have its `v` and
@@ -43,8 +43,9 @@ static void triangleChangeWinding(SRPTriangle* tri);
  *  delta values.
  *  @param[in] tri Triangle to calculate barycentric coordinates for. Must have
  * 				   its `ss` and `edge` fields initialized.
+ *  @param[in] areaX2 The triangle's area multiplied by 2 (to avoid division)
  *  @param[in] point Point to calculate barycentric coordinates for (screen-space) */
-static void calculateBarycentrics(SRPTriangle* tri, const vec2d point);
+static void calculateBarycentrics(SRPTriangle* tri, double areaX2, vec2d point);
 
 /** Check if a triangle's edge is flat top or left. Assumes counter-clockwise
  *  vertex order!
@@ -155,7 +156,7 @@ bool setupTriangle(
 		tri->p_ndc[i] = (vec3d*) tri->v[i].position;
 
 	bool isCCW;
-	if (shouldCullTriangle(tri, &isCCW))
+	if (isBackface(tri, &isCCW))
 		return false;
 
 	if (!isCCW)
@@ -167,6 +168,11 @@ bool setupTriangle(
 	for (size_t i = 0; i < 3; i++)
 		tri->edge[i] = vec3dSubtract(tri->ss[(i+1) % 3], tri->ss[i]);
 
+	// Cull degenerate triangles (using SS area!)
+	double areaX2 = fabs(signedAreaParallelogram(&tri->edge[0], &tri->edge[2]));
+	if (ROUGHLY_ZERO(areaX2))
+		return false;
+
 	tri->minBP = (vec2d) {
 		floor(MIN(tri->ss[0].x, MIN(tri->ss[1].x, tri->ss[2].x))),
 		floor(MIN(tri->ss[0].y, MIN(tri->ss[1].y, tri->ss[2].y)))
@@ -176,7 +182,7 @@ bool setupTriangle(
 		ceil(MAX(tri->ss[0].y, MAX(tri->ss[1].y, tri->ss[2].y)))
 	};
 
-	calculateBarycentrics(tri, (vec2d) {tri->minBP.x + 0.5, tri->minBP.y + 0.5});
+	calculateBarycentrics(tri, areaX2, (vec2d) {tri->minBP.x + 0.5, tri->minBP.y + 0.5});
 
 	for (uint8_t i = 0; i < 3; i++)
 	{
@@ -190,7 +196,7 @@ bool setupTriangle(
 	return true;
 }
 
-static bool shouldCullTriangle(const SRPTriangle* tri, bool* isCCW)
+static bool isBackface(const SRPTriangle* tri, bool* isCCW)
 {
 	vec3d edge0 = vec3dSubtract(*tri->p_ndc[1], *tri->p_ndc[0]);
 	vec3d edge1 = vec3dSubtract(*tri->p_ndc[2], *tri->p_ndc[0]);
@@ -218,11 +224,8 @@ static void triangleChangeWinding(SRPTriangle* tri)
 	tri->v[2] = temp;
 }
 
-static void calculateBarycentrics(SRPTriangle* tri, const vec2d point)
+static void calculateBarycentrics(SRPTriangle* tri, double areaX2, vec2d point)
 {
-	/** @todo what is going to happen with degenerate triangles? (area = 0) */
-	double areaX2 = fabs(signedAreaParallelogram(&tri->edge[0], &tri->edge[2]));
-
 	vec3d AP = {
 		point.x - tri->ss[0].x,
 		point.y - tri->ss[0].y,

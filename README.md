@@ -73,9 +73,9 @@ And many, many more, all of which I will not find anymore...
 - [x] Refactor / rewrite initial barycentric calculations
 - [x] Fix overly late backface culling
 - [x] Make CW/CCW vertex order configurable
-- [ ] Investigate the behaviour of degenerate triangles (area = 0)
+- [x] Investigate the behaviour of degenerate triangles (area = 0)
 - [x] Refactor / rewrite interpolation logic
-    - Perspective-correct interpolation doesn't seem to be right...
+    - Perspective-correct interpolation doesn't seem to be right, especially when culling the front faces of the cube in example 03
     - However, both before and after commit f10b4163b43bd3842adc1a651a2d5bbc54ae099b produce pixel-identical results
 - [ ] Check for bottlenecks
 - [ ] Implement other primitives (lines, points, lines/triangles strip/adjacency etc.)
