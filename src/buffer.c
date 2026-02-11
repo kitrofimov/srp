@@ -113,6 +113,10 @@ static bool assembleTriangles(
 	SRPTriangle* triangles = SRP_MALLOC(sizeof(SRPTriangle) * triangleCount);
 	size_t primitiveID = 0;
 
+	// Arena allocation for varying variables
+	void* varyingBuffer = SRP_MALLOC(sp->vs->nBytesPerOutputVariables * 3 * triangleCount);
+	SRPVertexVariable* pVarying = varyingBuffer;
+
 	for (size_t i = startIndex; i <= endIndex; i += 3)
 	{
 		SRPTriangle* tri = &triangles[primitiveID];
@@ -129,9 +133,11 @@ static bool assembleTriangles(
 			};
 			tri->v[j] = (SRPvsOutput) {
 				.position = {0},
-				/** @todo Too many allocations. Optimize to arena allocator later */
-				.pOutputVariables = SRP_MALLOC(sp->vs->nBytesPerOutputVariables)
+				.pOutputVariables = pVarying,
 			};
+
+			// Increment the arena allocation pointer
+			pVarying = (void*) INDEX_VOID_PTR(pVarying, 1, sp->vs->nBytesPerOutputVariables);
 
 			sp->vs->shader(&vsIn, &tri->v[j]);
 
@@ -155,11 +161,6 @@ static bool assembleTriangles(
 
 static void cleanUpTriangles(size_t triangleCount, SRPTriangle* triangles)
 {
-	for (size_t i = 0; i < triangleCount; i++)
-	{
-		for (uint8_t j = 0; j < 3; j++)
-			SRP_FREE(triangles[i].v[j].pOutputVariables);
-	}
 	SRP_FREE(triangles);
 }
 
