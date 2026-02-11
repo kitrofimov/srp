@@ -23,40 +23,24 @@
 
 /** Get a parallelogram's signed area. The two vectors define a parallelogram.
  *  Used for barycentric coordinates' initialization in
- *  calculateBarycentricCoordinatesForPointAndBarycentricDeltas() */
+ *  calculateBarycentrics() */
 static double signedAreaParallelogram(
 	const vec3d* restrict a, const vec3d* restrict b
 );
 
 /** Calculate barycentric coordinates for a point and barycentric coordinates'
  *  delta values.
- *  @param[in] SSPositions Vertices' positions in screen-space
- *  @param[in] edgeVectors Triangle's edge vectors, where 0th element is a vector
- *                         pointing from vertex 0 to vertex 1, 1th - from vertex
- *                         1 to vertex 2 and so on.
- *  @param[in] point A point for which to calculate the barycentric coordinates
- *  @param[out] barycentricCoordinates A pointer to 3-element `double` array to
- *                                     where output barycentric coordinates to
- *  @param[out] barycentricDeltaX,barycentricDeltaY
- *              A pointer to 3-element `double` array to where to output the X
- *              and Y barycentric delta values. These show how much does the
- *              barycentric coordinates change if we move one pixel to the +X or
- *              to the +Y direction. Used in incremental computation of
- *              barycentric coordinates when looping over triangle's bounding
- *              box */
-static void calculateBarycentricCoordinatesForPointAndBarycentricDeltas(
-	const vec3d* restrict SSPositions, const vec3d* restrict edgeVectors,
-	vec2d point, double* restrict barycentricCoordinates,
-	double* restrict barycentricDeltaX, double* restrict barycentricDeltaY
-);
+ *  @param[in] tri Triangle to calculate barycentric coordinates for. Must have
+ * 				   its `ss` and `edge` fields initialized.
+ *  @param[in] point Point to calculate barycentric coordinates for (screen-space) */
+static void calculateBarycentrics(SRPTriangle* tri, const vec2d point);
 
-/** Check if a triangle's edge is flat top or left. Used in rasterization rules.
- *  @param[in] edgeVector A pointer to an edge vector (pointing from one vertex
+/** Check if a triangle's edge is flat top or left. Assumes counter-clockwise
+ *  vertex order!
+ *  @param[in] edge A pointer to an edge vector (pointing from one vertex
  *  to the other)
- *  @return Whether or not this edge is flat top or left
- *  @todo Does it matter if I pass edge 0->1 or 1->0 (numbers = vertex indices)?
- *        This should be documented. */
-static bool triangleIsEdgeFlatTopOrLeft(const vec3d* restrict edgeVector);
+ *  @return Whether or not this edge is flat top or left */
+static bool isEdgeFlatTopOrLeft(const vec3d* restrict edge);
 
 /** Interpolate the fragment position and vertex variables inside the triangle.
  *  @param[in] vertices A pointer to an array of 3 vertices
@@ -73,42 +57,6 @@ static void triangleInterpolatePositionAndVertexVariables(
 );
 
 /** @} */  // ingroup Rasterization
-
-void setupTriangle(
-	SRPTriangle* tri, const SRPFramebuffer* fb
-)
-{
-	// vec3d is tightly packed, so this is safe
-	for (uint8_t i = 0; i < 3; i++)
-		tri->p_ndc[i] = (vec3d*) tri->v[i].position;
-
-	for (size_t i = 0; i < 3; i++)
-		srpFramebufferNDCToScreenSpace(
-			fb, (double*) tri->p_ndc[i], (double*) &tri->ss[i]
-		);
-	for (size_t i = 0; i < 3; i++)
-		tri->edge[i] = vec3dSubtract(tri->ss[(i+1) % 3], tri->ss[i]);
-
-	tri->minBP = (vec2d) {
-		floor(MIN(tri->ss[0].x, MIN(tri->ss[1].x, tri->ss[2].x))),
-		floor(MIN(tri->ss[0].y, MIN(tri->ss[1].y, tri->ss[2].y)))
-	};
-	tri->maxBP = (vec2d) {
-		ceil(MAX(tri->ss[0].x, MAX(tri->ss[1].x, tri->ss[2].x))),
-		ceil(MAX(tri->ss[0].y, MAX(tri->ss[1].y, tri->ss[2].y)))
-	};
-
-	vec2d start = {tri->minBP.x + 0.5, tri->minBP.y + 0.5};
-	calculateBarycentricCoordinatesForPointAndBarycentricDeltas(
-		tri->ss, tri->edge, start, tri->lambda, tri->dldx, tri->dldy
-	);
-
-	for (uint8_t i = 0; i < 3; i++)
-	{
-		tri->lambda_row[i] = tri->lambda[i];
-		tri->edgeTL[i] = triangleIsEdgeFlatTopOrLeft(&tri->edge[i]);
-	}
-}
 
 void rasterizeTriangle(
 	SRPTriangle* tri, const SRPFramebuffer* fb,
@@ -188,6 +136,72 @@ nextPixel:
 	}
 }
 
+void setupTriangle(
+	SRPTriangle* tri, const SRPFramebuffer* fb
+)
+{
+	// vec3d is tightly packed, so this is safe
+	for (uint8_t i = 0; i < 3; i++)
+		tri->p_ndc[i] = (vec3d*) tri->v[i].position;
+
+	for (size_t i = 0; i < 3; i++)
+		srpFramebufferNDCToScreenSpace(
+			fb, (double*) tri->p_ndc[i], (double*) &tri->ss[i]
+		);
+	for (size_t i = 0; i < 3; i++)
+		tri->edge[i] = vec3dSubtract(tri->ss[(i+1) % 3], tri->ss[i]);
+
+	tri->minBP = (vec2d) {
+		floor(MIN(tri->ss[0].x, MIN(tri->ss[1].x, tri->ss[2].x))),
+		floor(MIN(tri->ss[0].y, MIN(tri->ss[1].y, tri->ss[2].y)))
+	};
+	tri->maxBP = (vec2d) {
+		ceil(MAX(tri->ss[0].x, MAX(tri->ss[1].x, tri->ss[2].x))),
+		ceil(MAX(tri->ss[0].y, MAX(tri->ss[1].y, tri->ss[2].y)))
+	};
+
+	calculateBarycentrics(tri, (vec2d) {tri->minBP.x + 0.5, tri->minBP.y + 0.5});
+
+	for (uint8_t i = 0; i < 3; i++)
+	{
+		tri->lambda_row[i] = tri->lambda[i];
+		tri->edgeTL[i] = isEdgeFlatTopOrLeft(&tri->edge[i]);
+	}
+}
+
+static void calculateBarycentrics(SRPTriangle* tri, const vec2d point)
+{
+	double areaX2 = fabs(signedAreaParallelogram(&tri->edge[0], &tri->edge[2]));
+
+	vec3d AP = {
+		point.x - tri->ss[0].x,
+		point.y - tri->ss[0].y,
+		0
+	};
+	vec3d BP = {
+		point.x - tri->ss[1].x,
+		point.y - tri->ss[1].y,
+		0
+	};
+	vec3d CP = {
+		point.x - tri->ss[2].x,
+		point.y - tri->ss[2].y,
+		0
+	};
+
+	tri->lambda[0] = signedAreaParallelogram(&BP, &tri->edge[1]) / areaX2;
+	tri->lambda[1] = signedAreaParallelogram(&CP, &tri->edge[2]) / areaX2;
+	tri->lambda[2] = signedAreaParallelogram(&AP, &tri->edge[0]) / areaX2;
+
+	tri->dldx[0] = tri->edge[1].y / areaX2;
+	tri->dldx[1] = tri->edge[2].y / areaX2;
+	tri->dldx[2] = tri->edge[0].y / areaX2;
+
+	tri->dldy[0] = -tri->edge[1].x / areaX2;
+	tri->dldy[1] = -tri->edge[2].x / areaX2;
+	tri->dldy[2] = -tri->edge[0].x / areaX2;
+}
+
 static double signedAreaParallelogram(
 	const vec3d* restrict a, const vec3d* restrict b
 )
@@ -195,46 +209,9 @@ static double signedAreaParallelogram(
 	return a->x * b->y - a->y * b->x;
 }
 
-static void calculateBarycentricCoordinatesForPointAndBarycentricDeltas(
-	const vec3d* restrict SSPositions, const vec3d* restrict edgeVectors,
-	const vec2d point, double* restrict barycentricCoordinates,
-	double* restrict barycentricDeltaX, double* restrict barycentricDeltaY
-)
+static bool isEdgeFlatTopOrLeft(const vec3d* restrict edge)
 {
-	double areaX2 = fabs(signedAreaParallelogram(&edgeVectors[0], &edgeVectors[2]));
-
-	vec3d AP = {
-		point.x - SSPositions[0].x,
-		point.y - SSPositions[0].y,
-		0
-	};
-	vec3d BP = {
-		point.x - SSPositions[1].x,
-		point.y - SSPositions[1].y,
-		0
-	};
-	vec3d CP = {
-		point.x - SSPositions[2].x,
-		point.y - SSPositions[2].y,
-		0
-	};
-
-	barycentricCoordinates[0] = signedAreaParallelogram(&BP, &edgeVectors[1]) / areaX2;
-	barycentricCoordinates[1] = signedAreaParallelogram(&CP, &edgeVectors[2]) / areaX2;
-	barycentricCoordinates[2] = signedAreaParallelogram(&AP, &edgeVectors[0]) / areaX2;
-
-	barycentricDeltaX[0] = edgeVectors[1].y / areaX2;
-	barycentricDeltaX[1] = edgeVectors[2].y / areaX2;
-	barycentricDeltaX[2] = edgeVectors[0].y / areaX2;
-
-	barycentricDeltaY[0] = -edgeVectors[1].x / areaX2;
-	barycentricDeltaY[1] = -edgeVectors[2].x / areaX2;
-	barycentricDeltaY[2] = -edgeVectors[0].x / areaX2;
-}
-
-static bool triangleIsEdgeFlatTopOrLeft(const vec3d* restrict edgeVector)
-{
-	return ((edgeVector->x > 0) && (edgeVector->y == 0)) || (edgeVector->y < 0);
+	return ((edge->x > 0) && (edge->y == 0)) || (edge->y < 0);
 }
 
 static void triangleInterpolatePositionAndVertexVariables(
