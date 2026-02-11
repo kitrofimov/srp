@@ -10,6 +10,8 @@ void srpNewContext(SRPContext* pContext)
 	pContext->messageCallback = NULL;
 	pContext->messageCallbackUserParameter = NULL;
 	pContext->interpolationMode = SRP_INTERPOLATION_MODE_PERSPECTIVE;
+	pContext->frontFace = SRP_FRONT_FACE_CCW;
+	pContext->cullFace = SRP_CULL_FACE_NONE;
 	pContext->arena = newArena(SRP_DEFAULT_ARENA_CAPACITY);
 }
 
@@ -38,6 +40,13 @@ void srpContextSetI(SRPContextParameter contextParameter, int data)
 	{
 	case SRP_CONTEXT_INTERPOLATION_MODE:
 		srpContext.interpolationMode = data;
+		return;
+	case SRP_CONTEXT_FRONT_FACE:
+		srpContext.frontFace = data;
+		return;
+	case SRP_CONTEXT_CULL_FACE:
+		srpContext.cullFace = data;
+		return;
 	default:
 		srpMessageCallbackHelper(
 			SRP_MESSAGE_ERROR, SRP_MESSAGE_SEVERITY_HIGH, __func__,
@@ -70,6 +79,10 @@ int srpContextGetI(SRPContextParameter contextParameter)
 	{
 	case SRP_CONTEXT_INTERPOLATION_MODE:
 		return srpContext.interpolationMode;
+	case SRP_CONTEXT_FRONT_FACE:
+		return srpContext.frontFace;
+	case SRP_CONTEXT_CULL_FACE:
+		return srpContext.cullFace;
 	default:
 		srpMessageCallbackHelper(
 			SRP_MESSAGE_ERROR, SRP_MESSAGE_SEVERITY_HIGH, __func__,

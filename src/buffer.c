@@ -168,7 +168,7 @@ static void drawBuffer(
 	const SRPShaderProgram* sp, SRPPrimitive primitive, size_t startIndex, size_t count
 )
 {
-	if (count == 0)
+	if (count == 0 || srpContext.cullFace == SRP_CULL_FACE_FRONT_AND_BACK)
 		return;
 
 	size_t triangleCount;

@@ -20,18 +20,35 @@ typedef enum SRPInterpolationMode
 	SRP_INTERPOLATION_MODE_AFFINE
 } SRPInterpolationMode;
 
+/** Available front face modes */
+typedef enum SRPFrontFace
+{
+	SRP_FRONT_FACE_CCW,
+	SRP_FRONT_FACE_CW
+} SRPFrontFace;
+
+/** Available cull face modes */
+typedef enum SRPCullFace
+{
+	SRP_CULL_FACE_NONE,
+	SRP_CULL_FACE_FRONT,
+	SRP_CULL_FACE_BACK,
+	SRP_CULL_FACE_FRONT_AND_BACK
+} SRPCullFace;
+
 /** Holds runtime settings. This always needs to be declared as `SRPContext
  *  srpContext` in user programs and initialized with srpNewContext() */
 typedef struct SRPContext
 {
-	/** Message callback function that is called whenever an
-	 *  error/warning/etc. occurs */
+	/** Message callback function that is called whenever an error/warning/etc. occurs */
 	SRPMessageCallbackType messageCallback;
 	/** User pointer to pass to message callback function
 	 *  @see SRPContext.messageCallback */
 	void* messageCallbackUserParameter;
 	/** How to interpolate vertex attributes inside the primitive */
 	SRPInterpolationMode interpolationMode;
+	SRPFrontFace frontFace;  /** Which face is considered front-facing */
+	SRPCullFace cullFace;    /** Which face(s) are culled */
 	/** Arena for internal allocations. Is not exposed to the user */
 	SRPArena* arena;
 } SRPContext;
@@ -41,7 +58,9 @@ typedef enum SRPContextParameter
 {
 	SRP_CONTEXT_MESSAGE_CALLBACK,
 	SRP_CONTEXT_MESSAGE_CALLBACK_USER_PARAMETER,
-	SRP_CONTEXT_INTERPOLATION_MODE
+	SRP_CONTEXT_INTERPOLATION_MODE,
+	SRP_CONTEXT_FRONT_FACE,
+	SRP_CONTEXT_CULL_FACE
 } SRPContextParameter;
 
 /** Initialize the context

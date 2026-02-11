@@ -72,9 +72,10 @@ And many, many more, all of which I will not find anymore...
     - [x] VLA inside `rasterizeTriangle()`
 - [x] Refactor / rewrite initial barycentric calculations
 - [x] Fix overly late backface culling
-- [ ] Make CW/CCW vertex order configurable
+- [x] Make CW/CCW vertex order configurable
 - [ ] Investigate the behaviour of degenerate triangles (area = 0)
 - [x] Refactor / rewrite interpolation logic
+    - Perspective-correct interpolation doesn't seem to be right...
 - [ ] Check for bottlenecks
 - [ ] Implement other primitives (lines, points, lines/triangles strip/adjacency etc.)
 - [ ] Image-based testing framework?

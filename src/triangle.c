@@ -28,6 +28,17 @@ static double signedAreaParallelogram(
 	const vec3d* restrict a, const vec3d* restrict b
 );
 
+/** Determine if a triangle should be culled, based on related fields of SRPContext.
+ *  @param[in] tri Triangle to check. Must have its `p_ndc` field initialized.
+ *  @param[out] isCCW Whether or not the triangle's vertices are in counter-clockwise order
+ *  @return Whether or not the triangle should be culled */
+static bool shouldCullTriangle(const SRPTriangle* tri, bool* isCCW);
+
+/** Change the winding order of a triangle.
+ *  @param[in] tri Triangle to change the winding order of. Must have its `v` and
+ * 				   `p_ndc` fields initialized. */
+static void triangleChangeWinding(SRPTriangle* tri);
+
 /** Calculate barycentric coordinates for a point and barycentric coordinates'
  *  delta values.
  *  @param[in] tri Triangle to calculate barycentric coordinates for. Must have
@@ -143,16 +154,16 @@ bool setupTriangle(
 	for (uint8_t i = 0; i < 3; i++)
 		tri->p_ndc[i] = (vec3d*) tri->v[i].position;
 
-	// Backface culling: discard CW triangles
-	vec3d e0 = vec3dSubtract(*tri->p_ndc[1], *tri->p_ndc[0]);
-	vec3d e1 = vec3dSubtract(*tri->p_ndc[2], *tri->p_ndc[1]);
-	if (signedAreaParallelogram(&e0, &e1) < 0)
+	bool isCCW;
+	if (shouldCullTriangle(tri, &isCCW))
 		return false;
 
+	if (!isCCW)
+		triangleChangeWinding(tri);
+
 	for (size_t i = 0; i < 3; i++)
-		srpFramebufferNDCToScreenSpace(
-			fb, (double*) tri->p_ndc[i], (double*) &tri->ss[i]
-		);
+		srpFramebufferNDCToScreenSpace(fb, (double*) tri->p_ndc[i], (double*) &tri->ss[i]);
+
 	for (size_t i = 0; i < 3; i++)
 		tri->edge[i] = vec3dSubtract(tri->ss[(i+1) % 3], tri->ss[i]);
 
@@ -177,6 +188,34 @@ bool setupTriangle(
 		tri->invZ[i] = 1 / ((tri->v[i].position[2] + 1) / 2);
 
 	return true;
+}
+
+static bool shouldCullTriangle(const SRPTriangle* tri, bool* isCCW)
+{
+	vec3d edge0 = vec3dSubtract(*tri->p_ndc[1], *tri->p_ndc[0]);
+	vec3d edge1 = vec3dSubtract(*tri->p_ndc[2], *tri->p_ndc[0]);
+	double signedArea = signedAreaParallelogram(&edge0, &edge1);
+	*isCCW = signedArea > 0;
+
+	// Should have already been handled, but just in case
+	if (srpContext.cullFace == SRP_CULL_FACE_FRONT_AND_BACK)
+		return true;
+
+	bool frontFacing = \
+		(signedArea > 0) & (srpContext.frontFace == SRP_FRONT_FACE_CCW) ||
+		(signedArea < 0) & (srpContext.frontFace == SRP_FRONT_FACE_CW);
+	bool cull = \
+		( frontFacing && srpContext.cullFace == SRP_CULL_FACE_FRONT) ||
+		(!frontFacing && srpContext.cullFace == SRP_CULL_FACE_BACK);
+
+	return cull;
+}
+
+static void triangleChangeWinding(SRPTriangle* tri)
+{
+	SRPvsOutput temp = tri->v[1];
+	tri->v[1] = tri->v[2];
+	tri->v[2] = temp;
 }
 
 static void calculateBarycentrics(SRPTriangle* tri, const vec2d point)

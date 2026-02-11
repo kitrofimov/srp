@@ -42,6 +42,10 @@ int main()
 	srpNewContext(&srpContext);
 	srpContextSetP(SRP_CONTEXT_MESSAGE_CALLBACK, (void*) &messageCallback);
 
+	// Enable back-face culling and set counter-clockwise faces as front-facing
+	srpContextSetI(SRP_CONTEXT_FRONT_FACE, SRP_FRONT_FACE_CCW);
+	srpContextSetI(SRP_CONTEXT_CULL_FACE, SRP_CULL_FACE_BACK);
+
 	SRPFramebuffer* fb = srpNewFramebuffer(512, 512);
 
 	Vertex data[] = {
