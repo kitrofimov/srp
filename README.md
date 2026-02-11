@@ -76,6 +76,7 @@ And many, many more, all of which I will not find anymore...
 - [ ] Investigate the behaviour of degenerate triangles (area = 0)
 - [x] Refactor / rewrite interpolation logic
     - Perspective-correct interpolation doesn't seem to be right...
+    - However, both before and after commit f10b4163b43bd3842adc1a651a2d5bbc54ae099b produce pixel-identical results
 - [ ] Check for bottlenecks
 - [ ] Implement other primitives (lines, points, lines/triangles strip/adjacency etc.)
 - [ ] Image-based testing framework?
