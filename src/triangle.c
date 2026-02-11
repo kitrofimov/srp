@@ -73,7 +73,7 @@ static void triangleInterpolateAttributes(
 
 void rasterizeTriangle(
 	SRPTriangle* tri, const SRPFramebuffer* fb,
-	const SRPShaderProgram* restrict sp
+	const SRPShaderProgram* restrict sp, void* interpolatedBuffer
 )
 {
 	// Do not traverse triangles with clockwise vertices
@@ -96,11 +96,8 @@ void rasterizeTriangle(
 
 			if (tri->lambda[0] >= 0 && tri->lambda[1] >= 0 && tri->lambda[2] >= 0)
 			{
-				/** @todo Avoid VLA (custom allocator?) */
-				uint8_t interpolatedBuffer[sp->vs->nBytesPerOutputVariables];
-				SRPInterpolated* pInterpolated = (SRPInterpolated*) interpolatedBuffer;
 				vec4d interpolatedPosition = {0};
-				triangleInterpolateData(tri, sp, &interpolatedPosition, pInterpolated);
+				triangleInterpolateData(tri, sp, &interpolatedPosition, interpolatedBuffer);
 
 				/** @todo fix rasterizer to accept both cw and ccw vertices
 				 *  and add correct `frontFacing` here! */
@@ -108,7 +105,7 @@ void rasterizeTriangle(
 				 *  https://www.khronos.org/opengl/wiki/Fragment_Shader#Inputs */
 				SRPfsInput fsIn = {
 					.uniform = sp->uniform,
-					.interpolated = pInterpolated,
+					.interpolated = interpolatedBuffer,
 					.fragCoord = {
 						interpolatedPosition.x,
 						interpolatedPosition.y,

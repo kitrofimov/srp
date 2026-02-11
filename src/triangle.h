@@ -31,20 +31,22 @@ typedef struct SRPTriangle {
 } SRPTriangle;
 
 /** Calculate internal data for triangle rasterization
- *  @param[in] `tri` The triangle to set up. Its `v` field is required to be filled
- *  @param[in] `fb` The framebuffer to use for NDC to screen-space conversion */
+ *  @param[in] tri The triangle to set up. Its `v` field is required to be filled
+ *  @param[in] fb The framebuffer to use for NDC to screen-space conversion */
 void setupTriangle(
 	SRPTriangle* tri, const SRPFramebuffer* fb
 );
 
 /** Draw the triangle that is specified by three vertices to the framebuffer
- *  @param[in] `fb` The framebuffer to draw to
- *  @param[in] `vertices` Pointer to an array of 3 `SRPvsOutput`s
- *  @param[in] `sp` The shader program to use
- *  @param[in] `primitiveID` Primitive ID of this triangle */
+ *  @param[in] triangle Pointer to the triangle to draw
+ *  @param[in] fb The framebuffer to draw to
+ *  @param[in] sp The shader program to use
+ *  @param[in] interpolatedBuffer Pointer to a temporary buffer where interpolated
+ * 			   vertex attributes will be stored. Must be big enough to hold all
+ * 			   interpolated attributes for one vertex. */
 void rasterizeTriangle(
 	SRPTriangle* triangle, const SRPFramebuffer* fb,
-	const SRPShaderProgram* restrict sp
+	const SRPShaderProgram* restrict sp, void* interpolatedBuffer
 );
 
 /** @} */  // ingroup Rasterization

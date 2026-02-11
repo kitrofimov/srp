@@ -67,8 +67,9 @@ And many, many more, all of which I will not find anymore...
 - [x] Split the construction and rasterization of triangles in the pipeline
 - [x] Fix rasterization rules (see the gaps between triangles in `03_spinning_textured_cube` example)
 - [x] Fix unnecessary allocations in `assembleTriangles()`
-- [x] Get rid of `malloc`s in draw calls
-    - [ ] VLA inside `rasterizeTriangle()` - is it bad? should I get rid of it too?
+- [x] Get rid of dynamic memory allocation in draw calls
+    - [x] `malloc`s
+    - [x] VLA inside `rasterizeTriangle()`
 - [x] Refactor / rewrite initial barycentric calculations
 - [ ] Investigate the behaviour of degenerate triangles (area = 0)
 - [ ] Fix overly late backface culling

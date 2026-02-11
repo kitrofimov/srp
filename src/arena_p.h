@@ -13,17 +13,27 @@
 
 #define SRP_DEFAULT_ARENA_CAPACITY (1024 * 1024)  // 1 MiB
 
-typedef struct SRPArena
-{
-    void* buffer;
-    size_t offset;
+typedef struct SRPArenaBlock {
+    struct SRPArenaBlock* next;
     size_t capacity;
+    size_t used;
+    unsigned char data[];
+} SRPArenaBlock;
+
+typedef struct SRPArena {
+    SRPArenaBlock* head; 
+    SRPArenaBlock* current;
+    size_t pageSize;
 } SRPArena;
 
 /** Create a new arena with given capacity. Should be freed with freeArena()
  *  @param[in] capacity The capacity of the arena in bytes
  *  @return Pointer to the newly created arena */
 SRPArena* newArena(size_t capacity);
+
+/** Free the arena and all memory allocated within it
+ *  @param[in] this Pointer to the arena, as returned by newArena() */
+void freeArena(SRPArena* this);
 
 /** Allocate a block of memory in the arena
  *  @param[in] this Pointer to the arena
@@ -34,9 +44,5 @@ void* arenaAlloc(SRPArena* this, size_t size);
 /** Reset the arena, freeing all allocated memory. Does not free the arena itself.
  *  @param[in] this Pointer to the arena */
 void arenaReset(SRPArena* this);
-
-/** Free the arena and all memory allocated within it
- *  @param[in] this Pointer to the arena, as returned by newArena() */
-void freeArena(SRPArena* this);
 
 /** @} */  // defgroup Arena
