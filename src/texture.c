@@ -117,11 +117,12 @@ static vec4d textureGetColor(const SRPTexture* this, size_t x, size_t y)
 	// Each pixel is N_CHANNELS_REQUESTED bytes, and an image is stored row-major
 	uint8_t* start = \
 		INDEX_VOID_PTR(this->data, x + y * this->width, N_CHANNELS_REQUESTED);
+	const double inv255 = 1. / 255.;
 	return (vec4d) {
-		start[0] / 255.,
-		start[1] / 255.,
-		start[2] / 255.,
-		(N_CHANNELS_REQUESTED == 3) ? 1. : (start[3] / 255.)
+		start[0] * inv255,
+		start[1] * inv255,
+		start[2] * inv255,
+		(N_CHANNELS_REQUESTED == 3) ? 1. : (start[3] * inv255)
 	};
 }
 
