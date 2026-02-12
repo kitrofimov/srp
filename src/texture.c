@@ -48,6 +48,8 @@ SRPTexture* srpNewTexture(
 		);
 		return NULL;
 	}
+	this->wdthMinusOne = this->width - 1;
+	this->heightMinusOne = this->height - 1;
 	this->wrappingModeX = wrappingModeX;
 	this->wrappingModeY = wrappingModeY;
 	this->filteringModeMagnifying = filteringModeMagnifying;
@@ -95,8 +97,8 @@ void srpTextureGetFilteredColor(
 	}
 
 	// V axis is pointed down-up, but images are stored up-down, so (1-v) here
-	double x = (this->width-1) * u;
-	double y = (this->height-1) * (1-v);
+	double x = this->wdthMinusOne * u;
+	double y = this->heightMinusOne * (1-v);
 
 	switch (this->filteringModeMagnifying)
 	{

@@ -15,6 +15,7 @@ struct SRPTexture
 {
 	uint8_t* data;
 	int width, height;
+	int wdthMinusOne, heightMinusOne;
 	SRPTextureWrappingMode wrappingModeX;
 	SRPTextureWrappingMode wrappingModeY;
 	SRPTextureFilteringMode filteringModeMagnifying;
