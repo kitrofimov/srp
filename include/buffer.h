@@ -13,18 +13,17 @@
  *  @{ */
 
 /** Specifies primitives that can be drawn
- *	@todo implement primitives other than triangles
  *  @see srpDrawVertexBuffer() srpDrawIndexBuffer() */
 typedef enum SRPPrimitive
 {
-	SRP_PRIM_POINTS,          /**< Draw points (0, 1, 2, 3, ..., n-1) */
-	SRP_PRIM_LINES,           /**< Draw lines (0-1, 2-3, ...) If non-even N of vertices,
-	                               then the extra one is ignored) */
-	SRP_PRIM_LINE_STRIP,      /**< Draw lines (0-1, 1-2, ..., {n-2}-{n-1}) */
-	SRP_PRIM_LINE_LOOP,       /**< Draw lines (0-1, 1-2, ..., {n-2}-{n-1}, {n-1}-0) */
-	SRP_PRIM_TRIANGLES,       /**< Draw triangles (0-1-2, 3-4-5, ...) */
-	SRP_PRIM_TRIANGLE_STRIP,  /**< Draw triangles (0-1-2, 1-2-3, 2-3-4, ...) */
-	SRP_PRIM_TRIANGLE_FAN     /**< Draw triangles (0-1-2, 0-2-3, 0-3-4, ...) */
+	SRP_PRIM_POINTS,          /**< Points (0, 1, 2, 3, ..., n-1) */
+	SRP_PRIM_LINES,           /**< Lines (0-1, 2-3, ...) If non-even number of
+								   vertices, then the extra one is ignored) */
+	SRP_PRIM_LINE_STRIP,      /**< Lines (0-1, 1-2, ..., {n-2}-{n-1}) */
+	SRP_PRIM_LINE_LOOP,       /**< Lines (0-1, 1-2, ..., {n-2}-{n-1}, {n-1}-0) */
+	SRP_PRIM_TRIANGLES,       /**< Triangles (0-1-2, 3-4-5, ...) */
+	SRP_PRIM_TRIANGLE_STRIP,  /**< Triangles (0-1-2, 1-2-3, 2-3-4, ...) */
+	SRP_PRIM_TRIANGLE_FAN     /**< Triangles (0-1-2, 0-2-3, 0-3-4, ...) */
 } SRPPrimitive;
 
 /** Stores vertex data, similarly to VBO in OpenGL */
