@@ -75,6 +75,12 @@ void srpTextureGetFilteredColor(
 		case TW_CLAMP_TO_EDGE:
 			u = CLAMP(0., 1., u);
 			break;
+		default:
+			srpMessageCallbackHelper(
+				SRP_MESSAGE_ERROR, SRP_MESSAGE_SEVERITY_HIGH, __func__,
+				"Unknown texture wrapping mode (%i)", this->wrappingModeX
+			);
+			u = 0.;
 		}
 	}
 	if (v < 0 || v > 1)
@@ -87,6 +93,12 @@ void srpTextureGetFilteredColor(
 		case TW_CLAMP_TO_EDGE:
 			v = CLAMP(0., 1., v);
 			break;
+		default:
+			srpMessageCallbackHelper(
+				SRP_MESSAGE_ERROR, SRP_MESSAGE_SEVERITY_HIGH, __func__,
+				"Unknown texture wrapping mode (%i)", this->wrappingModeY
+			);
+			v = 0.;
 		}
 	}
 
