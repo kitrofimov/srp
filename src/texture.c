@@ -57,50 +57,15 @@ void srpFreeTexture(SRPTexture* this)
 	SRP_FREE(this);
 }
 
-/** @todo Now using only filteringModeMagnifying; how to know if texture is 
- *  magnified or minified?
- *  @todo Too many conditionals?
- *  @todo wrappingMode is untested! */
 void srpTextureGetFilteredColor(
 	const SRPTexture* this, double u, double v, double out[4]
 )
 {
 	if (u < 0 || u > 1)
-	{
-		switch (this->wrappingModeX)
-		{
-		case TW_REPEAT:
-			u = FRACTIONAL(u);
-			break;
-		case TW_CLAMP_TO_EDGE:
-			u = CLAMP(0., 1., u);
-			break;
-		default:
-			srpMessageCallbackHelper(
-				SRP_MESSAGE_ERROR, SRP_MESSAGE_SEVERITY_HIGH, __func__,
-				"Unknown texture wrapping mode (%i)", this->wrappingModeX
-			);
-			u = 0.;
-		}
-	}
+		u = (this->wrappingModeX == TW_REPEAT) ? u - floor(u) : fmax(0.0, fmin(1.0, u));
+
 	if (v < 0 || v > 1)
-	{
-		switch (this->wrappingModeY)
-		{
-		case TW_REPEAT:
-			v = FRACTIONAL(v);
-			break;
-		case TW_CLAMP_TO_EDGE:
-			v = CLAMP(0., 1., v);
-			break;
-		default:
-			srpMessageCallbackHelper(
-				SRP_MESSAGE_ERROR, SRP_MESSAGE_SEVERITY_HIGH, __func__,
-				"Unknown texture wrapping mode (%i)", this->wrappingModeY
-			);
-			v = 0.;
-		}
-	}
+		v = (this->wrappingModeY == TW_REPEAT) ? v - floor(v) : fmax(0.0, fmin(1.0, v));
 
 	// V axis is pointed down-up, but images are stored up-down, so (1-v) here
 	double x = this->wdthMinusOne * u;
@@ -108,21 +73,15 @@ void srpTextureGetFilteredColor(
 	size_t xi = (size_t) (x + 0.5);
 	size_t yi = (size_t) (y + 0.5);
 
-	switch (this->filteringModeMagnifying)
-	{
-	case TF_NEAREST:
-	{
-        // Each pixel is N_CHANNELS_REQUESTED bytes, and an image is stored row-major
-        uint8_t* start = \
-            INDEX_VOID_PTR(this->data, xi + yi * this->width, N_CHANNELS_REQUESTED);
-        const double inv255 = 1. / 255.;
-        out[0] = start[0] * inv255;
-        out[1] = start[1] * inv255;
-        out[2] = start[2] * inv255;
-        out[3] = (N_CHANNELS_REQUESTED == 3) ? 1. : (start[3] * inv255);
-		return;
-	}
-	}
+	// Each pixel is N_CHANNELS_REQUESTED bytes, and an image is stored row-major
+	uint8_t* start = \
+		INDEX_VOID_PTR(this->data, xi + yi * this->width, N_CHANNELS_REQUESTED);
+	const double inv255 = 1. / 255.;
+	out[0] = start[0] * inv255;
+	out[1] = start[1] * inv255;
+	out[2] = start[2] * inv255;
+	out[3] = (N_CHANNELS_REQUESTED == 3) ? 1. : (start[3] * inv255);
+	return;
 }
 
 int srpTextureGet(SRPTexture* this, SRPTextureParameter parameter)
@@ -152,9 +111,29 @@ void srpTextureSet(SRPTexture* this, SRPTextureParameter parameter, int data)
 	{
 	case SRP_TEXTURE_WRAPPING_MODE_X:
 		this->wrappingModeX = data;
+		switch (data) {
+			case TW_REPEAT:
+			case TW_CLAMP_TO_EDGE:
+				break;
+			default:
+				srpMessageCallbackHelper(
+					SRP_MESSAGE_ERROR, SRP_MESSAGE_SEVERITY_HIGH, __func__,
+					"Unknown texture wrapping mode (%i). Falling back to TW_REPEAT", data
+				);
+		}
 		return;
 	case SRP_TEXTURE_WRAPPING_MODE_Y:
 		this->wrappingModeY = data;
+		switch (data) {
+			case TW_REPEAT:
+			case TW_CLAMP_TO_EDGE:
+				break;
+			default:
+				srpMessageCallbackHelper(
+					SRP_MESSAGE_ERROR, SRP_MESSAGE_SEVERITY_HIGH, __func__,
+					"Unknown texture wrapping mode (%i). Falling back to TW_REPEAT", data
+				);
+		}
 		return;
 	case SRP_TEXTURE_FILTERING_MODE_MAGNIFYING:
 		this->filteringModeMagnifying = data;

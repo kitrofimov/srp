@@ -18,6 +18,8 @@ struct SRPTexture
 	int wdthMinusOne, heightMinusOne;
 	SRPTextureWrappingMode wrappingModeX;
 	SRPTextureWrappingMode wrappingModeY;
+
+	// Not used yet
 	SRPTextureFilteringMode filteringModeMagnifying;
 	SRPTextureFilteringMode filteringModeMinifying;
 };
