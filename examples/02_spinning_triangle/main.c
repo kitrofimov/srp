@@ -86,7 +86,7 @@ int main()
 		// (or an external math library) if you remove the `define`s at the
 		// top of this file (`SRP_INCLUDE_...`)
 		uniform.rotation = mat4dConstructRotate(0, 0, uniform.frameCount / 1000.);
-		framebufferClear(fb);
+		srpFramebufferClear(fb);
 		srpDrawVertexBuffer(vb, fb, &shaderProgram, SRP_PRIM_TRIANGLES, 0, 3);
 
 		windowPollEvents(window);

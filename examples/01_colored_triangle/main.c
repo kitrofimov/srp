@@ -98,7 +98,7 @@ int main()
 		TIMER_START(frametime);
 
 		// Clear the framebuffer and draw the index buffer as triangles
-		framebufferClear(fb);
+		srpFramebufferClear(fb);
 		srpDrawVertexBuffer(vb, fb, &shaderProgram, SRP_PRIM_TRIANGLES, 0, 3);
 
 		windowPollEvents(window);

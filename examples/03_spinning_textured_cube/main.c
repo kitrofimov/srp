@@ -135,7 +135,7 @@ int main()
 			uniform.frameCount / 200.,
 			uniform.frameCount / 500.
 		);
-		framebufferClear(fb);
+		srpFramebufferClear(fb);
 		srpDrawIndexBuffer(ib, vb, fb, &shaderProgram, SRP_PRIM_TRIANGLES, 0, 36);
 
 		windowPollEvents(window);

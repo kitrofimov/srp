@@ -34,7 +34,7 @@ void srpFreeFramebuffer(SRPFramebuffer* this);
 
 /** Clear a framebuffer: fill the color with black and depth with -1
  *  @param[in] this The pointer to SRPFramebuffer, as returned from srpNewFramebuffer() */
-void framebufferClear(const SRPFramebuffer* this);
+void srpFramebufferClear(const SRPFramebuffer* this);
 
 /** @} */  // ingroup Framebuffer
 

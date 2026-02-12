@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <assert.h>
+#include <string.h>
 #include "framebuffer.h"
 #include "message_callback_p.h"
 #include "defines.h"
@@ -81,16 +82,11 @@ void srpFramebufferNDCToScreenSpace(
 	SS[2] = NDC[2];
 }
 
-void framebufferClear(const SRPFramebuffer* this)
+void srpFramebufferClear(const SRPFramebuffer* this)
 {
-	for (size_t y = 0; y < this->height; y++)
-	{
-		for (size_t x = 0; x < this->width; x++)
-		{
-			*framebufferGetPixelPointer(this, x, y) = 0x000000FF;
-			*framebufferGetDepthPointer(this, x, y) = -1;
-		}
-	}
+	memset(this->color, 0x00, this->size * sizeof(uint32_t));
+    for (size_t i = 0; i < this->size; i++)
+        this->depth[i] = -1.;
 }
 
 uint32_t* framebufferGetPixelPointer(const SRPFramebuffer* this, size_t x, size_t y)
