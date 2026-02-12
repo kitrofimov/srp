@@ -102,7 +102,7 @@ void srpTextureGetFilteredColor(
 	{
 	case TF_NEAREST:
 	{
-		vec4d ret = textureGetColor(this, round(x), round(y));
+		vec4d ret = textureGetColor(this, (size_t) (x + 0.5), (size_t) (y + 0.5));
 		out[0] = ret.x;
 		out[1] = ret.y;
 		out[2] = ret.z;
