@@ -14,6 +14,7 @@ endif()
 set(CMAKE_C_FLAGS "-Wall -Wextra -Wpedantic -std=c2x -march=native")
 set(CMAKE_C_FLAGS_DEBUG "-g")
 set(CMAKE_C_FLAGS_RELEASE "-O3 -DNDEBUG")
+set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 -DNDEBUG -g")
 
 if (ENABLE_ASAN)
 	add_compile_options(-fsanitize=address)
