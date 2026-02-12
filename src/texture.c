@@ -23,12 +23,6 @@
 /** Number of channels requested from the `stbi_load()` call. */
 #define N_CHANNELS_REQUESTED 3
 
-/** Get texture color at specified pixel position
- *  @param[in] this Pointer to SRPTexture
- *  @param[in] x,y Position of the requested pixel
- *  @return Requested pixel's color */
-static vec4d textureGetColor(const SRPTexture* this, size_t x, size_t y);
-
 /** @} */  // ingroup Texture_internal
 
 SRPTexture* srpNewTexture(
@@ -99,33 +93,24 @@ void srpTextureGetFilteredColor(
 	// V axis is pointed down-up, but images are stored up-down, so (1-v) here
 	double x = this->wdthMinusOne * u;
 	double y = this->heightMinusOne * (1-v);
+	size_t xi = (size_t) (x + 0.5);
+	size_t yi = (size_t) (y + 0.5);
 
 	switch (this->filteringModeMagnifying)
 	{
 	case TF_NEAREST:
 	{
-		vec4d ret = textureGetColor(this, (size_t) (x + 0.5), (size_t) (y + 0.5));
-		out[0] = ret.x;
-		out[1] = ret.y;
-		out[2] = ret.z;
-		out[3] = ret.w;
+        // Each pixel is N_CHANNELS_REQUESTED bytes, and an image is stored row-major
+        uint8_t* start = \
+            INDEX_VOID_PTR(this->data, xi + yi * this->width, N_CHANNELS_REQUESTED);
+        const double inv255 = 1. / 255.;
+        out[0] = start[0] * inv255;
+        out[1] = start[1] * inv255;
+        out[2] = start[2] * inv255;
+        out[3] = (N_CHANNELS_REQUESTED == 3) ? 1. : (start[3] * inv255);
 		return;
 	}
 	}
-}
-
-static vec4d textureGetColor(const SRPTexture* this, size_t x, size_t y)
-{
-	// Each pixel is N_CHANNELS_REQUESTED bytes, and an image is stored row-major
-	uint8_t* start = \
-		INDEX_VOID_PTR(this->data, x + y * this->width, N_CHANNELS_REQUESTED);
-	const double inv255 = 1. / 255.;
-	return (vec4d) {
-		start[0] * inv255,
-		start[1] * inv255,
-		start[2] * inv255,
-		(N_CHANNELS_REQUESTED == 3) ? 1. : (start[3] * inv255)
-	};
 }
 
 int srpTextureGet(SRPTexture* this, SRPTextureParameter parameter)
