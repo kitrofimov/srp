@@ -80,6 +80,14 @@ And many, many more, all of which I will not find anymore...
 - [x] Check for bottlenecks
 - [ ] Implement other primitives (lines, points, lines/triangles strip/adjacency etc.)
     - https://wikis.khronos.org/opengl/Primitive
+    - [x] Triangle
+    - [x] Triangle strip
+    - [x] Triangle fan
+    - [ ] Points
+    - [ ] Line
+    - [ ] Line strip
+    - [ ] Line loop
+- [ ] Clipping? (i.e. try to render triangle that goes slightly beyond the screen edge)
 - [ ] Image-based testing framework?
 - [ ] Implement single-threaded binning and tile system
 - [ ] Scale to multiple threads
