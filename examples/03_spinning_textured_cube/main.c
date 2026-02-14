@@ -40,7 +40,7 @@ void fragmentShader(SRPfsInput* in, SRPfsOutput* out);
 int main()
 {
 	srpNewContext(&srpContext);
-	srpContextSetP(SRP_CONTEXT_MESSAGE_CALLBACK, (void*) &messageCallback);
+	srpContextSetMessageCallback(messageCallback);
 
 	// Enable back-face culling and set counter-clockwise faces as front-facing
 	srpContextSetI(SRP_CONTEXT_FRONT_FACE, SRP_FRONT_FACE_CCW);

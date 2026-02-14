@@ -15,13 +15,20 @@ void srpNewContext(SRPContext* pContext)
 	pContext->arena = newArena(SRP_DEFAULT_ARENA_CAPACITY);
 }
 
+void srpContextSetMessageCallback(SRPMessageCallbackType callback)
+{
+	srpContext.messageCallback = callback;
+}
+
+SRPMessageCallbackType srpContextGetMessageCallback()
+{
+	return srpContext.messageCallback;
+}
+
 void srpContextSetP(SRPContextParameter contextParameter, void* data)
 {
 	switch (contextParameter)
 	{
-	case SRP_CONTEXT_MESSAGE_CALLBACK:
-		srpContext.messageCallback = data;
-		return;
 	case SRP_CONTEXT_MESSAGE_CALLBACK_USER_PARAMETER:
 		srpContext.messageCallbackUserParameter = data;
 		return;
@@ -60,8 +67,6 @@ void* srpContextGetP(SRPContextParameter contextParameter)
 {
 	switch (contextParameter)
 	{
-	case SRP_CONTEXT_MESSAGE_CALLBACK:
-		return srpContext.messageCallback;
 	case SRP_CONTEXT_MESSAGE_CALLBACK_USER_PARAMETER:
 		return srpContext.messageCallbackUserParameter;
 	default:
