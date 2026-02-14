@@ -20,6 +20,37 @@
 /** @ingroup Buffer_internal
  *  @{ */
 
+/** Draw either SRPIndexBuffer or SRPVertexBuffer.
+ *  If `ib == NULL`, draws the vertex buffer, else draws index buffer.
+ *  Created because vertex and index buffer drawing are very similar,
+ *  with an intent to avoid code duplication
+ *  @see srpDrawVertexBuffer() srpDrawIndexBuffer() for parameter documentation */
+static void drawBuffer(
+	const SRPIndexBuffer* ib, const SRPVertexBuffer* vb, const SRPFramebuffer* fb,
+	const SRPShaderProgram* sp, SRPPrimitive primitive, size_t startIndex, size_t count
+);
+
+/** Draw triangle-based primitives from either SRPIndexBuffer or SRPVertexBuffer.
+ *  @see drawBuffer() for extensive documentation */
+static void drawTriangles(
+	const SRPIndexBuffer* ib, const SRPVertexBuffer* vb, const SRPFramebuffer* fb,
+	const SRPShaderProgram* sp, SRPPrimitive primitive, size_t startIndex, size_t count
+);
+
+/** Draw line-based primitives from either SRPIndexBuffer or SRPVertexBuffer.
+ *  @see drawBuffer() for extensive documentation */
+static void drawLines(
+	const SRPIndexBuffer* ib, const SRPVertexBuffer* vb, const SRPFramebuffer* fb,
+	const SRPShaderProgram* sp, SRPPrimitive primitive, size_t startIndex, size_t count
+);
+
+/** Draw points from either SRPIndexBuffer or SRPVertexBuffer.
+ *  @see drawBuffer() for extensive documentation */
+static void drawPoints(
+	const SRPIndexBuffer* ib, const SRPVertexBuffer* vb, const SRPFramebuffer* fb,
+	const SRPShaderProgram* sp, SRPPrimitive primitive, size_t startIndex, size_t count
+);
+
 /** Call the vertex shader and assemble triangles from vertex or index buffer.
  *  If `ib == NULL`, assembles from vertex buffer, else from index buffer.
  *  Uses memory from SRPArena, so the returned triangles are valid until the
@@ -84,37 +115,6 @@ static size_t computeTriangleCount(size_t vertexCount, SRPPrimitive prim);
  *  @param[out] out Array of size 3 to store the resulting stream indices */
 static void resolveTriangleTopology(size_t base, size_t primID, SRPPrimitive prim, size_t* out);
 
-/** Draw either SRPIndexBuffer or SRPVertexBuffer.
- *  If `ib == NULL`, draws the vertex buffer, else draws index buffer.
- *  Created because vertex and index buffer drawing are very similar,
- *  with an intent to avoid code duplication
- *  @see srpDrawVertexBuffer() srpDrawIndexBuffer() for parameter documentation */
-static void drawBuffer(
-	const SRPIndexBuffer* ib, const SRPVertexBuffer* vb, const SRPFramebuffer* fb,
-	const SRPShaderProgram* sp, SRPPrimitive primitive, size_t startIndex, size_t count
-);
-
-/** Draw triangle-based primitives from either SRPIndexBuffer or SRPVertexBuffer.
- *  @see drawBuffer() for extensive documentation */
-static void drawTriangles(
-	const SRPIndexBuffer* ib, const SRPVertexBuffer* vb, const SRPFramebuffer* fb,
-	const SRPShaderProgram* sp, SRPPrimitive primitive, size_t startIndex, size_t count
-);
-
-/** Draw line-based primitives from either SRPIndexBuffer or SRPVertexBuffer.
- *  @see drawBuffer() for extensive documentation */
-static void drawLines(
-	const SRPIndexBuffer* ib, const SRPVertexBuffer* vb, const SRPFramebuffer* fb,
-	const SRPShaderProgram* sp, SRPPrimitive primitive, size_t startIndex, size_t count
-);
-
-/** Draw points from either SRPIndexBuffer or SRPVertexBuffer.
- *  @see drawBuffer() for extensive documentation */
-static void drawPoints(
-	const SRPIndexBuffer* ib, const SRPVertexBuffer* vb, const SRPFramebuffer* fb,
-	const SRPShaderProgram* sp, SRPPrimitive primitive, size_t startIndex, size_t count
-);
-
 /** Determine if a primitive is triangle-based.
  *  @param[in] primitive Primitive type
  *  @return `true` if the primitive is triangle-based, `false` otherwise */
@@ -144,6 +144,73 @@ static uint64_t indexIndexBuffer(const SRPIndexBuffer* this, size_t ibIndex);
 static SRPVertex* indexVertexBuffer(const SRPVertexBuffer* this, size_t index);
 
 /** @} */
+
+static void drawBuffer(
+	const SRPIndexBuffer* ib, const SRPVertexBuffer* vb, const SRPFramebuffer* fb,
+	const SRPShaderProgram* sp, SRPPrimitive primitive, size_t startIndex, size_t count
+)
+{
+	if (count == 0)
+		return;
+
+	if (isPrimitiveTriangle(primitive))
+		drawTriangles(ib, vb, fb, sp, primitive, startIndex, count);
+	else if (isPrimitiveLine(primitive))
+		drawLines(ib, vb, fb, sp, primitive, startIndex, count);
+	else if (isPrimitivePoint(primitive))
+		drawPoints(ib, vb, fb, sp, primitive, startIndex, count);
+	else
+		srpMessageCallbackHelper(
+			SRP_MESSAGE_ERROR, SRP_MESSAGE_SEVERITY_HIGH, __func__,
+			"Unknown primitive type: %i", primitive
+		);
+}
+
+static void drawTriangles(
+	const SRPIndexBuffer* ib, const SRPVertexBuffer* vb, const SRPFramebuffer* fb,
+	const SRPShaderProgram* sp, SRPPrimitive primitive, size_t startIndex, size_t count
+)
+{
+	if (srpContext.cullFace == SRP_CULL_FACE_FRONT_AND_BACK)
+		return;
+
+	size_t triangleCount;
+	SRPTriangle* triangles;
+	bool success = assembleTriangles(
+		ib, vb, fb, sp, primitive, startIndex, count,
+		&triangleCount, &triangles
+	);
+	if (!success)
+		return;
+
+	void* interpolatedBuffer = arenaAlloc(srpContext.arena, sp->vs->nBytesPerOutputVariables);
+	for (size_t i = 0; i < triangleCount; i++)
+		rasterizeTriangle(&triangles[i], fb, sp, interpolatedBuffer);
+
+	arenaReset(srpContext.arena);
+}
+
+static void drawLines(
+	const SRPIndexBuffer* ib, const SRPVertexBuffer* vb, const SRPFramebuffer* fb,
+	const SRPShaderProgram* sp, SRPPrimitive primitive, size_t startIndex, size_t count
+)
+{
+	srpMessageCallbackHelper(
+		SRP_MESSAGE_ERROR, SRP_MESSAGE_SEVERITY_HIGH, __func__,
+		"Lines are not implemented yet"
+	);
+}
+
+static void drawPoints(
+	const SRPIndexBuffer* ib, const SRPVertexBuffer* vb, const SRPFramebuffer* fb,
+	const SRPShaderProgram* sp, SRPPrimitive primitive, size_t startIndex, size_t count
+)
+{
+	srpMessageCallbackHelper(
+		SRP_MESSAGE_ERROR, SRP_MESSAGE_SEVERITY_HIGH, __func__,
+		"Points are not implemented yet"
+	);
+}
 
 static bool assembleTriangles(
 	const SRPIndexBuffer* ib, const SRPVertexBuffer* vb, const SRPFramebuffer* fb,
@@ -301,73 +368,6 @@ static void resolveTriangleTopology(size_t base, size_t primID, SRPPrimitive pri
 	}
 	else
 		assert(false && "Invalid primitive type");
-}
-
-static void drawBuffer(
-	const SRPIndexBuffer* ib, const SRPVertexBuffer* vb, const SRPFramebuffer* fb,
-	const SRPShaderProgram* sp, SRPPrimitive primitive, size_t startIndex, size_t count
-)
-{
-	if (count == 0)
-		return;
-
-	if (isPrimitiveTriangle(primitive))
-		drawTriangles(ib, vb, fb, sp, primitive, startIndex, count);
-	else if (isPrimitiveLine(primitive))
-		drawLines(ib, vb, fb, sp, primitive, startIndex, count);
-	else if (isPrimitivePoint(primitive))
-		drawPoints(ib, vb, fb, sp, primitive, startIndex, count);
-	else
-		srpMessageCallbackHelper(
-			SRP_MESSAGE_ERROR, SRP_MESSAGE_SEVERITY_HIGH, __func__,
-			"Unknown primitive type: %i", primitive
-		);
-}
-
-static void drawTriangles(
-	const SRPIndexBuffer* ib, const SRPVertexBuffer* vb, const SRPFramebuffer* fb,
-	const SRPShaderProgram* sp, SRPPrimitive primitive, size_t startIndex, size_t count
-)
-{
-	if (srpContext.cullFace == SRP_CULL_FACE_FRONT_AND_BACK)
-		return;
-
-	size_t triangleCount;
-	SRPTriangle* triangles;
-	bool success = assembleTriangles(
-		ib, vb, fb, sp, primitive, startIndex, count,
-		&triangleCount, &triangles
-	);
-	if (!success)
-		return;
-
-	void* interpolatedBuffer = arenaAlloc(srpContext.arena, sp->vs->nBytesPerOutputVariables);
-	for (size_t i = 0; i < triangleCount; i++)
-		rasterizeTriangle(&triangles[i], fb, sp, interpolatedBuffer);
-
-	arenaReset(srpContext.arena);
-}
-
-static void drawLines(
-	const SRPIndexBuffer* ib, const SRPVertexBuffer* vb, const SRPFramebuffer* fb,
-	const SRPShaderProgram* sp, SRPPrimitive primitive, size_t startIndex, size_t count
-)
-{
-	srpMessageCallbackHelper(
-		SRP_MESSAGE_ERROR, SRP_MESSAGE_SEVERITY_HIGH, __func__,
-		"Lines are not implemented yet"
-	);
-}
-
-static void drawPoints(
-	const SRPIndexBuffer* ib, const SRPVertexBuffer* vb, const SRPFramebuffer* fb,
-	const SRPShaderProgram* sp, SRPPrimitive primitive, size_t startIndex, size_t count
-)
-{
-	srpMessageCallbackHelper(
-		SRP_MESSAGE_ERROR, SRP_MESSAGE_SEVERITY_HIGH, __func__,
-		"Points are not implemented yet"
-	);
 }
 
 static bool isPrimitiveTriangle(SRPPrimitive primitive)
