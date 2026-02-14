@@ -20,7 +20,8 @@ typedef struct VertexCacheEntry {
 /** Assemble a single triangle.
  *  @param[in] triangleIdx Index of the primitive to assemble, starting from 0,
  * 						   including culled triangles
- *  @param[in] minVI Minimal vertex index found in this draw call, used for indexing vertex cache
+ *  @param[in] baseVertex Base vertex for the post-VS cache, i.e. minimal vertex
+ * 						  index found in this draw call
  *  @param[in] cache Pointer to the vertex cache buffer
  *  @param[in] varyingBuffer Pointer to the buffer where vertex shader outputs will be stored
  *  @param[out] tri Pointer to the triangle where the assembled triangle will be stored
@@ -29,7 +30,14 @@ typedef struct VertexCacheEntry {
 static bool assembleOneTriangle(
     const SRPIndexBuffer* ib, const SRPVertexBuffer* vb, const SRPShaderProgram* sp,
     const SRPFramebuffer* fb, SRPPrimitive prim, size_t startIndex, size_t triangleIdx,
-    size_t minVI, VertexCacheEntry* cache, void* varyingBuffer, SRPTriangle* tri
+    size_t baseVertex, VertexCacheEntry* cache, void* varyingBuffer, SRPTriangle* tri
+);
+
+/** Fetch vertex shader output from post-VS cache. If not found, compute and store it.
+ * 	@see assembleOneTriangle() for documentation on other parameters */
+static SRPvsOutput* vertexCacheFetch(
+	VertexCacheEntry* cache, size_t vertexIndex, size_t baseVertex,
+	void* varyingBuffer, const SRPVertexBuffer* vb, const SRPShaderProgram* sp
 );
 
 /** Check if draw call for a triangle is valid.
@@ -122,50 +130,58 @@ bool assembleTriangles(
 static bool assembleOneTriangle(
     const SRPIndexBuffer* ib, const SRPVertexBuffer* vb, const SRPShaderProgram* sp,
     const SRPFramebuffer* fb, SRPPrimitive prim, size_t startIndex, size_t triangleIdx,
-    size_t minVI, VertexCacheEntry* cache, void* varyingBuffer, SRPTriangle* tri
+    size_t baseVertex, VertexCacheEntry* cache, void* varyingBuffer, SRPTriangle* tri
 )
 {
     size_t streamIndices[3];
     resolveTriangleTopology(startIndex, triangleIdx, prim, streamIndices);
-	const size_t stride = sp->vs->nBytesPerOutputVariables;
 
     for (uint8_t i = 0; i < 3; i++)
     {
         size_t vertexIndex = (ib) ? indexIndexBuffer(ib, streamIndices[i]) : streamIndices[i];
-		VertexCacheEntry* entry = &cache[vertexIndex - minVI];
-
-		if (!entry->valid)
-		{
-			SRPVertex* pVertex = indexVertexBuffer(vb, vertexIndex);
-			void* pVarying = INDEX_VOID_PTR(varyingBuffer, vertexIndex - minVI, stride);
-
-			SRPvsInput vsIn = {
-				.vertexID = vertexIndex,
-				.pVertex  = pVertex,
-				.uniform  = sp->uniform
-			};
-			entry->data = (SRPvsOutput) {
-				.position = {0},
-				.pOutputVariables = pVarying
-			};
-
-			sp->vs->shader(&vsIn, &entry->data);
-
-			// Perspective divide
-			double invW = 1.0 / entry->data.position[3];
-			entry->data.position[0] *= invW;
-			entry->data.position[1] *= invW;
-			entry->data.position[2] *= invW;
-			entry->data.position[3] = 1.0;
-
-			entry->valid = true;
-		}
-
-		tri->v[i] = entry->data;
-   }
+		tri->v[i] = *vertexCacheFetch(cache, vertexIndex, baseVertex, varyingBuffer, vb, sp);
+	}
 
 	bool success = setupTriangle(tri, fb);
     return success;
+}
+
+static SRPvsOutput* vertexCacheFetch(
+	VertexCacheEntry* cache, size_t vertexIndex, size_t baseVertex,
+	void* varyingBuffer, const SRPVertexBuffer* vb, const SRPShaderProgram* sp
+)
+{
+	VertexCacheEntry* entry = &cache[vertexIndex - baseVertex];
+	const size_t stride = sp->vs->nBytesPerOutputVariables;
+
+	if (!entry->valid)
+	{
+		SRPVertex* pVertex = indexVertexBuffer(vb, vertexIndex);
+		void* pVarying = INDEX_VOID_PTR(varyingBuffer, vertexIndex - baseVertex, stride);
+
+		SRPvsInput vsIn = {
+			.vertexID = vertexIndex,
+			.pVertex  = pVertex,
+			.uniform  = sp->uniform
+		};
+		entry->data = (SRPvsOutput) {
+			.position = {0},
+			.pOutputVariables = pVarying
+		};
+
+		sp->vs->shader(&vsIn, &entry->data);
+
+		// Perspective divide
+		double invW = 1.0 / entry->data.position[3];
+		entry->data.position[0] *= invW;
+		entry->data.position[1] *= invW;
+		entry->data.position[2] *= invW;
+		entry->data.position[3] = 1.0;
+
+		entry->valid = true;
+	}
+
+	return &entry->data;
 }
  
 static bool validateTriangleDrawCall(
