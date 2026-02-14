@@ -41,6 +41,18 @@ static bool assembleTriangles(
 	size_t* outTriangleCount, SRPTriangle** outTriangles
 );
 
+/** Assemble a single triangle.
+ *  @param[in] triangleIdx Index of the primitive to assemble, starting from 0,
+ * 						   including culled triangles
+ *  @param[in] pVarying Pointer to the buffer where vertex shader outputs will be stored
+ *  @param[out] tri Pointer to the triangle where the assembled triangle will be stored
+ *  @returns `true` if successful, `false` otherwise */
+static bool assembleOneTriangle(
+    const SRPIndexBuffer* ib, const SRPVertexBuffer* vb, const SRPShaderProgram* sp,
+    const SRPFramebuffer* fb, SRPPrimitive prim, size_t startIndex, size_t triangleIdx,
+    SRPTriangle* tri, void* pVarying
+);
+
 /** Check if draw call for a triangle is valid.
  *  @see assembleTriangles() for full parameter documentation */
 static bool validateTriangleDrawCall(
@@ -151,41 +163,14 @@ static bool assembleTriangles(
 	allocateTriangleBuffers(nTriangles, sp, &triangles, &pVarying);
 
 	size_t primitiveID = 0;
-	size_t streamIndices[3];
-
 	for (size_t k = 0; k < nTriangles; k += 1)
 	{
 		SRPTriangle* tri = &triangles[primitiveID];
-		resolveTriangleTopology(startIndex, k, prim, streamIndices);
+		bool success = assembleOneTriangle(
+			ib, vb, sp, fb, prim, startIndex, k, tri, pVarying
+		);
 
-		for (uint8_t i = 0; i < 3; i++)
-		{
-			size_t vertexIndex = (ib) ? indexIndexBuffer(ib, streamIndices[i]) : streamIndices[i];
-			SRPVertex* pVertex = indexVertexBuffer(vb, vertexIndex);
-
-			SRPvsInput vsIn = {
-				.vertexID = vertexIndex,
-				.pVertex  = pVertex,
-				.uniform  = sp->uniform
-			};
-			tri->v[i] = (SRPvsOutput) {
-				.position = {0},
-				.pOutputVariables = pVarying
-			};
-			pVarying = ADD_VOID_PTR(pVarying, sp->vs->nBytesPerOutputVariables);
-
-			sp->vs->shader(&vsIn, &tri->v[i]);
-
-			// Perspective divide
-			double invW = 1.0f / tri->v[i].position[3];
-			tri->v[i].position[0] *= invW;
-			tri->v[i].position[1] *= invW;
-			tri->v[i].position[2] *= invW;
-			tri->v[i].position[3] = 1.0f;
-		}
-
-		bool success = setupTriangle(tri, fb);
-		if (!success)  // triangle was culled
+		if (!success)
 			continue;
 
 		tri->id = primitiveID;
@@ -195,6 +180,47 @@ static bool assembleTriangles(
 	*outTriangleCount = primitiveID;  // Amount of non-culled triangles
 	*outTriangles = triangles;
 	return true;
+}
+
+static bool assembleOneTriangle(
+    const SRPIndexBuffer* ib, const SRPVertexBuffer* vb, const SRPShaderProgram* sp,
+    const SRPFramebuffer* fb, SRPPrimitive prim, size_t startIndex, size_t triangleIdx,
+    SRPTriangle* tri, void* varyingBuffer
+)
+{
+    size_t streamIndices[3];
+    resolveTriangleTopology(startIndex, triangleIdx, prim, streamIndices);
+	const size_t stride = sp->vs->nBytesPerOutputVariables;
+
+    for (uint8_t i = 0; i < 3; i++)
+    {
+        size_t vertexIndex = (ib) ? indexIndexBuffer(ib, streamIndices[i]) : streamIndices[i];
+        SRPVertex* pVertex = indexVertexBuffer(vb, vertexIndex);
+
+        SRPvsInput vsIn = {
+            .vertexID = vertexIndex,
+            .pVertex  = pVertex,
+            .uniform  = sp->uniform
+        };
+
+		void* pVarying = INDEX_VOID_PTR(varyingBuffer, 3 * triangleIdx + i, stride);
+        tri->v[i] = (SRPvsOutput){
+            .position = {0},
+            .pOutputVariables = pVarying
+        };
+
+        sp->vs->shader(&vsIn, &tri->v[i]);
+
+        // Perspective divide
+        double invW = 1.0 / tri->v[i].position[3];
+        tri->v[i].position[0] *= invW;
+        tri->v[i].position[1] *= invW;
+        tri->v[i].position[2] *= invW;
+        tri->v[i].position[3] = 1.0;
+    }
+
+	bool success = setupTriangle(tri, fb);
+    return success;
 }
  
 static bool validateTriangleDrawCall(
