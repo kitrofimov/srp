@@ -41,12 +41,29 @@ static bool assembleTriangles(
 	size_t* outTriangleCount, SRPTriangle** outTriangles
 );
 
+/** Check if draw call for a triangle is valid.
+ *  @see assembleTriangles() for full parameter documentation */
+static bool validateTriangleDrawCall(
+	const SRPIndexBuffer* ib, const SRPVertexBuffer* vb,
+	SRPPrimitive prim, size_t startIndex, size_t vertexCount
+);
+
+/** Allocate buffers needed for assembling triangles.
+ *  @param[in] nTriangles Number of triangles to allocate buffers for
+ *  @param[in] sp Shader program to use
+ *  @param[out] outTriangles Will contain pointer to the array of assembled triangles
+ *  @param[out] outVaryingBuffer Will contain pointer to the interpolated variables buffer */
+static void allocateTriangleBuffers(
+	size_t nTriangles, const SRPShaderProgram* sp,
+	SRPTriangle** outTriangles, void** outVaryingBuffer
+);
+
 /** Deduce the number of triangles to assemble based on the number of vertices
  *  and primitive type.
  *  @param[in] vertexCount Number of vertices
  *  @param[in] prim Primitive type
  *  @return Number of triangles that should be assembled */
-static size_t triangleCount(size_t vertexCount, SRPPrimitive prim);
+static size_t computeTriangleCount(size_t vertexCount, SRPPrimitive prim);
  
 /** Determine the stream indices based on the triangle type.
  *  @param[in] base Base stream index
@@ -118,56 +135,30 @@ static SRPVertex* indexVertexBuffer(const SRPVertexBuffer* this, size_t index);
 
 static bool assembleTriangles(
 	const SRPIndexBuffer* ib, const SRPVertexBuffer* vb, const SRPFramebuffer* fb,
-	const SRPShaderProgram* sp, SRPPrimitive primitive, size_t startIndex, size_t vertexCount,
+	const SRPShaderProgram* sp, SRPPrimitive prim, size_t startIndex, size_t vertexCount,
 	size_t* outTriangleCount, SRPTriangle** outTriangles
 )
 {
 	const bool drawingIB = (ib != NULL);
 
-	if (primitive == SRP_PRIM_TRIANGLES && vertexCount % 3 != 0)
-	{
-		srpMessageCallbackHelper(
-			SRP_MESSAGE_WARNING, SRP_MESSAGE_SEVERITY_LOW, __func__,
-			"Vertex count not divisible by 3. The last %i vertex/vertices will be ignored\n", vertexCount % 3
-		);
-	}
-
-	// The last stream index that will be touched
-	const size_t endIndex = startIndex + vertexCount - 1;
-	const size_t bufferSize = (drawingIB) ? ib->nIndices : vb->nVertices;
-	if (endIndex >= bufferSize)
-	{
-		const char* errorMessage = (drawingIB) ? \
-			"Attempt to OOB access index buffer (read) at indices %zu-%zu (size: %zu)\n" : \
-			"Attempt to OOB access vertex buffer (read) at indices %zu-%zu (size: %zu)\n";
-		srpMessageCallbackHelper(
-			SRP_MESSAGE_ERROR, SRP_MESSAGE_SEVERITY_HIGH, __func__,
-			errorMessage, startIndex, endIndex, bufferSize
-		);
+	if (!validateTriangleDrawCall(ib, vb, prim, startIndex, vertexCount))
 		return false;
-	}
 
-	// Allocating two buffers in one allocation to avoid possible reallocation,
-	// which would cause dangling pointers
-	size_t nTriangles = triangleCount(vertexCount, primitive);
+	size_t nTriangles = computeTriangleCount(vertexCount, prim);
 	if (nTriangles == 0)
 		return false;
 
-	size_t trianglesBufferSize = sizeof(SRPTriangle) * nTriangles;
-	size_t varyingBufferSize = sp->vs->nBytesPerOutputVariables * 3 * nTriangles;
-	void* buffer = arenaAlloc(srpContext.arena, trianglesBufferSize + varyingBufferSize);
+	SRPTriangle* triangles;
+	void* pVarying;
+	allocateTriangleBuffers(nTriangles, sp, &triangles, &pVarying);
 
-	SRPTriangle* triangles = (SRPTriangle*) buffer;
-	void* varyingBuffer = ADD_VOID_PTR(buffer, trianglesBufferSize);
-	void* pVarying = varyingBuffer;
 	size_t primitiveID = 0;
+	size_t streamIndices[3];
 
 	for (size_t k = 0; k < nTriangles; k += 1)
 	{
 		SRPTriangle* tri = &triangles[primitiveID];
-
-		size_t streamIndices[3];
-		resolveTriangleTopology(startIndex, k, primitive, streamIndices);
+		resolveTriangleTopology(startIndex, k, prim, streamIndices);
 
 		for (uint8_t i = 0; i < 3; i++)
 		{
@@ -207,8 +198,54 @@ static bool assembleTriangles(
 	*outTriangles = triangles;
 	return true;
 }
+ 
+static bool validateTriangleDrawCall(
+	const SRPIndexBuffer* ib, const SRPVertexBuffer* vb,
+	SRPPrimitive prim, size_t startIndex, size_t vertexCount
+)
+{
+	if (prim == SRP_PRIM_TRIANGLES && vertexCount % 3 != 0)
+	{
+		srpMessageCallbackHelper(
+			SRP_MESSAGE_WARNING, SRP_MESSAGE_SEVERITY_LOW, __func__,
+			"Vertex count not divisible by 3. The last %i vertex/vertices will be ignored\n", vertexCount % 3
+		);
+	}
 
-static size_t triangleCount(size_t vertexCount, SRPPrimitive prim)
+	const bool drawingIB = (ib != NULL);
+
+	// The last stream index that will be touched
+	const size_t endIndex = startIndex + vertexCount - 1;
+	const size_t bufferSize = (drawingIB) ? ib->nIndices : vb->nVertices;
+
+	if (endIndex >= bufferSize)
+	{
+		const char* errorMessage = (drawingIB) ? \
+			"Attempt to OOB access index buffer (read) at indices %zu-%zu (size: %zu)\n" : \
+			"Attempt to OOB access vertex buffer (read) at indices %zu-%zu (size: %zu)\n";
+		srpMessageCallbackHelper(
+			SRP_MESSAGE_ERROR, SRP_MESSAGE_SEVERITY_HIGH, __func__,
+			errorMessage, startIndex, endIndex, bufferSize
+		);
+		return false;
+	}
+
+	return true;
+}
+
+static void allocateTriangleBuffers(
+	size_t nTriangles, const SRPShaderProgram* sp,
+	SRPTriangle** outTriangles, void** outVaryingBuffer
+)
+{
+	size_t trianglesBufferSize = sizeof(SRPTriangle) * nTriangles;
+	size_t varyingBufferSize = sp->vs->nBytesPerOutputVariables * 3 * nTriangles;
+
+	*outTriangles = arenaAlloc(srpContext.arena, trianglesBufferSize);
+	*outVaryingBuffer = arenaAlloc(srpContext.arena, varyingBufferSize);
+}
+
+static size_t computeTriangleCount(size_t vertexCount, SRPPrimitive prim)
 {
 	if (prim == SRP_PRIM_TRIANGLES)
 		return vertexCount / 3;
