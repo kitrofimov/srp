@@ -28,5 +28,17 @@ struct SRPIndexBuffer
 	void* data;              /**< Pointer to the index data */
 };
 
-/** @} */  // ingroup Buffer_internal
+/** Get an element stored in SRPIndexBuffer.
+ *  Needed because SRPIndexBuffer stores opaque index types.
+ *  @param[in] this Pointer to SRPIndexBuffer
+ *  @param[in] ibIndex Index of the element in the SRPIndexBuffer
+ *  @return Element upcasted to `uint64_t` */
+uint64_t indexIndexBuffer(const SRPIndexBuffer* this, size_t ibIndex);
 
+/** Get a vertex stored in SRPVertexBuffer.
+ *  @param[in] this Pointer to SRPVertexBuffer
+ *  @param[in] index Index of the vertex to get
+ *  @return Requested vertex */
+SRPVertex* indexVertexBuffer(const SRPVertexBuffer* this, size_t index);
+
+/** @} */  // ingroup Buffer_internal

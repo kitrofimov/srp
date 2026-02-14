@@ -15,6 +15,8 @@ set(
 	alloc.c
 	message_callback.c
 	arena.c
+	draw.c
+	primitive_assembly.c
 )
 
 add_library(srp STATIC ${SOURCES})
