@@ -139,8 +139,6 @@ static bool assembleTriangles(
 	size_t* outTriangleCount, SRPTriangle** outTriangles
 )
 {
-	const bool drawingIB = (ib != NULL);
-
 	if (!validateTriangleDrawCall(ib, vb, prim, startIndex, vertexCount))
 		return false;
 
@@ -162,7 +160,7 @@ static bool assembleTriangles(
 
 		for (uint8_t i = 0; i < 3; i++)
 		{
-			size_t vertexIndex = drawingIB ? indexIndexBuffer(ib, streamIndices[i]) : streamIndices[i];
+			size_t vertexIndex = (ib) ? indexIndexBuffer(ib, streamIndices[i]) : streamIndices[i];
 			SRPVertex* pVertex = indexVertexBuffer(vb, vertexIndex);
 
 			SRPvsInput vsIn = {
@@ -212,15 +210,13 @@ static bool validateTriangleDrawCall(
 		);
 	}
 
-	const bool drawingIB = (ib != NULL);
-
 	// The last stream index that will be touched
 	const size_t endIndex = startIndex + vertexCount - 1;
-	const size_t bufferSize = (drawingIB) ? ib->nIndices : vb->nVertices;
+	const size_t bufferSize = (ib) ? ib->nIndices : vb->nVertices;
 
 	if (endIndex >= bufferSize)
 	{
-		const char* errorMessage = (drawingIB) ? \
+		const char* errorMessage = (ib) ? \
 			"Attempt to OOB access index buffer (read) at indices %zu-%zu (size: %zu)\n" : \
 			"Attempt to OOB access vertex buffer (read) at indices %zu-%zu (size: %zu)\n";
 		srpMessageCallbackHelper(
