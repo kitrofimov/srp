@@ -1,6 +1,7 @@
 // Software Rendering Pipeline (SRP) library
 // Licensed under GNU GPLv3
 
+#include <string.h>
 #include "arena_p.h"
 #include "defines.h"
 #include "utils.h"
@@ -81,6 +82,13 @@ void* arenaAlloc(SRPArena* this, size_t size)
 
     void* ptr = this->current->data + aligned_used;
     this->current->used = aligned_used + size;
+    return ptr;
+}
+
+void* arenaCalloc(SRPArena* this, size_t size)
+{
+    void* ptr = arenaAlloc(this, size);
+    memset(ptr, 0, size);
     return ptr;
 }
 

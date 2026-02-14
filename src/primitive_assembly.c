@@ -11,16 +11,25 @@
 #include "arena_p.h"
 #include "utils.h"
 
+/** Represents an entry in the post-VS cache */
+typedef struct VertexCacheEntry {
+	bool valid;
+	SRPvsOutput data;
+} VertexCacheEntry;
+
 /** Assemble a single triangle.
  *  @param[in] triangleIdx Index of the primitive to assemble, starting from 0,
  * 						   including culled triangles
- *  @param[in] pVarying Pointer to the buffer where vertex shader outputs will be stored
+ *  @param[in] minVI Minimal vertex index found in this draw call, used for indexing vertex cache
+ *  @param[in] cache Pointer to the vertex cache buffer
+ *  @param[in] varyingBuffer Pointer to the buffer where vertex shader outputs will be stored
  *  @param[out] tri Pointer to the triangle where the assembled triangle will be stored
- *  @returns `true` if successful, `false` otherwise */
+ *  @returns `true` if successful, `false` otherwise
+ *  @see assembleTriangles() for documentation on other parameters */
 static bool assembleOneTriangle(
     const SRPIndexBuffer* ib, const SRPVertexBuffer* vb, const SRPShaderProgram* sp,
     const SRPFramebuffer* fb, SRPPrimitive prim, size_t startIndex, size_t triangleIdx,
-    SRPTriangle* tri, void* pVarying
+    size_t minVI, VertexCacheEntry* cache, void* varyingBuffer, SRPTriangle* tri
 );
 
 /** Check if draw call for a triangle is valid.
@@ -33,11 +42,14 @@ static bool validateTriangleDrawCall(
 /** Allocate buffers needed for assembling triangles.
  *  @param[in] nTriangles Number of triangles to allocate buffers for
  *  @param[in] sp Shader program to use
+ *  @param[in] minVI Minimal vertex index found in this draw call
+ *  @param[in] maxVI Maximal vertex index found in this draw call. Both with
+ * 					 minVI used to determine the size of post-VS cache
  *  @param[out] outTriangles Will contain pointer to the array of assembled triangles
  *  @param[out] outVaryingBuffer Will contain pointer to the interpolated variables buffer */
 static void allocateTriangleBuffers(
-	size_t nTriangles, const SRPShaderProgram* sp,
-	SRPTriangle** outTriangles, void** outVaryingBuffer
+	size_t nTriangles, const SRPShaderProgram* sp, size_t minVI, size_t maxVI,
+	SRPTriangle** outTriangles, void** outVaryingBuffer, VertexCacheEntry** outVertexCache
 );
 
 /** Deduce the number of triangles to assemble based on the number of vertices
@@ -67,16 +79,32 @@ bool assembleTriangles(
 	if (nTriangles == 0)
 		return false;
 
+	size_t minVI = SIZE_MAX;
+	size_t maxVI = 0;
+	if (ib)
+		for (size_t i = 0; i < vertexCount; i++)
+		{
+			size_t vi = indexIndexBuffer(ib, startIndex + i);
+			if (vi < minVI) minVI = vi;
+			if (vi > maxVI) maxVI = vi;
+		}
+	else
+	{
+		minVI = startIndex;
+		maxVI = startIndex + vertexCount - 1;
+	}
+
 	SRPTriangle* triangles;
 	void* pVarying;
-	allocateTriangleBuffers(nTriangles, sp, &triangles, &pVarying);
+	VertexCacheEntry* cache;
+	allocateTriangleBuffers(nTriangles, sp, minVI, maxVI, &triangles, &pVarying, &cache);
 
 	size_t primitiveID = 0;
 	for (size_t k = 0; k < nTriangles; k += 1)
 	{
 		SRPTriangle* tri = &triangles[primitiveID];
 		bool success = assembleOneTriangle(
-			ib, vb, sp, fb, prim, startIndex, k, tri, pVarying
+			ib, vb, sp, fb, prim, startIndex, k, minVI, cache, pVarying, tri
 		);
 
 		if (!success)
@@ -94,7 +122,7 @@ bool assembleTriangles(
 static bool assembleOneTriangle(
     const SRPIndexBuffer* ib, const SRPVertexBuffer* vb, const SRPShaderProgram* sp,
     const SRPFramebuffer* fb, SRPPrimitive prim, size_t startIndex, size_t triangleIdx,
-    SRPTriangle* tri, void* varyingBuffer
+    size_t minVI, VertexCacheEntry* cache, void* varyingBuffer, SRPTriangle* tri
 )
 {
     size_t streamIndices[3];
@@ -104,29 +132,37 @@ static bool assembleOneTriangle(
     for (uint8_t i = 0; i < 3; i++)
     {
         size_t vertexIndex = (ib) ? indexIndexBuffer(ib, streamIndices[i]) : streamIndices[i];
-        SRPVertex* pVertex = indexVertexBuffer(vb, vertexIndex);
+		VertexCacheEntry* entry = &cache[vertexIndex - minVI];
 
-        SRPvsInput vsIn = {
-            .vertexID = vertexIndex,
-            .pVertex  = pVertex,
-            .uniform  = sp->uniform
-        };
+		if (!entry->valid)
+		{
+			SRPVertex* pVertex = indexVertexBuffer(vb, vertexIndex);
+			void* pVarying = INDEX_VOID_PTR(varyingBuffer, vertexIndex - minVI, stride);
 
-		void* pVarying = INDEX_VOID_PTR(varyingBuffer, 3 * triangleIdx + i, stride);
-        tri->v[i] = (SRPvsOutput){
-            .position = {0},
-            .pOutputVariables = pVarying
-        };
+			SRPvsInput vsIn = {
+				.vertexID = vertexIndex,
+				.pVertex  = pVertex,
+				.uniform  = sp->uniform
+			};
+			entry->data = (SRPvsOutput) {
+				.position = {0},
+				.pOutputVariables = pVarying
+			};
 
-        sp->vs->shader(&vsIn, &tri->v[i]);
+			sp->vs->shader(&vsIn, &entry->data);
 
-        // Perspective divide
-        double invW = 1.0 / tri->v[i].position[3];
-        tri->v[i].position[0] *= invW;
-        tri->v[i].position[1] *= invW;
-        tri->v[i].position[2] *= invW;
-        tri->v[i].position[3] = 1.0;
-    }
+			// Perspective divide
+			double invW = 1.0 / entry->data.position[3];
+			entry->data.position[0] *= invW;
+			entry->data.position[1] *= invW;
+			entry->data.position[2] *= invW;
+			entry->data.position[3] = 1.0;
+
+			entry->valid = true;
+		}
+
+		tri->v[i] = entry->data;
+   }
 
 	bool success = setupTriangle(tri, fb);
     return success;
@@ -165,15 +201,18 @@ static bool validateTriangleDrawCall(
 }
 
 static void allocateTriangleBuffers(
-	size_t nTriangles, const SRPShaderProgram* sp,
-	SRPTriangle** outTriangles, void** outVaryingBuffer
+	size_t nTriangles, const SRPShaderProgram* sp, size_t minVI, size_t maxVI,
+	SRPTriangle** outTriangles, void** outVaryingBuffer, VertexCacheEntry** outVertexCache
 )
 {
+	size_t nUniqueVertices = maxVI - minVI + 1;
 	size_t trianglesBufferSize = sizeof(SRPTriangle) * nTriangles;
-	size_t varyingBufferSize = sp->vs->nBytesPerOutputVariables * 3 * nTriangles;
+	size_t varyingBufferSize = sp->vs->nBytesPerOutputVariables * nUniqueVertices;
+	size_t vertexCacheSize = sizeof(VertexCacheEntry) * nUniqueVertices;
 
 	*outTriangles = arenaAlloc(srpContext.arena, trianglesBufferSize);
 	*outVaryingBuffer = arenaAlloc(srpContext.arena, varyingBufferSize);
+	*outVertexCache = arenaCalloc(srpContext.arena, vertexCacheSize);
 }
 
 static size_t computeTriangleCount(size_t vertexCount, SRPPrimitive prim)
