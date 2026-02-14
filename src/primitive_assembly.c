@@ -40,6 +40,13 @@ static SRPvsOutput* vertexCacheFetch(
 	void* varyingBuffer, const SRPVertexBuffer* vb, const SRPShaderProgram* sp
 );
 
+/** Compute minimal and maximal vertex indices given stream indices.
+ *  @see assembleOneTriangle() for documentation on other parameters */
+static size_t computeMinMaxVI(
+	const SRPIndexBuffer* ib, size_t startIndex, size_t vertexCount,
+	size_t* outMinVI, size_t* outMaxVI
+);
+
 /** Check if draw call for a triangle is valid.
  *  @see assembleTriangles() for full parameter documentation */
 static bool validateTriangleDrawCall(
@@ -87,20 +94,8 @@ bool assembleTriangles(
 	if (nTriangles == 0)
 		return false;
 
-	size_t minVI = SIZE_MAX;
-	size_t maxVI = 0;
-	if (ib)
-		for (size_t i = 0; i < vertexCount; i++)
-		{
-			size_t vi = indexIndexBuffer(ib, startIndex + i);
-			if (vi < minVI) minVI = vi;
-			if (vi > maxVI) maxVI = vi;
-		}
-	else
-	{
-		minVI = startIndex;
-		maxVI = startIndex + vertexCount - 1;
-	}
+	size_t minVI, maxVI;
+	computeMinMaxVI(ib, startIndex, vertexCount, &minVI, &maxVI);
 
 	SRPTriangle* triangles;
 	void* pVarying;
@@ -182,6 +177,30 @@ static SRPvsOutput* vertexCacheFetch(
 	}
 
 	return &entry->data;
+}
+
+static size_t computeMinMaxVI(
+	const SRPIndexBuffer* ib, size_t startIndex, size_t vertexCount,
+	size_t* outMinVI, size_t* outMaxVI
+)
+{
+	size_t minVI = SIZE_MAX;
+	size_t maxVI = 0;
+	if (ib)
+		for (size_t i = 0; i < vertexCount; i++)
+		{
+			size_t vi = indexIndexBuffer(ib, startIndex + i);
+			if (vi < minVI) minVI = vi;
+			if (vi > maxVI) maxVI = vi;
+		}
+	else
+	{
+		minVI = startIndex;
+		maxVI = startIndex + vertexCount - 1;
+	}
+
+	*outMinVI = minVI;
+	*outMaxVI = maxVI;
 }
  
 static bool validateTriangleDrawCall(
