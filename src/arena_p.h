@@ -51,4 +51,8 @@ void* arenaCalloc(SRPArena* this, size_t size);
  *  @param[in] this Pointer to the arena */
 void arenaReset(SRPArena* this);
 
+#define ARENA_ALLOC(size) (arenaAlloc(srpContext.arena, (size)))
+#define ARENA_CALLOC(size) (arenaCalloc(srpContext.arena, (size)))
+#define ARENA_RESET() (arenaReset(srpContext.arena))
+
 /** @} */  // defgroup Arena

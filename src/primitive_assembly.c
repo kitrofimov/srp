@@ -226,9 +226,9 @@ static void allocateTriangleBuffers(
 	size_t varyingBufferSize = sp->vs->nBytesPerOutputVariables * nUniqueVertices;
 	size_t vertexCacheSize = sizeof(VertexCacheEntry) * nUniqueVertices;
 
-	*outTriangles = arenaAlloc(srpContext.arena, trianglesBufferSize);
-	*outVaryingBuffer = arenaAlloc(srpContext.arena, varyingBufferSize);
-	*outVertexCache = arenaCalloc(srpContext.arena, vertexCacheSize);
+	*outTriangles = ARENA_ALLOC(trianglesBufferSize);
+	*outVaryingBuffer = ARENA_ALLOC(varyingBufferSize);
+	*outVertexCache = ARENA_CALLOC(vertexCacheSize);
 }
 
 static size_t computeTriangleCount(size_t vertexCount, SRPPrimitive prim)

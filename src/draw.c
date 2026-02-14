@@ -89,11 +89,11 @@ static void drawTriangles(
 	if (!success)
 		return;
 
-	void* interpolatedBuffer = arenaAlloc(srpContext.arena, sp->vs->nBytesPerOutputVariables);
+	void* interpolatedBuffer = ARENA_ALLOC(sp->vs->nBytesPerOutputVariables);
 	for (size_t i = 0; i < triangleCount; i++)
 		rasterizeTriangle(&triangles[i], fb, sp, interpolatedBuffer);
 
-	arenaReset(srpContext.arena);
+	ARENA_RESET();
 }
 
 static void drawLines(
