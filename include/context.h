@@ -67,6 +67,14 @@ typedef enum SRPContextParameter
  *  @param[in] pContext The pointer to context */
 void srpNewContext(SRPContext* pContext);
 
+/** Set message callback function
+ *  @param[in] callback The pointer to the message callback function */
+void srpContextSetMessageCallback(SRPMessageCallbackType callback);
+
+/** Get the current message callback function
+ *  @return The pointer to the current message callback function */
+SRPMessageCallbackType srpContextGetMessageCallback();
+
 /** Set a pointer parameter in the context
  *  @param[in] contextParameter The context parameter you want to modify
  *  @param[in] data The pointer you want to assign to specified context parameter */

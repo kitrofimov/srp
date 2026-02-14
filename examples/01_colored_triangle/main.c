@@ -42,7 +42,7 @@ int main()
 {
 	// Initializing the context
 	srpNewContext(&srpContext);
-	srpContextSetP(SRP_CONTEXT_MESSAGE_CALLBACK, (void*) &messageCallback);
+	srpContextSetMessageCallback(messageCallback);
 
 	// Framebuffer object is necessary and stores the depth and
 	// color (RGBA8888) buffers

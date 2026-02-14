@@ -41,8 +41,18 @@ void freeArena(SRPArena* this);
  *  @return Pointer to the allocated block */
 void* arenaAlloc(SRPArena* this, size_t size);
 
+/** Allocate a block of memory in the arena, initializing the memory to zero
+ *  @param[in] this Pointer to the arena
+ *  @param[in] size Size of the block to allocate in bytes
+ *  @return Pointer to the allocated block */
+void* arenaCalloc(SRPArena* this, size_t size);
+
 /** Reset the arena, freeing all allocated memory. Does not free the arena itself.
  *  @param[in] this Pointer to the arena */
 void arenaReset(SRPArena* this);
+
+#define ARENA_ALLOC(size) (arenaAlloc(srpContext.arena, (size)))
+#define ARENA_CALLOC(size) (arenaCalloc(srpContext.arena, (size)))
+#define ARENA_RESET() (arenaReset(srpContext.arena))
 
 /** @} */  // defgroup Arena
