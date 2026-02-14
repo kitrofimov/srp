@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <assert.h>
 #include "context.h"
 #include "arena_p.h"
 #include "buffer_p.h"
@@ -39,6 +40,20 @@ static bool assembleTriangles(
 	const SRPShaderProgram* sp, SRPPrimitive primitive, size_t startIndex, size_t count,
 	size_t* outTriangleCount, SRPTriangle** outTriangles
 );
+
+/** Deduce the number of triangles to assemble based on the number of vertices
+ *  and primitive type.
+ *  @param[in] vertexCount Number of vertices
+ *  @param[in] prim Primitive type
+ *  @return Number of triangles that should be assembled */
+static size_t triangleCount(size_t vertexCount, SRPPrimitive prim);
+ 
+/** Determine the stream indices based on the triangle type.
+ *  @param[in] base Base stream index
+ *  @param[in] primID Primitive ID
+ *  @param[in] prim Primitive type
+ *  @param[out] out Array of size 3 to store the resulting stream indices */
+static void resolveTriangleTopology(size_t base, size_t primID, SRPPrimitive prim, size_t* out);
 
 /** Draw either SRPIndexBuffer or SRPVertexBuffer.
  *  If `ib == NULL`, draws the vertex buffer, else draws index buffer.
@@ -103,36 +118,26 @@ static SRPVertex* indexVertexBuffer(const SRPVertexBuffer* this, size_t index);
 
 static bool assembleTriangles(
 	const SRPIndexBuffer* ib, const SRPVertexBuffer* vb, const SRPFramebuffer* fb,
-	const SRPShaderProgram* sp, SRPPrimitive primitive, size_t startIndex, size_t count,
+	const SRPShaderProgram* sp, SRPPrimitive primitive, size_t startIndex, size_t vertexCount,
 	size_t* outTriangleCount, SRPTriangle** outTriangles
 )
 {
-	const bool isDrawingIndexBuffer = (ib != NULL);
+	const bool drawingIB = (ib != NULL);
 
-	if (primitive != SRP_PRIM_TRIANGLES)
-	{
-		srpMessageCallbackHelper(
-			SRP_MESSAGE_ERROR, SRP_MESSAGE_SEVERITY_HIGH, __func__,
-			"Only triangles are implemented"
-		);
-		return false;
-	}
-
-	if (count % 3 != 0)
+	if (primitive == SRP_PRIM_TRIANGLES && vertexCount % 3 != 0)
 	{
 		srpMessageCallbackHelper(
 			SRP_MESSAGE_WARNING, SRP_MESSAGE_SEVERITY_LOW, __func__,
-			"Vertex count not divisible by 3. The last %i vertex/vertices will be ignored", count % 3
+			"Vertex count not divisible by 3. The last %i vertex/vertices will be ignored\n", vertexCount % 3
 		);
 	}
 
-	// Index of the last vertex that will be touched
-	// That is, only vertices with indices [startIndex, endIndex] will be drawn
-	const size_t endIndex = startIndex + count - 1;
-	const size_t bufferSize = (isDrawingIndexBuffer) ? ib->nIndices : vb->nVertices;
+	// The last stream index that will be touched
+	const size_t endIndex = startIndex + vertexCount - 1;
+	const size_t bufferSize = (drawingIB) ? ib->nIndices : vb->nVertices;
 	if (endIndex >= bufferSize)
 	{
-		const char* errorMessage = (isDrawingIndexBuffer) ? \
+		const char* errorMessage = (drawingIB) ? \
 			"Attempt to OOB access index buffer (read) at indices %zu-%zu (size: %zu)\n" : \
 			"Attempt to OOB access vertex buffer (read) at indices %zu-%zu (size: %zu)\n";
 		srpMessageCallbackHelper(
@@ -144,9 +149,12 @@ static bool assembleTriangles(
 
 	// Allocating two buffers in one allocation to avoid possible reallocation,
 	// which would cause dangling pointers
-	size_t triangleCount = count / 3;
-	size_t trianglesBufferSize = sizeof(SRPTriangle) * triangleCount;
-	size_t varyingBufferSize = sp->vs->nBytesPerOutputVariables * 3 * triangleCount;
+	size_t nTriangles = triangleCount(vertexCount, primitive);
+	if (nTriangles == 0)
+		return false;
+
+	size_t trianglesBufferSize = sizeof(SRPTriangle) * nTriangles;
+	size_t varyingBufferSize = sp->vs->nBytesPerOutputVariables * 3 * nTriangles;
 	void* buffer = arenaAlloc(srpContext.arena, trianglesBufferSize + varyingBufferSize);
 
 	SRPTriangle* triangles = (SRPTriangle*) buffer;
@@ -154,13 +162,16 @@ static bool assembleTriangles(
 	void* pVarying = varyingBuffer;
 	size_t primitiveID = 0;
 
-	for (size_t i = startIndex; i <= endIndex; i += 3)
+	for (size_t k = 0; k < nTriangles; k += 1)
 	{
 		SRPTriangle* tri = &triangles[primitiveID];
 
-		for (uint8_t j = 0; j < 3; j++)
+		size_t streamIndices[3];
+		resolveTriangleTopology(startIndex, k, primitive, streamIndices);
+
+		for (uint8_t i = 0; i < 3; i++)
 		{
-			size_t vertexIndex = isDrawingIndexBuffer ? indexIndexBuffer(ib, i+j) : (i+j);
+			size_t vertexIndex = drawingIB ? indexIndexBuffer(ib, streamIndices[i]) : streamIndices[i];
 			SRPVertex* pVertex = indexVertexBuffer(vb, vertexIndex);
 
 			SRPvsInput vsIn = {
@@ -168,35 +179,69 @@ static bool assembleTriangles(
 				.pVertex  = pVertex,
 				.uniform  = sp->uniform
 			};
-			tri->v[j] = (SRPvsOutput) {
+			tri->v[i] = (SRPvsOutput) {
 				.position = {0},
 				.pOutputVariables = pVarying
 			};
 			pVarying = ADD_VOID_PTR(pVarying, sp->vs->nBytesPerOutputVariables);
 
-			sp->vs->shader(&vsIn, &tri->v[j]);
+			sp->vs->shader(&vsIn, &tri->v[i]);
 
 			// Perspective divide
-			tri->v[j].position[0] /= tri->v[j].position[3];
-			tri->v[j].position[1] /= tri->v[j].position[3];
-			tri->v[j].position[2] /= tri->v[j].position[3];
-			tri->v[j].position[3] = 1.0f;
+			double invW = 1.0f / tri->v[i].position[3];
+			tri->v[i].position[0] *= invW;
+			tri->v[i].position[1] *= invW;
+			tri->v[i].position[2] *= invW;
+			tri->v[i].position[3] = 1.0f;
 		}
 
 		bool success = setupTriangle(tri, fb);
 		if (!success)  // triangle was culled
-		{
-			triangleCount--;
 			continue;
-		}
 
 		tri->id = primitiveID;
 		primitiveID++;
 	}
 
-	*outTriangleCount = triangleCount;
+	*outTriangleCount = primitiveID;  // Amount of non-culled triangles
 	*outTriangles = triangles;
 	return true;
+}
+
+static size_t triangleCount(size_t vertexCount, SRPPrimitive prim)
+{
+	if (prim == SRP_PRIM_TRIANGLES)
+		return vertexCount / 3;
+	else if (prim == SRP_PRIM_TRIANGLE_STRIP || prim == SRP_PRIM_TRIANGLE_FAN)
+		return (vertexCount >= 3) ? vertexCount - 2 : 0;
+	else
+		assert(false && "Invalid primitive type");
+}
+
+static void resolveTriangleTopology(size_t base, size_t primID, SRPPrimitive prim, size_t* out)
+{
+	if (prim == SRP_PRIM_TRIANGLES)
+	{
+		out[0] = base + primID * 3;
+		out[1] = base + primID * 3 + 1;
+		out[2] = base + primID * 3 + 2;
+	}
+	else if (prim == SRP_PRIM_TRIANGLE_STRIP)
+	{
+		// Maintain proper winding order for odd triangles (swap the first two vertices)
+		bool odd = (primID % 2 == 1);
+		out[0] = base + primID + ((odd) ? 1 : 0);
+		out[1] = base + primID + ((odd) ? 0 : 1);
+		out[2] = base + primID + 2;
+	}
+	else if (prim == SRP_PRIM_TRIANGLE_FAN)
+	{
+		out[0] = base;
+		out[1] = base + primID + 1;
+		out[2] = base + primID + 2;
+	}
+	else
+		assert(false && "Invalid primitive type");
 }
 
 static void drawBuffer(
