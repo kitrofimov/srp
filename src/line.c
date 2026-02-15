@@ -52,8 +52,9 @@ void rasterizeLine(
     double dx = ss[1].x - ss[0].x;
     double dy = ss[1].y - ss[0].y;
 
-    /** @todo what if steps = 0? edge case */
     int steps = (int) ceil(fmax(fabs(dx), fabs(dy)));
+	if (steps == 0)
+		steps = 1;
 
     double xInc = dx / steps;
     double yInc = dy / steps;
