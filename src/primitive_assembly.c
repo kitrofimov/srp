@@ -15,6 +15,7 @@
 typedef struct VertexCacheEntry {
 	bool valid;
 	SRPvsOutput data;
+	double invW;
 } VertexCacheEntry;
 
 /** Assemble a single triangle.
@@ -35,7 +36,7 @@ static bool assembleOneTriangle(
 
 /** Fetch vertex shader output from post-VS cache. If not found, compute and store it.
  * 	@see assembleOneTriangle() for documentation on other parameters */
-static SRPvsOutput* vertexCacheFetch(
+static VertexCacheEntry* vertexCacheFetch(
 	VertexCacheEntry* cache, size_t vertexIndex, size_t baseVertex,
 	void* varyingBuffer, const SRPVertexBuffer* vb, const SRPShaderProgram* sp
 );
@@ -153,14 +154,16 @@ static bool assembleOneTriangle(
     for (uint8_t i = 0; i < 3; i++)
     {
         size_t vertexIndex = (ib) ? indexIndexBuffer(ib, streamIndices[i]) : streamIndices[i];
-		tri->v[i] = *vertexCacheFetch(cache, vertexIndex, baseVertex, varyingBuffer, vb, sp);
+		VertexCacheEntry* entry = vertexCacheFetch(cache, vertexIndex, baseVertex, varyingBuffer, vb, sp);
+		tri->v[i] = entry->data;
+		tri->invW[i] = entry->invW;
 	}
 
 	bool success = setupTriangle(tri, fb);
     return success;
 }
 
-static SRPvsOutput* vertexCacheFetch(
+static VertexCacheEntry* vertexCacheFetch(
 	VertexCacheEntry* cache, size_t vertexIndex, size_t baseVertex,
 	void* varyingBuffer, const SRPVertexBuffer* vb, const SRPShaderProgram* sp
 )
@@ -186,16 +189,19 @@ static SRPvsOutput* vertexCacheFetch(
 		sp->vs->shader(&vsIn, &entry->data);
 
 		// Perspective divide
-		double invW = 1.0 / entry->data.position[3];
+		double clipW = entry->data.position[3];
+		double invW = 1.0 / clipW;
+		entry->invW = invW;
+
 		entry->data.position[0] *= invW;
 		entry->data.position[1] *= invW;
 		entry->data.position[2] *= invW;
-		entry->data.position[3] = 1.0;
+		entry->data.position[3] = 1.;
 
 		entry->valid = true;
 	}
 
-	return &entry->data;
+	return entry;
 }
 
 static void computeMinMaxVI(
