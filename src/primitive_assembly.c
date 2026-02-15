@@ -358,17 +358,17 @@ bool assembleLines(
 			sp->vs->shader(&vsIn, &line->v[i]);
 
 			// Perspective divide
-			double invW = 1.0 / line->v[i].position[3];
+			double clipW = line->v[i].position[3];
+			double invW = 1.0 / clipW;
+			line->invW[i] = invW;
+
 			line->v[i].position[0] *= invW;
 			line->v[i].position[1] *= invW;
 			line->v[i].position[2] *= invW;
 			line->v[i].position[3] = 1.0;
 		}
 
-		// // ???
-		// bool success = setupLine();
-		// if (!success)
-		// 	continue;
+		setupLine(line, fb);
 
 		line->id = primitiveID;
 		primitiveID++;

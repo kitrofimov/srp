@@ -110,8 +110,9 @@ static void drawLines(
 	if (!success)
 		return;
 
+	void* interpolatedBuffer = ARENA_ALLOC(sp->vs->nBytesPerOutputVariables);
 	for (size_t i = 0; i < lineCount; i++)
-		rasterizeLine(&lines[i], fb, sp);
+		rasterizeLine(&lines[i], fb, sp, interpolatedBuffer);
 
 	ARENA_RESET();
 }
