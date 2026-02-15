@@ -112,9 +112,11 @@ static void drawPoints(
 	const SRPShaderProgram* sp, SRPPrimitive primitive, size_t startIndex, size_t count
 )
 {
-	const size_t pointCount = count;
+	size_t pointCount;
 	SRPPoint* points;
-	bool success = assemblePoints(ib, vb, fb, sp, startIndex, count, &points);
+	bool success = assemblePoints(
+		ib, vb, fb, sp, startIndex, count, &pointCount, &points
+	);
 	if (!success)
 		return;
 

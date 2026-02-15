@@ -81,6 +81,11 @@ static size_t computeTriangleCount(size_t vertexCount, SRPPrimitive prim);
  *  @param[out] out Array of size 3 to store the resulting stream indices */
 static void resolveTriangleTopology(size_t base, size_t primID, SRPPrimitive prim, size_t* out);
 
+/** Determine if a point should be clipped or not.
+ *  @param[in] p Pointer to a point
+ *  @return Whether this point should be clipped or not */
+static bool shouldClipPoint(SRPPoint* p);
+
 bool assembleTriangles(
 	const SRPIndexBuffer* ib, const SRPVertexBuffer* vb, const SRPFramebuffer* fb,
 	const SRPShaderProgram* sp, SRPPrimitive prim, size_t startIndex, size_t vertexCount,
@@ -288,25 +293,27 @@ static void resolveTriangleTopology(size_t base, size_t primID, SRPPrimitive pri
 
 bool assemblePoints(
 	const SRPIndexBuffer* ib, const SRPVertexBuffer* vb, const SRPFramebuffer* fb,
-	const SRPShaderProgram* sp, size_t startIndex, size_t count, SRPPoint** outPoints
+	const SRPShaderProgram* sp, size_t startIndex, size_t count,
+	size_t* outPointCount, SRPPoint** outPoints
 )
 {
 	if (srpContext.pointSize <= 0.)
 		return false;
 
 	const size_t stride = sp->vs->nBytesPerOutputVariables;
-	SRPPoint* points = ARENA_ALLOC(sizeof(SRPPoint) * count);
-	void* varyingBuffer = ARENA_ALLOC(stride * count);
 	const size_t nPoints = count;
 
+	SRPPoint* points = ARENA_ALLOC(sizeof(SRPPoint) * count);
+	void* varyingBuffer = ARENA_ALLOC(stride * count);
+
+	size_t primitiveID = 0;
 	for (size_t i = 0; i < nPoints; i += 1)
 	{
-		SRPPoint* p = &points[i];
-		p->id = i;
+		SRPPoint* p = &points[primitiveID];
 
 		size_t vertexIndex = (ib) ? indexIndexBuffer(ib, startIndex+i) : startIndex+i;
 		SRPVertex* pVertex = indexVertexBuffer(vb, vertexIndex);
-		void* pVarying = INDEX_VOID_PTR(varyingBuffer, vertexIndex, stride);
+		void* pVarying = INDEX_VOID_PTR(varyingBuffer, i, stride);
 
 		SRPvsInput vsIn = {
 			.vertexID = vertexIndex,
@@ -326,8 +333,23 @@ bool assemblePoints(
 		p->v.position[1] *= invW;
 		p->v.position[2] *= invW;
 		p->v.position[3] = 1.0;
+
+		if (shouldClipPoint(p))
+			continue;
+
+		p->id = primitiveID;
+		primitiveID++;
 	}
 
+	*outPointCount = primitiveID;
 	*outPoints = points;
 	return true;
+}
+
+static bool shouldClipPoint(SRPPoint* p)
+{
+	for (int i = 0; i < 3; i++)
+		if (p->v.position[i] < -1.0 || p->v.position[i] > 1.0)
+			return true;
+	return false;
 }

@@ -107,6 +107,8 @@ void rasterizeTriangle(
 				 *  and add correct `frontFacing` here! */
 				/** @todo `fragCoord` should be window-space: see
 				 *  https://www.khronos.org/opengl/wiki/Fragment_Shader#Inputs */
+				/** @todo similar to rasterizePoint(). abstract this into an
+				 * 	emitFragment() function? */
 				SRPfsInput fsIn = {
 					.uniform = sp->uniform,
 					.interpolated = interpolatedBuffer,

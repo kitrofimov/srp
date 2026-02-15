@@ -34,6 +34,8 @@ bool assembleTriangles(
 
 /** Call the vertex shader and assemble points from vertex or index buffer.
  *  If `ib == NULL`, assembles from vertex buffer, else from index buffer.
+ *  Uses memory from SRPArena, so the returned points are valid until the
+ *  next call to arenaReset().
  *  @param[in] ib Pointer to index buffer, or `NULL` if assembling from vertex buffer
  *  @param[in] vb Pointer to vertex buffer
  *  @param[in] fb Pointer to the framebuffer to draw to (needed for NDC to
@@ -41,10 +43,12 @@ bool assembleTriangles(
  *  @param[in] sp Pointer to the shader program to use
  *  @param[in] startIndex First stream index to assemble
  *  @param[in] count Number of stream indices to assemble
+ *  @param[out] outPointCount Amount of assembled points
  *  @param[out] outPoints Pointer to the array of `count` assembled points
  *  @return `true` if successful, `false` otherwise. If `false` if returned,
  * 			`*outPoints` is undefined */
 bool assemblePoints(
 	const SRPIndexBuffer* ib, const SRPVertexBuffer* vb, const SRPFramebuffer* fb,
-	const SRPShaderProgram* sp, size_t startIndex, size_t count, SRPPoint** outPoints
+	const SRPShaderProgram* sp, size_t startIndex, size_t count,
+	size_t* outPointCount, SRPPoint** outPoints
 );

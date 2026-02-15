@@ -10,44 +10,38 @@
 #include "color.h"
 #include "math_utils.h"
 
-#include <stdio.h>
+/** Given screen-space point position, compute its math and raster boundaries.
+ *  @param[in] ss Screen-space point position
+ *  @param[in] pointSize Point size, in pixels
+ *  @param[in] fb Pointer to the framebuffer, used to clip partially-OOB points
+ *  @return `true` if point is fully OOB, `false` otherwise
+ */
+static bool computeMathAndRasterBoundaries(
+    vec3d ss, double halfSize, const SRPFramebuffer* fb, vec2d* outMinBP, vec2d* outMaxBP,
+    int* outMinX, int* outMaxX, int* outMinY, int* outMaxY
+);
 
 void rasterizePoint(
     SRPPoint* point, const SRPFramebuffer* fb,
     const SRPShaderProgram* restrict sp
 )
 {
-    vec3d ss;
-    srpFramebufferNDCToScreenSpace(fb, point->v.position, (double*) &ss);
-
     const double pointSize = srpContext.pointSize;
-    const double halfSize = pointSize * 0.5;
+    vec3d ss;
+    vec2d minBP, maxBP;
+    int minX, maxX, minY, maxY;
 
-    vec2d minBP = {
-        ss.x - halfSize,
-        ss.y - halfSize,
-    };
-    vec2d maxBP = {
-        ss.x + halfSize,
-        ss.y + halfSize,
-    };
+    srpFramebufferNDCToScreenSpace(fb, point->v.position, (double*) &ss);
+    bool success = computeMathAndRasterBoundaries(
+        ss, pointSize, fb, &minBP, &maxBP, &minX, &maxX, &minY, &maxY
+    );
 
-    // Convert to integer pixel bounds
-    size_t minX = (size_t) floor(minBP.x);
-    size_t maxX = (size_t) floor(maxBP.x);
-    size_t minY = (size_t) floor(minBP.y);
-    size_t maxY = (size_t) floor(maxBP.y);
-
-    /** @todo should clipping be done earlier? */
-    // Clip to framebuffer
-    if (minX >= fb->width || minY >= fb->height)
+    if (!success)
         return;
-    if (maxX >= fb->width)  maxX = fb->width - 1;
-    if (maxY >= fb->height) maxY = fb->height - 1;
 
-    for (size_t y = minY; y <= maxY; y++)
+    for (int y = minY; y <= maxY; y++)
     {
-        for (size_t x = minX; x <= maxX; x++)
+        for (int x = minX; x <= maxX; x++)
         {
             // Pixel center
             const double px = x + 0.5;
@@ -61,7 +55,7 @@ void rasterizePoint(
             SRPfsInput fsIn = {
                 .uniform = sp->uniform,
                 .interpolated = (SRPInterpolated*) point->v.pOutputVariables,
-                .fragCoord = {x, y, point->v.position[3], point->v.position[4]},
+                .fragCoord = {px, py, point->v.position[2], point->v.position[3]},
                 .frontFacing = true,
                 .primitiveID = point->id,
             };
@@ -81,4 +75,43 @@ void rasterizePoint(
             srpFramebufferDrawPixel(fb, x, y, depth, SRP_COLOR_TO_UINT32_T(color));
         }
     }
+}
+
+static bool computeMathAndRasterBoundaries(
+    vec3d ss, double pointSize, const SRPFramebuffer* fb, vec2d* outMinBP, vec2d* outMaxBP,
+    int* outMinX, int* outMaxX, int* outMinY, int* outMaxY
+)
+{
+    double halfSize = pointSize * 0.5;
+
+    vec2d minBP = {
+        ss.x - halfSize,
+        ss.y - halfSize,
+    };
+    vec2d maxBP = {
+        ss.x + halfSize,
+        ss.y + halfSize,
+    };
+
+    // Convert to integer pixel bounds
+    int minX = (int) floor(minBP.x);
+    int maxX = (int) floor(maxBP.x);
+    int minY = (int) floor(minBP.y);
+    int maxY = (int) floor(maxBP.y);
+
+    if (maxX < 0 || maxY < 0 || minX >= (int) fb->width || minY >= (int) fb->height)
+        return false;
+
+    if (minX < 0) minX = 0;
+    if (minY < 0) minY = 0;
+    if (maxX >= (int) fb->width)  maxX = fb->width - 1;
+    if (maxY >= (int) fb->height) maxY = fb->height - 1;
+
+    *outMinBP = minBP;
+    *outMaxBP = maxBP;
+    *outMinX = minX;
+    *outMaxX = maxX;
+    *outMinY = minY;
+    *outMaxY = maxY;
+    return true;
 }
