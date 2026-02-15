@@ -31,8 +31,9 @@ static double signedAreaParallelogram(
 /** Determine if a triangle should be culled (back-face culling)
  *  @param[in] tri Triangle to check. Must have its `p_ndc` field initialized.
  *  @param[out] isCCW Whether or not the triangle's vertices are in counter-clockwise order
+ *  @param[out] isFrontFacing Whether or not the triangle is front facing 
  *  @return Whether or not the triangle should be culled */
-static bool isBackface(const SRPTriangle* tri, bool* isCCW);
+static bool shouldCullTriangle(const SRPTriangle* tri, bool* isCCW, bool* isFrontFacing);
 
 /** Change the winding order of a triangle.
  *  @param[in] tri Triangle to change the winding order of. Must have its `v` and
@@ -103,22 +104,18 @@ void rasterizeTriangle(
 				vec4d interpolatedPosition = {0};
 				triangleInterpolateData(tri, sp, &interpolatedPosition, interpolatedBuffer);
 
-				/** @todo fix rasterizer to accept both cw and ccw vertices
-				 *  and add correct `frontFacing` here! */
-				/** @todo `fragCoord` should be window-space: see
-				 *  https://www.khronos.org/opengl/wiki/Fragment_Shader#Inputs */
-				/** @todo similar to rasterizePoint(). abstract this into an
-				 * 	emitFragment() function? */
+				/** @todo This is similar to rasterizePoint(). Should I abstract
+				 * 	this into an emitFragment() function? */
 				SRPfsInput fsIn = {
 					.uniform = sp->uniform,
 					.interpolated = interpolatedBuffer,
 					.fragCoord = {
-						interpolatedPosition.x,
-						interpolatedPosition.y,
+						x + 0.5,
+						y + 0.5,
 						interpolatedPosition.z,
 						interpolatedPosition.w
 					},
-					.frontFacing = true,
+					.frontFacing = tri->isFrontFacing,
 					.primitiveID = tri->id,
 				};
 				SRPfsOutput fsOut = {0};
@@ -158,7 +155,7 @@ bool setupTriangle(
 		tri->p_ndc[i] = (vec3d*) tri->v[i].position;
 
 	bool isCCW;
-	if (isBackface(tri, &isCCW))
+	if (shouldCullTriangle(tri, &isCCW, &tri->isFrontFacing))
 		return false;
 
 	if (!isCCW)
@@ -198,7 +195,7 @@ bool setupTriangle(
 	return true;
 }
 
-static bool isBackface(const SRPTriangle* tri, bool* isCCW)
+static bool shouldCullTriangle(const SRPTriangle* tri, bool* isCCW, bool* isFrontFacing)
 {
 	vec3d edge0 = vec3dSubtract(*tri->p_ndc[1], *tri->p_ndc[0]);
 	vec3d edge1 = vec3dSubtract(*tri->p_ndc[2], *tri->p_ndc[0]);
@@ -216,6 +213,7 @@ static bool isBackface(const SRPTriangle* tri, bool* isCCW)
 		( frontFacing && srpContext.cullFace == SRP_CULL_FACE_FRONT) ||
 		(!frontFacing && srpContext.cullFace == SRP_CULL_FACE_BACK);
 
+	*isFrontFacing = frontFacing;
 	return cull;
 }
 

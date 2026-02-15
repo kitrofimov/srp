@@ -27,6 +27,7 @@ typedef struct SRPTriangle {
 	double dldx[3];        /**< Barycentric coordinates' delta values for +X movement */
 	double dldy[3];        /**< Barycentric coordinates' delta values for +Y movement */
 	double invZ[3];        /**< 1 / Z, where Z is in [0; 1]. Needed for perspective-correct interpolation */
+	bool isFrontFacing;    /**< Whether or not the triangle is front-facing */
 	size_t id;             /**< ID of the primitive, starting from 0 */
 } SRPTriangle;
 
