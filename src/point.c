@@ -59,7 +59,10 @@ void rasterizePoint(
                 .frontFacing = true,
                 .primitiveID = point->id,
             };
-            SRPfsOutput fsOut = {0};
+            SRPfsOutput fsOut = {
+                .color = {0},
+                .fragDepth = NAN
+            };
 
             sp->fs->shader(&fsIn, &fsOut);
 
@@ -69,8 +72,9 @@ void rasterizePoint(
                 CLAMP(0, 255, fsOut.color[2] * 255),
                 CLAMP(0, 255, fsOut.color[3] * 255)
             };
-            /** @todo `SRPfsOutput.fragDepth` may be set to 0 manually by the user */
-            double depth = (fsOut.fragDepth == 0) ? fsIn.fragCoord[2] : fsOut.fragDepth;
+
+            // If depth wasn't overridden by the user's fragment shader
+            double depth = isnan(fsOut.fragDepth) ? fsIn.fragCoord[2] : fsOut.fragDepth;
 
             srpFramebufferDrawPixel(fb, x, y, depth, SRP_COLOR_TO_UINT32_T(color));
         }
