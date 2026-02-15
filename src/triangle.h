@@ -43,9 +43,9 @@ bool setupTriangle(
  *  @param[in] triangle Pointer to the triangle to draw
  *  @param[in] fb The framebuffer to draw to
  *  @param[in] sp The shader program to use
- *  @param[in] interpolatedBuffer Pointer to a temporary buffer where interpolated
- * 			   vertex attributes will be stored. Must be big enough to hold all
- * 			   interpolated attributes for one vertex. */
+ *  @param[in] interpolatedBuffer Pointer to a temporary buffer where varyings 
+ * 			   for each fragment will be stored. Must be big enough to hold all
+ * 			   interpolated attributes for ONE vertex. */
 void rasterizeTriangle(
 	SRPTriangle* triangle, const SRPFramebuffer* fb,
 	const SRPShaderProgram* restrict sp, void* interpolatedBuffer

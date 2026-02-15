@@ -19,6 +19,7 @@ set(
 	primitive_assembly.c
 	point.c
 	fragment.c
+	line.c
 )
 
 add_library(srp STATIC ${SOURCES})
