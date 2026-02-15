@@ -52,28 +52,27 @@ void srpFreeFramebuffer(SRPFramebuffer* this)
 
 // The `const` qualifier is completely legal: only the buffer pointed to by
 // `framebuffer->color` is modified, not the structure itself!
-void srpFramebufferDrawPixel(
+void framebufferDrawPixel(
 	const SRPFramebuffer* this, size_t x, size_t y, double depth,
 	uint32_t color
 )
 {
-	/** @todo This is not the job of the framebuffer to check this,
-	 *  this should be deleted after the primitive clipping implementation */
-	if (1 < depth || depth < -1)
-		srpMessageCallbackHelper(
-			SRP_MESSAGE_ERROR, SRP_MESSAGE_SEVERITY_HIGH, __func__,
-			"Depth value is not inside [-1, 1] interval; depth=%lf", depth
-		);
-
-	double* pDepth = framebufferGetDepthPointer(this, x, y);
-	if (depth < *pDepth)
-		return;
-
+	// If this is failed, this is the problem of library code =>
+	// => no point to use message callback
+	assert(depth >= -1 && depth < 1);
 	*framebufferGetPixelPointer(this, x, y) = color;
-	*pDepth = depth;
+	*framebufferGetDepthPointer(this, x, y) = depth;
 }
 
-void srpFramebufferNDCToScreenSpace(
+bool framebufferDepthTest(
+	const SRPFramebuffer* this, size_t x, size_t y, double depth
+)
+{
+	double* pStoredDepth = framebufferGetDepthPointer(this, x, y);
+	return (depth > *pStoredDepth);
+}
+
+void framebufferNDCToScreenSpace(
 	const SRPFramebuffer* this, const double* NDC, double* SS
 )
 {
@@ -89,12 +88,12 @@ void srpFramebufferClear(const SRPFramebuffer* this)
         this->depth[i] = -1.;
 }
 
-uint32_t* framebufferGetPixelPointer(const SRPFramebuffer* this, size_t x, size_t y)
+static uint32_t* framebufferGetPixelPointer(const SRPFramebuffer* this, size_t x, size_t y)
 {
 	return this->color + (y * this->width + x);
 }
 
-double* framebufferGetDepthPointer(const SRPFramebuffer* this, size_t x, size_t y)
+static double* framebufferGetDepthPointer(const SRPFramebuffer* this, size_t x, size_t y)
 {
 	return this->depth + (y * this->width + x);
 }

@@ -9,6 +9,7 @@
 #include "context.h"
 #include "color.h"
 #include "math_utils.h"
+#include "fragment.h"
 
 /** Given screen-space point position, compute its math and raster boundaries.
  *  @param[in] ss Screen-space point position
@@ -31,7 +32,7 @@ void rasterizePoint(
     vec2d minBP, maxBP;
     int minX, maxX, minY, maxY;
 
-    srpFramebufferNDCToScreenSpace(fb, point->v.position, (double*) &ss);
+    framebufferNDCToScreenSpace(fb, point->v.position, (double*) &ss);
     bool success = computeMathAndRasterBoundaries(
         ss, pointSize, fb, &minBP, &maxBP, &minX, &maxX, &minY, &maxY
     );
@@ -59,24 +60,7 @@ void rasterizePoint(
                 .frontFacing = true,
                 .primitiveID = point->id,
             };
-            SRPfsOutput fsOut = {
-                .color = {0},
-                .fragDepth = NAN
-            };
-
-            sp->fs->shader(&fsIn, &fsOut);
-
-            SRPColor color = {
-                CLAMP(0, 255, fsOut.color[0] * 255),
-                CLAMP(0, 255, fsOut.color[1] * 255),
-                CLAMP(0, 255, fsOut.color[2] * 255),
-                CLAMP(0, 255, fsOut.color[3] * 255)
-            };
-
-            // If depth wasn't overridden by the user's fragment shader
-            double depth = isnan(fsOut.fragDepth) ? fsIn.fragCoord[2] : fsOut.fragDepth;
-
-            srpFramebufferDrawPixel(fb, x, y, depth, SRP_COLOR_TO_UINT32_T(color));
+            emitFragment(fb, sp, x, y, &fsIn);
         }
     }
 }

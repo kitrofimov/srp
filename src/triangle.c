@@ -14,6 +14,7 @@
 #include "utils.h"
 #include "math_utils.h"
 #include "vec.h"
+#include "fragment.h"
 
 /** @file
  *  Triangle rasteization & data interpolation */
@@ -104,8 +105,6 @@ void rasterizeTriangle(
 				vec4d interpolatedPosition = {0};
 				triangleInterpolateData(tri, sp, &interpolatedPosition, interpolatedBuffer);
 
-				/** @todo This is similar to rasterizePoint(). Should I abstract
-				 * 	this into an emitFragment() function? */
 				SRPfsInput fsIn = {
 					.uniform = sp->uniform,
 					.interpolated = interpolatedBuffer,
@@ -118,24 +117,7 @@ void rasterizeTriangle(
 					.frontFacing = tri->isFrontFacing,
 					.primitiveID = tri->id,
 				};
-				SRPfsOutput fsOut = {
-					.color = {0},
-					.fragDepth = NAN
-				};
-
-				sp->fs->shader(&fsIn, &fsOut);
-
-				SRPColor color = {
-					CLAMP(0, 255, fsOut.color[0] * 255),
-					CLAMP(0, 255, fsOut.color[1] * 255),
-					CLAMP(0, 255, fsOut.color[2] * 255),
-					CLAMP(0, 255, fsOut.color[3] * 255)
-				};
-
-				// If depth wasn't overridden by the user's fragment shader
-				double depth = isnan(fsOut.fragDepth) ? fsIn.fragCoord[2] : fsOut.fragDepth;
-
-				srpFramebufferDrawPixel(fb, x, y, depth, SRP_COLOR_TO_UINT32_T(color));
+				emitFragment(fb, sp, x, y, &fsIn);
 			}
 
 nextPixel:
@@ -166,7 +148,7 @@ bool setupTriangle(
 		triangleChangeWinding(tri);
 
 	for (size_t i = 0; i < 3; i++)
-		srpFramebufferNDCToScreenSpace(fb, (double*) tri->p_ndc[i], (double*) &tri->ss[i]);
+		framebufferNDCToScreenSpace(fb, (double*) tri->p_ndc[i], (double*) &tri->ss[i]);
 
 	for (size_t i = 0; i < 3; i++)
 		tri->edge[i] = vec3dSubtract(tri->ss[(i+1) % 3], tri->ss[i]);
