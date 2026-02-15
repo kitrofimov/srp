@@ -12,6 +12,7 @@ void srpNewContext(SRPContext* pContext)
 	pContext->interpolationMode = SRP_INTERPOLATION_MODE_PERSPECTIVE;
 	pContext->frontFace = SRP_FRONT_FACE_CCW;
 	pContext->cullFace = SRP_CULL_FACE_NONE;
+	pContext->pointSize = 1.;
 	pContext->arena = newArena(SRP_DEFAULT_ARENA_CAPACITY);
 }
 
@@ -35,7 +36,7 @@ void srpContextSetP(SRPContextParameter contextParameter, void* data)
 	default:
 		srpMessageCallbackHelper(
 			SRP_MESSAGE_ERROR, SRP_MESSAGE_SEVERITY_HIGH, __func__,
-			"Unknown type (%i)", contextParameter
+			"Unsupported context parameter %i", contextParameter
 		);
 		return;
 	}
@@ -57,7 +58,23 @@ void srpContextSetI(SRPContextParameter contextParameter, int data)
 	default:
 		srpMessageCallbackHelper(
 			SRP_MESSAGE_ERROR, SRP_MESSAGE_SEVERITY_HIGH, __func__,
-			"Unknown type (%i)", contextParameter
+			"Unsupported context parameter %i", contextParameter
+		);
+		return;
+	}
+}
+
+void srpContextSetD(SRPContextParameter contextParameter, double data)
+{
+	switch (contextParameter)
+	{
+	case SRP_CONTEXT_POINT_SIZE:
+		srpContext.pointSize = data;
+		return;
+	default:
+		srpMessageCallbackHelper(
+			SRP_MESSAGE_ERROR, SRP_MESSAGE_SEVERITY_HIGH, __func__,
+			"Unsupported context parameter %i", contextParameter
 		);
 		return;
 	}
@@ -72,7 +89,7 @@ void* srpContextGetP(SRPContextParameter contextParameter)
 	default:
 		srpMessageCallbackHelper(
 			SRP_MESSAGE_ERROR, SRP_MESSAGE_SEVERITY_HIGH, __func__,
-			"Unknown type (%i)", contextParameter
+			"Unsupported context parameter %i", contextParameter
 		);
 		return NULL;
 	}
@@ -91,9 +108,23 @@ int srpContextGetI(SRPContextParameter contextParameter)
 	default:
 		srpMessageCallbackHelper(
 			SRP_MESSAGE_ERROR, SRP_MESSAGE_SEVERITY_HIGH, __func__,
-			"Unknown type (%i)", contextParameter
+			"Unsupported context parameter %i", contextParameter
 		);
 		return 0;
 	}
 }
 
+double srpContextGetD(SRPContextParameter contextParameter)
+{
+	switch (contextParameter)
+	{
+	case SRP_CONTEXT_POINT_SIZE:
+		return srpContext.pointSize;
+	default:
+		srpMessageCallbackHelper(
+			SRP_MESSAGE_ERROR, SRP_MESSAGE_SEVERITY_HIGH, __func__,
+			"Unsupported context parameter %i", contextParameter
+		);
+		return 0.;
+	}
+}

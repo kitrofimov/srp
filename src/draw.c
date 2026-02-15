@@ -112,10 +112,18 @@ static void drawPoints(
 	const SRPShaderProgram* sp, SRPPrimitive primitive, size_t startIndex, size_t count
 )
 {
-	srpMessageCallbackHelper(
-		SRP_MESSAGE_ERROR, SRP_MESSAGE_SEVERITY_HIGH, __func__,
-		"Points are not implemented yet"
+	size_t pointCount;
+	SRPPoint* points;
+	bool success = assemblePoints(
+		ib, vb, fb, sp, startIndex, count, &pointCount, &points
 	);
+	if (!success)
+		return;
+
+	for (size_t i = 0; i < pointCount; i++)
+		rasterizePoint(&points[i], fb, sp);
+
+	ARENA_RESET();
 }
 
 static bool isPrimitiveTriangle(SRPPrimitive primitive)

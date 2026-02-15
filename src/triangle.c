@@ -14,6 +14,7 @@
 #include "utils.h"
 #include "math_utils.h"
 #include "vec.h"
+#include "fragment.h"
 
 /** @file
  *  Triangle rasteization & data interpolation */
@@ -31,8 +32,9 @@ static double signedAreaParallelogram(
 /** Determine if a triangle should be culled (back-face culling)
  *  @param[in] tri Triangle to check. Must have its `p_ndc` field initialized.
  *  @param[out] isCCW Whether or not the triangle's vertices are in counter-clockwise order
+ *  @param[out] isFrontFacing Whether or not the triangle is front facing 
  *  @return Whether or not the triangle should be culled */
-static bool isBackface(const SRPTriangle* tri, bool* isCCW);
+static bool shouldCullTriangle(const SRPTriangle* tri, bool* isCCW, bool* isFrontFacing);
 
 /** Change the winding order of a triangle.
  *  @param[in] tri Triangle to change the winding order of. Must have its `v` and
@@ -92,7 +94,7 @@ void rasterizeTriangle(
 	{
 		for (size_t x = tri->minBP.x; x < tri->maxBP.x; x += 1)
 		{
-			for (uint8_t i = 0; i < 3; i++)
+			for (uint8_t i = 0; i < 3; i++)  // Top-left rasterization rule
 			{
 				if (ROUGHLY_ZERO(tri->lambda[i]) && !tri->edgeTL[i])
 					goto nextPixel;
@@ -103,36 +105,19 @@ void rasterizeTriangle(
 				vec4d interpolatedPosition = {0};
 				triangleInterpolateData(tri, sp, &interpolatedPosition, interpolatedBuffer);
 
-				/** @todo fix rasterizer to accept both cw and ccw vertices
-				 *  and add correct `frontFacing` here! */
-				/** @todo `fragCoord` should be window-space: see
-				 *  https://www.khronos.org/opengl/wiki/Fragment_Shader#Inputs */
 				SRPfsInput fsIn = {
 					.uniform = sp->uniform,
 					.interpolated = interpolatedBuffer,
 					.fragCoord = {
-						interpolatedPosition.x,
-						interpolatedPosition.y,
+						x + 0.5,
+						y + 0.5,
 						interpolatedPosition.z,
 						interpolatedPosition.w
 					},
-					.frontFacing = true,
+					.frontFacing = tri->isFrontFacing,
 					.primitiveID = tri->id,
 				};
-				SRPfsOutput fsOut = {0};
-
-				sp->fs->shader(&fsIn, &fsOut);
-
-				SRPColor color = {
-					CLAMP(0, 255, fsOut.color[0] * 255),
-					CLAMP(0, 255, fsOut.color[1] * 255),
-					CLAMP(0, 255, fsOut.color[2] * 255),
-					CLAMP(0, 255, fsOut.color[3] * 255)
-				};
-				/** @todo `SRPfsOutput.fragDepth` may be set to 0 manually by the user */
-				double depth = (fsOut.fragDepth == 0) ? fsIn.fragCoord[2] : fsOut.fragDepth;
-
-				srpFramebufferDrawPixel(fb, x, y, depth, SRP_COLOR_TO_UINT32_T(color));
+				emitFragment(fb, sp, x, y, &fsIn);
 			}
 
 nextPixel:
@@ -156,14 +141,14 @@ bool setupTriangle(
 		tri->p_ndc[i] = (vec3d*) tri->v[i].position;
 
 	bool isCCW;
-	if (isBackface(tri, &isCCW))
+	if (shouldCullTriangle(tri, &isCCW, &tri->isFrontFacing))
 		return false;
 
 	if (!isCCW)
 		triangleChangeWinding(tri);
 
 	for (size_t i = 0; i < 3; i++)
-		srpFramebufferNDCToScreenSpace(fb, (double*) tri->p_ndc[i], (double*) &tri->ss[i]);
+		framebufferNDCToScreenSpace(fb, (double*) tri->p_ndc[i], (double*) &tri->ss[i]);
 
 	for (size_t i = 0; i < 3; i++)
 		tri->edge[i] = vec3dSubtract(tri->ss[(i+1) % 3], tri->ss[i]);
@@ -196,7 +181,7 @@ bool setupTriangle(
 	return true;
 }
 
-static bool isBackface(const SRPTriangle* tri, bool* isCCW)
+static bool shouldCullTriangle(const SRPTriangle* tri, bool* isCCW, bool* isFrontFacing)
 {
 	vec3d edge0 = vec3dSubtract(*tri->p_ndc[1], *tri->p_ndc[0]);
 	vec3d edge1 = vec3dSubtract(*tri->p_ndc[2], *tri->p_ndc[0]);
@@ -214,6 +199,7 @@ static bool isBackface(const SRPTriangle* tri, bool* isCCW)
 		( frontFacing && srpContext.cullFace == SRP_CULL_FACE_FRONT) ||
 		(!frontFacing && srpContext.cullFace == SRP_CULL_FACE_BACK);
 
+	*isFrontFacing = frontFacing;
 	return cull;
 }
 

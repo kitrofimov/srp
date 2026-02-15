@@ -47,8 +47,10 @@ typedef struct SRPContext
 	void* messageCallbackUserParameter;
 	/** How to interpolate vertex attributes inside the primitive */
 	SRPInterpolationMode interpolationMode;
-	SRPFrontFace frontFace;  /** Which face is considered front-facing */
-	SRPCullFace cullFace;    /** Which face(s) are culled */
+	SRPFrontFace frontFace;  /**< Which face is considered front-facing */
+	SRPCullFace cullFace;    /**< Which face(s) are culled */
+	double pointSize;        /**< Size of rasterized SRP_PRIM_POINTS, in pixels */
+
 	/** Arena for internal allocations. Is not exposed to the user */
 	SRPArena* arena;
 } SRPContext;
@@ -56,11 +58,11 @@ typedef struct SRPContext
 /** Possible arguments to `srpContextSet...` */
 typedef enum SRPContextParameter
 {
-	SRP_CONTEXT_MESSAGE_CALLBACK,
 	SRP_CONTEXT_MESSAGE_CALLBACK_USER_PARAMETER,
 	SRP_CONTEXT_INTERPOLATION_MODE,
 	SRP_CONTEXT_FRONT_FACE,
-	SRP_CONTEXT_CULL_FACE
+	SRP_CONTEXT_CULL_FACE,
+	SRP_CONTEXT_POINT_SIZE,
 } SRPContextParameter;
 
 /** Initialize the context
@@ -85,6 +87,11 @@ void srpContextSetP(SRPContextParameter contextParameter, void* data);
  *  @param[in] data The value you want to assign to specified context parameter */
 void srpContextSetI(SRPContextParameter contextParameter, int data);
 
+/** Set a double parameter in the context
+ *  @param[in] contextParameter The context parameter you want to modify
+ *  @param[in] data The value you want to assign to specified context parameter */
+void srpContextSetD(SRPContextParameter contextParameter, double data);
+
 /** Get a pointer parameter in the context
  *  @param[in] contextParameter The context parameter you want to get
  *  @return Requested parameter or NULL on error */
@@ -94,6 +101,11 @@ void* srpContextGetP(SRPContextParameter contextParameter);
  *  @param[in] contextParameter The context parameter you want to get
  *  @return Requested parameter or 0 on error */
 int srpContextGetI(SRPContextParameter contextParameter);
+
+/** Get a double parameter in the context
+ *  @param[in] contextParameter The context parameter you want to get
+ *  @return Requested parameter or 0 on error */
+double srpContextGetD(SRPContextParameter contextParameter);
 
 /** @} */  // defgroup Context
 

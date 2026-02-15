@@ -27,6 +27,7 @@ typedef struct SRPTriangle {
 	double dldx[3];        /**< Barycentric coordinates' delta values for +X movement */
 	double dldy[3];        /**< Barycentric coordinates' delta values for +Y movement */
 	double invZ[3];        /**< 1 / Z, where Z is in [0; 1]. Needed for perspective-correct interpolation */
+	bool isFrontFacing;    /**< Whether or not the triangle is front-facing */
 	size_t id;             /**< ID of the primitive, starting from 0 */
 } SRPTriangle;
 
@@ -38,7 +39,7 @@ bool setupTriangle(
 	SRPTriangle* tri, const SRPFramebuffer* fb
 );
 
-/** Draw the triangle that is specified by three vertices to the framebuffer
+/** Rasterize a triangle
  *  @param[in] triangle Pointer to the triangle to draw
  *  @param[in] fb The framebuffer to draw to
  *  @param[in] sp The shader program to use

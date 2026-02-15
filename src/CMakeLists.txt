@@ -17,6 +17,8 @@ set(
 	arena.c
 	draw.c
 	primitive_assembly.c
+	point.c
+	fragment.c
 )
 
 add_library(srp STATIC ${SOURCES})

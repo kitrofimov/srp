@@ -83,10 +83,12 @@ And many, many more, all of which I will not find anymore...
     - [x] Triangle
     - [x] Triangle strip
     - [x] Triangle fan
-    - [ ] Points
+    - [x] Points
     - [ ] Line
     - [ ] Line strip
     - [ ] Line loop
+- [ ] Restructure the code (Are the relationships between files clear? Is there any multiple-responsibilities?)
+- [ ] Debug stutters
 - [ ] Clipping? (i.e. try to render triangle that goes slightly beyond the screen edge)
 - [ ] Image-based testing framework?
 - [ ] Implement single-threaded binning and tile system
