@@ -26,7 +26,7 @@ typedef struct SRPTriangle {
 	double lambda_row[3];  /**< Barycentric coordinates at the beginning of the row */
 	double dldx[3];        /**< Barycentric coordinates' delta values for +X movement */
 	double dldy[3];        /**< Barycentric coordinates' delta values for +Y movement */
-	double invZ[3];        /**< 1 / Z, where Z is in [0; 1]. Needed for perspective-correct interpolation */
+	double invW[3];        /**< 1 / clip-space W. Needed for perspective-correct interpolation */
 	bool isFrontFacing;    /**< Whether or not the triangle is front-facing */
 	size_t id;             /**< ID of the primitive, starting from 0 */
 } SRPTriangle;
@@ -43,9 +43,9 @@ bool setupTriangle(
  *  @param[in] triangle Pointer to the triangle to draw
  *  @param[in] fb The framebuffer to draw to
  *  @param[in] sp The shader program to use
- *  @param[in] interpolatedBuffer Pointer to a temporary buffer where interpolated
- * 			   vertex attributes will be stored. Must be big enough to hold all
- * 			   interpolated attributes for one vertex. */
+ *  @param[in] interpolatedBuffer Pointer to a temporary buffer where varyings 
+ * 			   for each fragment will be stored. Must be big enough to hold all
+ * 			   interpolated attributes for ONE vertex. */
 void rasterizeTriangle(
 	SRPTriangle* triangle, const SRPFramebuffer* fb,
 	const SRPShaderProgram* restrict sp, void* interpolatedBuffer

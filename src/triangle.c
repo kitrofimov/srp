@@ -37,8 +37,8 @@ static double signedAreaParallelogram(
 static bool shouldCullTriangle(const SRPTriangle* tri, bool* isCCW, bool* isFrontFacing);
 
 /** Change the winding order of a triangle.
- *  @param[in] tri Triangle to change the winding order of. Must have its `v` and
- * 				   `p_ndc` fields initialized. */
+ *  @param[in] tri Triangle to change the winding order of. Must have its `v`,
+ * 				   `p_ndc` and `invW` fields initialized. */
 static void triangleChangeWinding(SRPTriangle* tri);
 
 /** Calculate barycentric coordinates for a point and barycentric coordinates'
@@ -175,9 +175,6 @@ bool setupTriangle(
 		tri->edgeTL[i] = isEdgeFlatTopOrLeft(&tri->edge[i]);
 	}
 
-	for (uint8_t i = 0; i < 3; i++)
-		tri->invZ[i] = 1 / ((tri->v[i].position[2] + 1) / 2);
-
 	return true;
 }
 
@@ -205,9 +202,15 @@ static bool shouldCullTriangle(const SRPTriangle* tri, bool* isCCW, bool* isFron
 
 static void triangleChangeWinding(SRPTriangle* tri)
 {
-	SRPvsOutput temp = tri->v[1];
+	// Not swapping `p_ndc`, because those are pointers to `v.position`
+	// If swapped both at the same time, it's almost the same as not swapping anything
+	SRPvsOutput temp1 = tri->v[1];
 	tri->v[1] = tri->v[2];
-	tri->v[2] = temp;
+	tri->v[2] = temp1;
+
+	double temp2 = tri->invW[1];
+	tri->invW[1] = tri->invW[2];
+	tri->invW[2] = temp2;
 }
 
 static void calculateBarycentrics(SRPTriangle* tri, double areaX2, vec2d point)
@@ -293,24 +296,20 @@ static void triangleInterpolatePosition(SRPTriangle* tri, vec4d* pPosition)
 		tri->v[1].position[1] * tri->lambda[1] + \
 		tri->v[2].position[1] * tri->lambda[2];
 
-	if (perspective)
-	{
-		pPosition->z = 1 / (
-			tri->invZ[0] * tri->lambda[0] + \
-			tri->invZ[1] * tri->lambda[1] + \
-			tri->invZ[2] * tri->lambda[2]
-		);
-	}
-	else  // affine
-	{
-		pPosition->z = (
-			tri->v[0].position[2] * tri->lambda[0] + \
-			tri->v[1].position[2] * tri->lambda[1] + \
-			tri->v[2].position[2] * tri->lambda[2]
-		);
-	}
+	// If I am not mistaken, this should be linear in screen space
+	pPosition->z = \  
+		tri->v[0].position[2] * tri->lambda[0] + \
+		tri->v[1].position[2] * tri->lambda[1] + \
+		tri->v[2].position[2] * tri->lambda[2];
 
-	pPosition->w = 1;
+	if (perspective)
+        pPosition->w = 1 / (
+			tri->invW[0] * tri->lambda[0] + \
+			tri->invW[1] * tri->lambda[1] + \
+			tri->invW[2] * tri->lambda[2]
+		);
+	else  // affine
+        pPosition->w = 1.;
 }
 
 static void triangleInterpolateAttributes(
@@ -349,10 +348,10 @@ static void triangleInterpolateAttributes(
 			if (perspective)
 				for (size_t elemI = 0; elemI < attr->nItems; elemI++)
 				{
-					pInterpolatedAttr[elemI] = pPosition->z * (
-						AV[0][elemI] * tri->invZ[0] * tri->lambda[0] + \
-						AV[1][elemI] * tri->invZ[1] * tri->lambda[1] + \
-						AV[2][elemI] * tri->invZ[2] * tri->lambda[2]
+					pInterpolatedAttr[elemI] = pPosition->w * (
+						AV[0][elemI] * tri->invW[0] * tri->lambda[0] + \
+						AV[1][elemI] * tri->invW[1] * tri->lambda[1] + \
+						AV[2][elemI] * tri->invW[2] * tri->lambda[2]
 					);
 				}
 			else  // affine

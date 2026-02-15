@@ -101,10 +101,20 @@ static void drawLines(
 	const SRPShaderProgram* sp, SRPPrimitive primitive, size_t startIndex, size_t count
 )
 {
-	srpMessageCallbackHelper(
-		SRP_MESSAGE_ERROR, SRP_MESSAGE_SEVERITY_HIGH, __func__,
-		"Lines are not implemented yet"
+	size_t lineCount;
+	SRPLine* lines;
+	bool success = assembleLines(
+		ib, vb, fb, sp, primitive, startIndex, count,
+		&lineCount, &lines
 	);
+	if (!success)
+		return;
+
+	void* interpolatedBuffer = ARENA_ALLOC(sp->vs->nBytesPerOutputVariables);
+	for (size_t i = 0; i < lineCount; i++)
+		rasterizeLine(&lines[i], fb, sp, interpolatedBuffer);
+
+	ARENA_RESET();
 }
 
 static void drawPoints(

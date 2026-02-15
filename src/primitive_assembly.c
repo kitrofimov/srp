@@ -15,11 +15,12 @@
 typedef struct VertexCacheEntry {
 	bool valid;
 	SRPvsOutput data;
+	double invW;
 } VertexCacheEntry;
 
 /** Assemble a single triangle.
- *  @param[in] triangleIdx Index of the primitive to assemble, starting from 0,
- * 						   including culled triangles
+ *  @param[in] rawTriIdx Index of the primitive to assemble, starting from 0,
+ * 						 including culled triangles
  *  @param[in] baseVertex Base vertex for the post-VS cache, i.e. minimal vertex
  * 						  index found in this draw call
  *  @param[in] cache Pointer to the vertex cache buffer
@@ -29,13 +30,13 @@ typedef struct VertexCacheEntry {
  *  @see assembleTriangles() for documentation on other parameters */
 static bool assembleOneTriangle(
     const SRPIndexBuffer* ib, const SRPVertexBuffer* vb, const SRPShaderProgram* sp,
-    const SRPFramebuffer* fb, SRPPrimitive prim, size_t startIndex, size_t triangleIdx,
+    const SRPFramebuffer* fb, SRPPrimitive prim, size_t startIndex, size_t rawTriIdx,
     size_t baseVertex, VertexCacheEntry* cache, void* varyingBuffer, SRPTriangle* tri
 );
 
 /** Fetch vertex shader output from post-VS cache. If not found, compute and store it.
  * 	@see assembleOneTriangle() for documentation on other parameters */
-static SRPvsOutput* vertexCacheFetch(
+static VertexCacheEntry* vertexCacheFetch(
 	VertexCacheEntry* cache, size_t vertexIndex, size_t baseVertex,
 	void* varyingBuffer, const SRPVertexBuffer* vb, const SRPShaderProgram* sp
 );
@@ -74,12 +75,26 @@ static void allocateTriangleBuffers(
  *  @return Number of triangles that should be assembled */
 static size_t computeTriangleCount(size_t vertexCount, SRPPrimitive prim);
  
-/** Determine the stream indices based on the triangle type.
+/** Determine the stream indices for a triangle based on its type.
  *  @param[in] base Base stream index
- *  @param[in] primID Primitive ID
+ *  @param[in] rawTriIdx Index of the primitive to assemble, starting from 0,
+ * 						 including culled triangles
  *  @param[in] prim Primitive type
  *  @param[out] out Array of size 3 to store the resulting stream indices */
-static void resolveTriangleTopology(size_t base, size_t primID, SRPPrimitive prim, size_t* out);
+static void resolveTriangleTopology(
+	size_t base, size_t rawTriIdx, SRPPrimitive prim, size_t* out
+);
+
+/** Determine the stream indices for a line based on its type.
+ *  @param[in] base Base stream index
+ *  @param[in] rawLineIdx Index of the primitive to assemble, starting from 0,
+ * 						  including culled/skipped lines
+ *  @param[in] prim Primitive type
+ *  @param[in] vertexCount The total amount of stream vertices for this draw call
+ *  @param[out] out Array of size 2 to store the resulting stream indices */
+static void resolveLineTopology(
+	size_t base, size_t rawLineIdx, SRPPrimitive prim, size_t vertexCount, size_t* out
+);
 
 /** Determine if a point should be clipped or not.
  *  @param[in] p Pointer to a point
@@ -129,24 +144,26 @@ bool assembleTriangles(
 
 static bool assembleOneTriangle(
     const SRPIndexBuffer* ib, const SRPVertexBuffer* vb, const SRPShaderProgram* sp,
-    const SRPFramebuffer* fb, SRPPrimitive prim, size_t startIndex, size_t triangleIdx,
+    const SRPFramebuffer* fb, SRPPrimitive prim, size_t startIndex, size_t rawTriIdx,
     size_t baseVertex, VertexCacheEntry* cache, void* varyingBuffer, SRPTriangle* tri
 )
 {
     size_t streamIndices[3];
-    resolveTriangleTopology(startIndex, triangleIdx, prim, streamIndices);
+    resolveTriangleTopology(startIndex, rawTriIdx, prim, streamIndices);
 
     for (uint8_t i = 0; i < 3; i++)
     {
         size_t vertexIndex = (ib) ? indexIndexBuffer(ib, streamIndices[i]) : streamIndices[i];
-		tri->v[i] = *vertexCacheFetch(cache, vertexIndex, baseVertex, varyingBuffer, vb, sp);
+		VertexCacheEntry* entry = vertexCacheFetch(cache, vertexIndex, baseVertex, varyingBuffer, vb, sp);
+		tri->v[i] = entry->data;
+		tri->invW[i] = entry->invW;
 	}
 
 	bool success = setupTriangle(tri, fb);
     return success;
 }
 
-static SRPvsOutput* vertexCacheFetch(
+static VertexCacheEntry* vertexCacheFetch(
 	VertexCacheEntry* cache, size_t vertexIndex, size_t baseVertex,
 	void* varyingBuffer, const SRPVertexBuffer* vb, const SRPShaderProgram* sp
 )
@@ -172,16 +189,19 @@ static SRPvsOutput* vertexCacheFetch(
 		sp->vs->shader(&vsIn, &entry->data);
 
 		// Perspective divide
-		double invW = 1.0 / entry->data.position[3];
+		double clipW = entry->data.position[3];
+		double invW = 1.0 / clipW;
+		entry->invW = invW;
+
 		entry->data.position[0] *= invW;
 		entry->data.position[1] *= invW;
 		entry->data.position[2] *= invW;
-		entry->data.position[3] = 1.0;
+		entry->data.position[3] = 1.;
 
 		entry->valid = true;
 	}
 
-	return &entry->data;
+	return entry;
 }
 
 static void computeMinMaxVI(
@@ -265,27 +285,124 @@ static size_t computeTriangleCount(size_t vertexCount, SRPPrimitive prim)
 		assert(false && "Invalid primitive type");
 }
 
-static void resolveTriangleTopology(size_t base, size_t primID, SRPPrimitive prim, size_t* out)
+static void resolveTriangleTopology(size_t base, size_t rawTriIdx, SRPPrimitive prim, size_t* out)
 {
 	if (prim == SRP_PRIM_TRIANGLES)
 	{
-		out[0] = base + primID * 3;
-		out[1] = base + primID * 3 + 1;
-		out[2] = base + primID * 3 + 2;
+		out[0] = base + rawTriIdx * 3;
+		out[1] = base + rawTriIdx * 3 + 1;
+		out[2] = base + rawTriIdx * 3 + 2;
 	}
 	else if (prim == SRP_PRIM_TRIANGLE_STRIP)
 	{
 		// Maintain proper winding order for odd triangles (swap the first two vertices)
-		bool odd = (primID % 2 == 1);
-		out[0] = base + primID + ((odd) ? 1 : 0);
-		out[1] = base + primID + ((odd) ? 0 : 1);
-		out[2] = base + primID + 2;
+		bool odd = (rawTriIdx % 2 == 1);
+		out[0] = base + rawTriIdx + ((odd) ? 1 : 0);
+		out[1] = base + rawTriIdx + ((odd) ? 0 : 1);
+		out[2] = base + rawTriIdx + 2;
 	}
 	else if (prim == SRP_PRIM_TRIANGLE_FAN)
 	{
 		out[0] = base;
-		out[1] = base + primID + 1;
-		out[2] = base + primID + 2;
+		out[1] = base + rawTriIdx + 1;
+		out[2] = base + rawTriIdx + 2;
+	}
+	else
+		assert(false && "Invalid primitive type");
+}
+
+bool assembleLines(
+	const SRPIndexBuffer* ib, const SRPVertexBuffer* vb, const SRPFramebuffer* fb,
+	const SRPShaderProgram* sp, SRPPrimitive primitive, size_t startIndex, size_t count,
+	size_t* outLineCount, SRPLine** outLines
+)
+{
+	const size_t stride = sp->vs->nBytesPerOutputVariables;
+
+	size_t nLines;
+	if (primitive == SRP_PRIM_LINES)
+		nLines = (count % 2 == 0) ? count / 2 : (count-1) / 2;
+	else if (primitive == SRP_PRIM_LINE_STRIP)
+		nLines = (count != 1) ? count-1 : 0;
+	else if (primitive == SRP_PRIM_LINE_LOOP)
+		nLines = (count != 1) ? count : 0;
+	else
+		assert(false && "Invalid primitive type");
+
+	if (nLines == 0)
+		return false;
+
+	SRPLine* lines = ARENA_ALLOC(sizeof(SRPLine) * nLines);
+	void* varyingBuffer = ARENA_ALLOC(stride * 2 * nLines);
+
+	size_t primitiveID = 0;
+	for (size_t k = 0; k < nLines; k += 1)
+	{
+		SRPLine* line = &lines[primitiveID];
+
+		size_t streamIndices[2];
+		resolveLineTopology(startIndex, k, primitive, count, streamIndices);
+
+		for (uint8_t i = 0; i < 2; i++)
+		{
+			size_t vertexIndex = (ib) ? indexIndexBuffer(ib, streamIndices[i]) : streamIndices[i];
+			SRPVertex* pVertex = indexVertexBuffer(vb, vertexIndex);
+			void* pVarying = INDEX_VOID_PTR(varyingBuffer, k+i, stride);
+
+			SRPvsInput vsIn = {
+				.vertexID = vertexIndex,
+				.pVertex  = pVertex,
+				.uniform  = sp->uniform
+			};
+			line->v[i] = (SRPvsOutput) {
+				.position = {0},
+				.pOutputVariables = pVarying
+			};
+
+			/** @todo Repeating the same thing 3 times already. Should I abstract
+			 *  vertex shader invocation too? */
+			sp->vs->shader(&vsIn, &line->v[i]);
+
+			// Perspective divide
+			double clipW = line->v[i].position[3];
+			double invW = 1.0 / clipW;
+			line->invW[i] = invW;
+
+			line->v[i].position[0] *= invW;
+			line->v[i].position[1] *= invW;
+			line->v[i].position[2] *= invW;
+			line->v[i].position[3] = 1.0;
+		}
+
+		setupLine(line, fb);
+
+		line->id = primitiveID;
+		primitiveID++;
+	}
+
+	*outLineCount = primitiveID;
+	*outLines = lines;
+	return true;
+}
+
+static void resolveLineTopology(
+	size_t base, size_t rawLineIdx, SRPPrimitive prim, size_t vertexCount, size_t* out
+)
+{
+	if (prim == SRP_PRIM_LINES)
+	{
+		out[0] = base + rawLineIdx * 2;
+		out[1] = base + rawLineIdx * 2 + 1;
+	}
+	else if (prim == SRP_PRIM_LINE_STRIP)
+	{
+		out[0] = base + rawLineIdx;
+		out[1] = base + rawLineIdx + 1;
+	}
+	else if (prim == SRP_PRIM_LINE_LOOP)
+	{
+		out[0] = base + rawLineIdx;
+		out[1] = base + ((rawLineIdx + 1) % vertexCount);
 	}
 	else
 		assert(false && "Invalid primitive type");
@@ -303,17 +420,17 @@ bool assemblePoints(
 	const size_t stride = sp->vs->nBytesPerOutputVariables;
 	const size_t nPoints = count;
 
-	SRPPoint* points = ARENA_ALLOC(sizeof(SRPPoint) * count);
-	void* varyingBuffer = ARENA_ALLOC(stride * count);
+	SRPPoint* points = ARENA_ALLOC(sizeof(SRPPoint) * nPoints);
+	void* varyingBuffer = ARENA_ALLOC(stride * nPoints);
 
 	size_t primitiveID = 0;
-	for (size_t i = 0; i < nPoints; i += 1)
+	for (size_t k = 0; k < nPoints; k += 1)
 	{
 		SRPPoint* p = &points[primitiveID];
 
-		size_t vertexIndex = (ib) ? indexIndexBuffer(ib, startIndex+i) : startIndex+i;
+		size_t vertexIndex = (ib) ? indexIndexBuffer(ib, startIndex+k) : startIndex+k;
 		SRPVertex* pVertex = indexVertexBuffer(vb, vertexIndex);
-		void* pVarying = INDEX_VOID_PTR(varyingBuffer, i, stride);
+		void* pVarying = INDEX_VOID_PTR(varyingBuffer, k, stride);
 
 		SRPvsInput vsIn = {
 			.vertexID = vertexIndex,
@@ -341,7 +458,7 @@ bool assemblePoints(
 		primitiveID++;
 	}
 
-	*outPointCount = primitiveID;
+	*outPointCount = primitiveID;  // Amount of non-clipped points
 	*outPoints = points;
 	return true;
 }
