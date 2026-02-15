@@ -38,7 +38,7 @@ bool setupTriangle(
 	SRPTriangle* tri, const SRPFramebuffer* fb
 );
 
-/** Draw the triangle that is specified by three vertices to the framebuffer
+/** Rasterize a triangle
  *  @param[in] triangle Pointer to the triangle to draw
  *  @param[in] fb The framebuffer to draw to
  *  @param[in] sp The shader program to use

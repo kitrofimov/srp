@@ -92,7 +92,7 @@ void rasterizeTriangle(
 	{
 		for (size_t x = tri->minBP.x; x < tri->maxBP.x; x += 1)
 		{
-			for (uint8_t i = 0; i < 3; i++)
+			for (uint8_t i = 0; i < 3; i++)  // Top-left rasterization rule
 			{
 				if (ROUGHLY_ZERO(tri->lambda[i]) && !tri->edgeTL[i])
 					goto nextPixel;

@@ -42,7 +42,7 @@ static SRPvsOutput* vertexCacheFetch(
 
 /** Compute minimal and maximal vertex indices given stream indices.
  *  @see assembleOneTriangle() for documentation on other parameters */
-static size_t computeMinMaxVI(
+static void computeMinMaxVI(
 	const SRPIndexBuffer* ib, size_t startIndex, size_t vertexCount,
 	size_t* outMinVI, size_t* outMaxVI
 );
@@ -179,7 +179,7 @@ static SRPvsOutput* vertexCacheFetch(
 	return &entry->data;
 }
 
-static size_t computeMinMaxVI(
+static void computeMinMaxVI(
 	const SRPIndexBuffer* ib, size_t startIndex, size_t vertexCount,
 	size_t* outMinVI, size_t* outMaxVI
 )
@@ -284,4 +284,50 @@ static void resolveTriangleTopology(size_t base, size_t primID, SRPPrimitive pri
 	}
 	else
 		assert(false && "Invalid primitive type");
+}
+
+bool assemblePoints(
+	const SRPIndexBuffer* ib, const SRPVertexBuffer* vb, const SRPFramebuffer* fb,
+	const SRPShaderProgram* sp, size_t startIndex, size_t count, SRPPoint** outPoints
+)
+{
+	if (srpContext.pointSize <= 0.)
+		return false;
+
+	const size_t stride = sp->vs->nBytesPerOutputVariables;
+	SRPPoint* points = ARENA_ALLOC(sizeof(SRPPoint) * count);
+	void* varyingBuffer = ARENA_ALLOC(stride * count);
+	const size_t nPoints = count;
+
+	for (size_t i = 0; i < nPoints; i += 1)
+	{
+		SRPPoint* p = &points[i];
+		p->id = i;
+
+		size_t vertexIndex = (ib) ? indexIndexBuffer(ib, startIndex+i) : startIndex+i;
+		SRPVertex* pVertex = indexVertexBuffer(vb, vertexIndex);
+		void* pVarying = INDEX_VOID_PTR(varyingBuffer, vertexIndex, stride);
+
+		SRPvsInput vsIn = {
+			.vertexID = vertexIndex,
+			.pVertex  = pVertex,
+			.uniform  = sp->uniform
+		};
+		p->v = (SRPvsOutput) {
+			.position = {0},
+			.pOutputVariables = pVarying
+		};
+
+		sp->vs->shader(&vsIn, &p->v);
+
+		// Perspective divide
+		double invW = 1.0 / p->v.position[3];
+		p->v.position[0] *= invW;
+		p->v.position[1] *= invW;
+		p->v.position[2] *= invW;
+		p->v.position[3] = 1.0;
+	}
+
+	*outPoints = points;
+	return true;
 }
