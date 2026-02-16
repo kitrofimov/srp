@@ -113,6 +113,17 @@ static void resolveTriangleTopology(
  *  and primitive type */
 static size_t computeLineCount(size_t vertexCount, SRPPrimitive prim);
 
+static void allocateLineBuffers(
+	size_t nLines, const SRPShaderProgram* sp, VertexCache* cache,
+	SRPLine** outLines, void** outVaryingBuffer
+);
+
+static void assembleOneLine(
+    const SRPIndexBuffer* ib, const SRPVertexBuffer* vb, const SRPShaderProgram* sp,
+    const SRPFramebuffer* fb, SRPPrimitive prim, size_t startIndex, size_t rawLineIdx,
+    size_t vertexCount, VertexCache* cache, void* varyingBuffer, SRPLine* line
+);
+
 /** Determine the stream indices for a line based on its type
  *  @param[in] base Base stream index
  *  @param[in] rawLineIdx Index of the primitive to assemble, starting from 0,
@@ -369,33 +380,24 @@ bool assembleLines(
 	size_t* outLineCount, SRPLine** outLines
 )
 {
-	const size_t stride = sp->vs->nBytesPerOutputVariables;
-
 	size_t nLines = computeLineCount(vertexCount, prim);
 	if (nLines == 0)
 		return false;
 
-	SRPLine* lines = ARENA_ALLOC(sizeof(SRPLine) * nLines);
-	void* varyingBuffer = ARENA_ALLOC(stride * 2 * nLines);
+	VertexCache cache;
+	SRPLine* lines;
+	void* varyingBuffer;
+	allocateVertexCache(&cache, ib, startIndex, vertexCount);
+	allocateLineBuffers(nLines, sp, &cache, &lines, &varyingBuffer);
 
 	size_t primitiveID = 0;
 	for (size_t k = 0; k < nLines; k += 1)
 	{
 		SRPLine* line = &lines[primitiveID];
-
-		size_t streamIndices[2];
-		resolveLineTopology(startIndex, k, prim, vertexCount, streamIndices);
-
-		for (uint8_t i = 0; i < 2; i++)
-		{
-			size_t vertexIndex = (ib) ? indexIndexBuffer(ib, streamIndices[i]) : streamIndices[i];
-			processVertex(
-				vertexIndex, k+i, varyingBuffer, vb, sp,
-				&line->v[i], &line->invW[i]
-			);
-		}
-
-		setupLine(line, fb);
+		assembleOneLine(
+			ib, vb, sp, fb, prim, startIndex, k, vertexCount,
+			&cache, varyingBuffer, line
+		);
 
 		line->id = primitiveID;
 		primitiveID++;
@@ -439,6 +441,39 @@ static void resolveLineTopology(
 	}
 	else
 		assert(false && "Invalid primitive type");
+}
+
+static void allocateLineBuffers(
+	size_t nLines, const SRPShaderProgram* sp, VertexCache* cache,
+	SRPLine** outLines, void** outVaryingBuffer
+)
+{
+	size_t nUniqueVertices = cache->size;
+	size_t linesBufferSize = sizeof(SRPLine) * nLines;
+	size_t varyingBufferSize = sp->vs->nBytesPerOutputVariables * nUniqueVertices;
+
+	*outLines = ARENA_ALLOC(linesBufferSize);
+	*outVaryingBuffer = ARENA_ALLOC(varyingBufferSize);
+}
+
+static void assembleOneLine(
+    const SRPIndexBuffer* ib, const SRPVertexBuffer* vb, const SRPShaderProgram* sp,
+    const SRPFramebuffer* fb, SRPPrimitive prim, size_t startIndex, size_t rawLineIdx,
+    size_t vertexCount, VertexCache* cache, void* varyingBuffer, SRPLine* line
+)
+{
+	size_t streamIndices[2];
+	resolveLineTopology(startIndex, rawLineIdx, prim, vertexCount, streamIndices);
+
+	for (uint8_t i = 0; i < 2; i++)
+	{
+		size_t vertexIndex = (ib) ? indexIndexBuffer(ib, streamIndices[i]) : streamIndices[i];
+		VertexCacheEntry* entry = vertexCacheFetch(cache, vertexIndex, varyingBuffer, vb, sp);
+		line->v[i] = entry->data;
+		line->invW[i] = entry->invW;
+	}
+
+	setupLine(line, fb);
 }
 
 bool assemblePoints(
