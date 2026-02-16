@@ -2,7 +2,7 @@
 
 #include <SDL2/SDL.h>
 #include <stdbool.h>
-#include "framebuffer.h"
+#include <srp/framebuffer.h>
 
 typedef struct
 {

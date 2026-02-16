@@ -4,7 +4,7 @@
 #define SRP_INCLUDE_MAT
 
 #include <stdio.h>
-#include "srp.h"  // the only header you need to include
+#include <srp/srp.h>  // the only header you need to include
 #include "window.h"
 #include "timer.h"
 #include "rad.h"
