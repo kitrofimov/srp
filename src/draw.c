@@ -11,42 +11,46 @@
 #include "primitive_assembly.h"
 #include "arena_p.h"
 
-/** Draw triangle-based primitives from either SRPIndexBuffer or SRPVertexBuffer.
+/** Draw triangle-based primitives from either SRPIndexBuffer or SRPVertexBuffer
  *  @see drawBuffer() for extensive documentation */
 static void drawTriangles(
 	const SRPIndexBuffer* ib, const SRPVertexBuffer* vb, const SRPFramebuffer* fb,
 	const SRPShaderProgram* sp, SRPPrimitive primitive, size_t startIndex, size_t count
 );
 
-/** Draw line-based primitives from either SRPIndexBuffer or SRPVertexBuffer.
+/** Draw line-based primitives from either SRPIndexBuffer or SRPVertexBuffer
  *  @see drawBuffer() for extensive documentation */
 static void drawLines(
 	const SRPIndexBuffer* ib, const SRPVertexBuffer* vb, const SRPFramebuffer* fb,
 	const SRPShaderProgram* sp, SRPPrimitive primitive, size_t startIndex, size_t count
 );
 
-/** Draw points from either SRPIndexBuffer or SRPVertexBuffer.
+/** Draw points from either SRPIndexBuffer or SRPVertexBuffer
  *  @see drawBuffer() for extensive documentation */
 static void drawPoints(
 	const SRPIndexBuffer* ib, const SRPVertexBuffer* vb, const SRPFramebuffer* fb,
 	const SRPShaderProgram* sp, SRPPrimitive primitive, size_t startIndex, size_t count
 );
 
-/** Determine if a primitive is triangle-based.
+/** Check if the draw call tries to access out-of-bounds memory and
+ * 	if so, send an error message
+ *  @see drawBuffer() for extensive documentation */
+static bool checkOOB(
+	const SRPIndexBuffer* ib, const SRPVertexBuffer* vb,
+	size_t startIndex, size_t count
+);
+
+/** Determine if a primitive is triangle-based
  *  @param[in] primitive Primitive type
  *  @return `true` if the primitive is triangle-based, `false` otherwise */
 static bool isPrimitiveTriangle(SRPPrimitive primitive);
 
-/** Determine if a primitive is line-based.
- *  @param[in] primitiv// #include "triangle.h"
-// #include "type.h"
-// #include "utils.h"
-// #include "defines.h"
-// #include "vertex.h"e Primitive type
+/** Determine if a primitive is line-based
+ *  @param[in] primitive Primitive type
  *  @return `true` if the primitive is line-based, `false` otherwise */
 static bool isPrimitiveLine(SRPPrimitive primitive);
 
-/** Determine if a primitive is a point.
+/** Determine if a primitive is a point
  *  @param[in] primitive Primitive type
  *  @return `true` if the primitive is a point, `false` otherwise */
 static bool isPrimitivePoint(SRPPrimitive primitive);
@@ -56,7 +60,7 @@ void drawBuffer(
 	const SRPShaderProgram* sp, SRPPrimitive primitive, size_t startIndex, size_t count
 )
 {
-	if (count == 0)
+	if (count == 0 || checkOOB(ib, vb, startIndex, count))
 		return;
 
 	if (isPrimitiveTriangle(primitive))
@@ -134,6 +138,30 @@ static void drawPoints(
 		rasterizePoint(&points[i], fb, sp);
 
 	ARENA_RESET();
+}
+
+static bool checkOOB(
+	const SRPIndexBuffer* ib, const SRPVertexBuffer* vb,
+	size_t startIndex, size_t count
+)
+{
+	// The last stream index that will be touched
+	const size_t endIndex = startIndex + count - 1;
+	const size_t bufferSize = (ib) ? ib->nIndices : vb->nVertices;
+
+	if (endIndex >= bufferSize)
+	{
+		const char* errorMessage = (ib) ? \
+			"Attempt to OOB access index buffer (read) at indices %zu-%zu (size: %zu)\n" : \
+			"Attempt to OOB access vertex buffer (read) at indices %zu-%zu (size: %zu)\n";
+		srpMessageCallbackHelper(
+			SRP_MESSAGE_ERROR, SRP_MESSAGE_SEVERITY_HIGH, __func__,
+			errorMessage, startIndex, endIndex, bufferSize
+		);
+		return true;
+	}
+
+	return false;
 }
 
 static bool isPrimitiveTriangle(SRPPrimitive primitive)

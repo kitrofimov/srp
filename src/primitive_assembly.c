@@ -16,11 +16,9 @@
 /** Assemble a single triangle
  *  @param[in] rawTriIdx Index of the primitive to assemble, starting from 0,
  * 						 including culled triangles
- *  @param[in] baseVertex Base vertex for the post-VS cache, i.e. minimal vertex
- * 						  index found in this draw call
- *  @param[in] cache Pointer to the vertex cache buffer
- *  @param[in] varyingBuffer Pointer to the buffer where vertex shader outputs will be stored
- *  @param[out] tri Pointer to the triangle where the assembled triangle will be stored
+ *  @param[in] cache Pointer to the post-VS cache
+ *  @param[in] varyingBuffer Buffer where vertex shader outputs will be stored
+ *  @param[out] tri Assembled triangle
  *  @returns `true` if successful, `false` otherwise
  *  @see assembleTriangles() for documentation on other parameters */
 static bool assembleOneTriangle(
@@ -29,35 +27,38 @@ static bool assembleOneTriangle(
     VertexCache* cache, void* varyingBuffer, SRPTriangle* tri
 );
 
-/** Check if draw call for a triangle is valid
- *  @see assembleTriangles() for full parameter documentation */
-static bool validateTriangleDrawCall(
-	const SRPIndexBuffer* ib, const SRPVertexBuffer* vb,
-	SRPPrimitive prim, size_t startIndex, size_t vertexCount
-);
-
-/** Allocate buffers needed for assembling triangles
- *  @param[in] nTriangles Number of triangles to allocate buffers for
- *  @param[in] sp Shader program to use
- *  @param[in] minVI Minimal vertex index found in this draw call
- *  @param[in] maxVI Maximal vertex index found in this draw call. Both with
- * 					 minVI used to determine the size of post-VS cache
- *  @param[out] outTriangles Will contain pointer to the array of assembled triangles
- *  @param[out] outVaryingBuffer Will contain pointer to the interpolated variables buffer */
-static void allocateTriangleBuffers(
-	size_t nTriangles, const SRPShaderProgram* sp, VertexCache* cache,
-	SRPTriangle** outTriangles, void** outVaryingBuffer
-);
-
-static void allocateLineBuffers(
-	size_t nLines, const SRPShaderProgram* sp, VertexCache* cache,
-	SRPLine** outLines, void** outVaryingBuffer
-);
-
+/** Assemble a single triangle
+ *  @param[in] rawLineIdx Index of the primitive to assemble, starting from 0,
+ * 						  including skipped lines
+ *  @param[in] cache Pointer to the post-VS cache
+ *  @param[in] varyingBuffer Buffer where vertex shader outputs will be stored
+ *  @param[out] line Assembled line
+ *  @returns `true` if successful, `false` otherwise
+ *  @see assembleLines() for documentation on other parameters */
 static void assembleOneLine(
     const SRPIndexBuffer* ib, const SRPVertexBuffer* vb, const SRPShaderProgram* sp,
     const SRPFramebuffer* fb, SRPPrimitive prim, size_t startIndex, size_t rawLineIdx,
     size_t vertexCount, VertexCache* cache, void* varyingBuffer, SRPLine* line
+);
+
+/** Allocate buffers needed for assembling primitives
+ *  @param[in] nPrimitives Number of primitives to allocate buffers for
+ *  @param[in] primSize Size of each primitive, in bytes
+ *  @param[in] sp Shader program to use
+ *  @param[in] cache Post-VS cache that is going to be used
+ *  @param[out] outPrimitives Will contain pointer to the array of assembled primitives
+ *  @param[out] outVaryingBuffer Will contain pointer to the interpolated variables buffer */
+static void allocateBuffers(
+    size_t nPrimitives, size_t primSize, const SRPShaderProgram* sp, 
+    VertexCache* cache, void** outPrimitives, void** outVaryingBuffer
+);
+
+/** Check if there are excess vertices when drawing some kind of primitive,
+ * 	send a warning if so
+ *  @see assembleTriangles() for full parameter documentation */
+static void warnOnExcessVertexCount(
+	const SRPIndexBuffer* ib, const SRPVertexBuffer* vb,
+	SRPPrimitive prim, size_t startIndex, size_t vertexCount
 );
 
 bool assembleTriangles(
@@ -66,9 +67,7 @@ bool assembleTriangles(
 	size_t* outTriangleCount, SRPTriangle** outTriangles
 )
 {
-	if (!validateTriangleDrawCall(ib, vb, prim, startIndex, vertexCount))
-		return false;
-
+	warnOnExcessVertexCount(ib, vb, prim, startIndex, vertexCount);
 	size_t nTriangles = computeTriangleCount(vertexCount, prim);
 	if (nTriangles == 0)
 		return false;
@@ -77,7 +76,7 @@ bool assembleTriangles(
 	SRPTriangle* triangles;
 	void* varyingBuffer;
 	allocateVertexCache(&cache, ib, startIndex, vertexCount);
-	allocateTriangleBuffers(nTriangles, sp, &cache, &triangles, &varyingBuffer);
+	allocateBuffers(nTriangles, sizeof(SRPTriangle), sp, &cache, (void**) &triangles, &varyingBuffer);
 
 	size_t primitiveID = 0;
 	for (size_t k = 0; k < nTriangles; k += 1)
@@ -120,57 +119,13 @@ static bool assembleOneTriangle(
     return success;
 }
 
-static bool validateTriangleDrawCall(
-	const SRPIndexBuffer* ib, const SRPVertexBuffer* vb,
-	SRPPrimitive prim, size_t startIndex, size_t vertexCount
-)
-{
-	if (prim == SRP_PRIM_TRIANGLES && vertexCount % 3 != 0)
-	{
-		srpMessageCallbackHelper(
-			SRP_MESSAGE_WARNING, SRP_MESSAGE_SEVERITY_LOW, __func__,
-			"Vertex count not divisible by 3. The last %i vertex/vertices will be ignored\n", vertexCount % 3
-		);
-	}
-
-	// The last stream index that will be touched
-	const size_t endIndex = startIndex + vertexCount - 1;
-	const size_t bufferSize = (ib) ? ib->nIndices : vb->nVertices;
-
-	if (endIndex >= bufferSize)
-	{
-		const char* errorMessage = (ib) ? \
-			"Attempt to OOB access index buffer (read) at indices %zu-%zu (size: %zu)\n" : \
-			"Attempt to OOB access vertex buffer (read) at indices %zu-%zu (size: %zu)\n";
-		srpMessageCallbackHelper(
-			SRP_MESSAGE_ERROR, SRP_MESSAGE_SEVERITY_HIGH, __func__,
-			errorMessage, startIndex, endIndex, bufferSize
-		);
-		return false;
-	}
-
-	return true;
-}
-
-static void allocateTriangleBuffers(
-	size_t nTriangles, const SRPShaderProgram* sp, VertexCache* cache,
-	SRPTriangle** outTriangles, void** outVaryingBuffer
-)
-{
-	size_t nUniqueVertices = cache->size;
-	size_t trianglesBufferSize = sizeof(SRPTriangle) * nTriangles;
-	size_t varyingBufferSize = sp->vs->nBytesPerOutputVariables * nUniqueVertices;
-
-	*outTriangles = ARENA_ALLOC(trianglesBufferSize);
-	*outVaryingBuffer = ARENA_ALLOC(varyingBufferSize);
-}
-
 bool assembleLines(
 	const SRPIndexBuffer* ib, const SRPVertexBuffer* vb, const SRPFramebuffer* fb,
 	const SRPShaderProgram* sp, SRPPrimitive prim, size_t startIndex, size_t vertexCount,
 	size_t* outLineCount, SRPLine** outLines
 )
 {
+	warnOnExcessVertexCount(ib, vb, prim, startIndex, vertexCount);
 	size_t nLines = computeLineCount(vertexCount, prim);
 	if (nLines == 0)
 		return false;
@@ -179,7 +134,7 @@ bool assembleLines(
 	SRPLine* lines;
 	void* varyingBuffer;
 	allocateVertexCache(&cache, ib, startIndex, vertexCount);
-	allocateLineBuffers(nLines, sp, &cache, &lines, &varyingBuffer);
+	allocateBuffers(nLines, sizeof(SRPLine), sp, &cache, (void**) &lines, &varyingBuffer);
 
 	size_t primitiveID = 0;
 	for (size_t k = 0; k < nLines; k += 1)
@@ -197,19 +152,6 @@ bool assembleLines(
 	*outLineCount = primitiveID;
 	*outLines = lines;
 	return true;
-}
-
-static void allocateLineBuffers(
-	size_t nLines, const SRPShaderProgram* sp, VertexCache* cache,
-	SRPLine** outLines, void** outVaryingBuffer
-)
-{
-	size_t nUniqueVertices = cache->size;
-	size_t linesBufferSize = sizeof(SRPLine) * nLines;
-	size_t varyingBufferSize = sp->vs->nBytesPerOutputVariables * nUniqueVertices;
-
-	*outLines = ARENA_ALLOC(linesBufferSize);
-	*outVaryingBuffer = ARENA_ALLOC(varyingBufferSize);
 }
 
 static void assembleOneLine(
@@ -230,6 +172,36 @@ static void assembleOneLine(
 	}
 
 	setupLine(line, fb);
+}
+
+static void allocateBuffers(
+    size_t nPrimitives, size_t primSize, const SRPShaderProgram* sp, 
+    VertexCache* cache, void** outPrimitives, void** outVaryingBuffer
+) {
+	size_t nUniqueVertices = cache->size;
+	size_t trianglesBufferSize = primSize * nPrimitives;
+	size_t varyingBufferSize = sp->vs->nBytesPerOutputVariables * nUniqueVertices;
+
+	*outPrimitives = ARENA_ALLOC(trianglesBufferSize);
+	*outVaryingBuffer = ARENA_ALLOC(varyingBufferSize);
+}
+
+static void warnOnExcessVertexCount(
+	const SRPIndexBuffer* ib, const SRPVertexBuffer* vb,
+	SRPPrimitive prim, size_t startIndex, size_t vertexCount
+)
+{
+	if (prim == SRP_PRIM_LINES && vertexCount % 2 != 0)
+		srpMessageCallbackHelper(
+			SRP_MESSAGE_WARNING, SRP_MESSAGE_SEVERITY_LOW, __func__,
+			"Odd vertex count when drawing SRP_PRIM_LINES. The last vertex will be ignored\n"
+		);
+
+	if (prim == SRP_PRIM_TRIANGLES && vertexCount % 3 != 0)
+		srpMessageCallbackHelper(
+			SRP_MESSAGE_WARNING, SRP_MESSAGE_SEVERITY_LOW, __func__,
+			"Vertex count not divisible by 3 when drawing SRP_PRIM_TRIANGLES. The last %i vertex/vertices will be ignored\n", vertexCount % 3
+		);
 }
 
 bool assemblePoints(
