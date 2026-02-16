@@ -297,7 +297,7 @@ static void triangleInterpolatePosition(SRPTriangle* tri, vec4d* pPosition)
 		tri->v[2].position[1] * tri->lambda[2];
 
 	// If I am not mistaken, this should be linear in screen space
-	pPosition->z = \  
+	pPosition->z = \
 		tri->v[0].position[2] * tri->lambda[0] + \
 		tri->v[1].position[2] * tri->lambda[1] + \
 		tri->v[2].position[2] * tri->lambda[2];

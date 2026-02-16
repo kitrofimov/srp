@@ -7,6 +7,7 @@
 #pragma once
 
 #include <stddef.h>
+#include "context.h"
 
 /** @ingroup Arena
  *  @{ */

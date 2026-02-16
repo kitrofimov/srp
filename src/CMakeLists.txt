@@ -20,6 +20,8 @@ set(
 	point.c
 	fragment.c
 	line.c
+	topology.c
+	vertex_processing.c
 )
 
 add_library(srp STATIC ${SOURCES})
