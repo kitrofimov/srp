@@ -41,6 +41,19 @@ static VertexCacheEntry* vertexCacheFetch(
 	void* varyingBuffer, const SRPVertexBuffer* vb, const SRPShaderProgram* sp
 );
 
+/** Run vertex shader and perform perspective divide. */
+static void processVertex(
+	size_t vertexIndex, size_t varyingIndex, void* varyingBuffer,
+	const SRPVertexBuffer* vb, const SRPShaderProgram* sp,
+	SRPvsOutput* outV, double* outInvW
+);
+
+/** Apply perspective divide to the output of the vertex shader,
+ *  saving the 1 / W_clip value.
+ *  @param[in] output Output of the vertex shader
+ *  @param[out] outInvW Pointer where 1/W value will be stored. May be NULL */
+static void applyPerspectiveDivide(SRPvsOutput* output, double* outInvW);
+
 /** Compute minimal and maximal vertex indices given stream indices.
  *  @see assembleOneTriangle() for documentation on other parameters */
 static void computeMinMaxVI(
@@ -84,6 +97,10 @@ static size_t computeTriangleCount(size_t vertexCount, SRPPrimitive prim);
 static void resolveTriangleTopology(
 	size_t base, size_t rawTriIdx, SRPPrimitive prim, size_t* out
 );
+
+/** Deduce the number of lines to assemble based on the number of vertices
+ *  and primitive type. */
+static size_t computeLineCount(size_t vertexCount, SRPPrimitive prim);
 
 /** Determine the stream indices for a line based on its type.
  *  @param[in] base Base stream index
@@ -169,39 +186,54 @@ static VertexCacheEntry* vertexCacheFetch(
 )
 {
 	VertexCacheEntry* entry = &cache[vertexIndex - baseVertex];
-	const size_t stride = sp->vs->nBytesPerOutputVariables;
 
 	if (!entry->valid)
 	{
-		SRPVertex* pVertex = indexVertexBuffer(vb, vertexIndex);
-		void* pVarying = INDEX_VOID_PTR(varyingBuffer, vertexIndex - baseVertex, stride);
-
-		SRPvsInput vsIn = {
-			.vertexID = vertexIndex,
-			.pVertex  = pVertex,
-			.uniform  = sp->uniform
-		};
-		entry->data = (SRPvsOutput) {
-			.position = {0},
-			.pOutputVariables = pVarying
-		};
-
-		sp->vs->shader(&vsIn, &entry->data);
-
-		// Perspective divide
-		double clipW = entry->data.position[3];
-		double invW = 1.0 / clipW;
-		entry->invW = invW;
-
-		entry->data.position[0] *= invW;
-		entry->data.position[1] *= invW;
-		entry->data.position[2] *= invW;
-		entry->data.position[3] = 1.;
-
+		processVertex(
+			vertexIndex, vertexIndex - baseVertex, varyingBuffer, vb, sp,
+			&entry->data, &entry->invW
+		);
 		entry->valid = true;
 	}
 
 	return entry;
+}
+
+static void processVertex(
+	size_t vertexIndex, size_t varyingIndex, void* varyingBuffer,
+	const SRPVertexBuffer* vb, const SRPShaderProgram* sp,
+	SRPvsOutput* outV, double* outInvW
+)
+{
+	SRPVertex* pVertex = indexVertexBuffer(vb, vertexIndex);
+	const size_t stride = sp->vs->nBytesPerOutputVariables;
+	void* pVarying = INDEX_VOID_PTR(varyingBuffer, varyingIndex, stride);
+
+	SRPvsInput vsIn = {
+		.vertexID = vertexIndex,
+		.pVertex  = pVertex,
+		.uniform  = sp->uniform
+	};
+	*outV = (SRPvsOutput) {
+		.position = {0},
+		.pOutputVariables = pVarying
+	};
+
+	sp->vs->shader(&vsIn, outV);
+	applyPerspectiveDivide(outV, outInvW);
+}
+
+static void applyPerspectiveDivide(SRPvsOutput* output, double* outInvW)
+{
+    double clipW = output->position[3];
+    double invW = 1.0 / clipW;
+	if (outInvW != NULL)
+		*outInvW = invW;
+
+    output->position[0] *= invW;
+    output->position[1] *= invW;
+    output->position[2] *= invW;
+    output->position[3] = 1.0;
 }
 
 static void computeMinMaxVI(
@@ -313,22 +345,13 @@ static void resolveTriangleTopology(size_t base, size_t rawTriIdx, SRPPrimitive 
 
 bool assembleLines(
 	const SRPIndexBuffer* ib, const SRPVertexBuffer* vb, const SRPFramebuffer* fb,
-	const SRPShaderProgram* sp, SRPPrimitive primitive, size_t startIndex, size_t count,
+	const SRPShaderProgram* sp, SRPPrimitive prim, size_t startIndex, size_t vertexCount,
 	size_t* outLineCount, SRPLine** outLines
 )
 {
 	const size_t stride = sp->vs->nBytesPerOutputVariables;
 
-	size_t nLines;
-	if (primitive == SRP_PRIM_LINES)
-		nLines = (count % 2 == 0) ? count / 2 : (count-1) / 2;
-	else if (primitive == SRP_PRIM_LINE_STRIP)
-		nLines = (count != 1) ? count-1 : 0;
-	else if (primitive == SRP_PRIM_LINE_LOOP)
-		nLines = (count != 1) ? count : 0;
-	else
-		assert(false && "Invalid primitive type");
-
+	size_t nLines = computeLineCount(vertexCount, prim);
 	if (nLines == 0)
 		return false;
 
@@ -341,37 +364,15 @@ bool assembleLines(
 		SRPLine* line = &lines[primitiveID];
 
 		size_t streamIndices[2];
-		resolveLineTopology(startIndex, k, primitive, count, streamIndices);
+		resolveLineTopology(startIndex, k, prim, vertexCount, streamIndices);
 
 		for (uint8_t i = 0; i < 2; i++)
 		{
 			size_t vertexIndex = (ib) ? indexIndexBuffer(ib, streamIndices[i]) : streamIndices[i];
-			SRPVertex* pVertex = indexVertexBuffer(vb, vertexIndex);
-			void* pVarying = INDEX_VOID_PTR(varyingBuffer, k+i, stride);
-
-			SRPvsInput vsIn = {
-				.vertexID = vertexIndex,
-				.pVertex  = pVertex,
-				.uniform  = sp->uniform
-			};
-			line->v[i] = (SRPvsOutput) {
-				.position = {0},
-				.pOutputVariables = pVarying
-			};
-
-			/** @todo Repeating the same thing 3 times already. Should I abstract
-			 *  vertex shader invocation too? */
-			sp->vs->shader(&vsIn, &line->v[i]);
-
-			// Perspective divide
-			double clipW = line->v[i].position[3];
-			double invW = 1.0 / clipW;
-			line->invW[i] = invW;
-
-			line->v[i].position[0] *= invW;
-			line->v[i].position[1] *= invW;
-			line->v[i].position[2] *= invW;
-			line->v[i].position[3] = 1.0;
+			processVertex(
+				vertexIndex, k+i, varyingBuffer, vb, sp,
+				&line->v[i], &line->invW[i]
+			);
 		}
 
 		setupLine(line, fb);
@@ -383,6 +384,18 @@ bool assembleLines(
 	*outLineCount = primitiveID;
 	*outLines = lines;
 	return true;
+}
+
+static size_t computeLineCount(size_t vertexCount, SRPPrimitive prim)
+{
+	if (prim == SRP_PRIM_LINES)
+		return (vertexCount % 2 == 0) ? vertexCount / 2 : (vertexCount-1) / 2;
+	else if (prim == SRP_PRIM_LINE_STRIP)
+		return (vertexCount != 1) ? vertexCount-1 : 0;
+	else if (prim == SRP_PRIM_LINE_LOOP)
+		return (vertexCount != 1) ? vertexCount : 0;
+	else
+		assert(false && "Invalid primitive type");
 }
 
 static void resolveLineTopology(
@@ -429,27 +442,10 @@ bool assemblePoints(
 		SRPPoint* p = &points[primitiveID];
 
 		size_t vertexIndex = (ib) ? indexIndexBuffer(ib, startIndex+k) : startIndex+k;
-		SRPVertex* pVertex = indexVertexBuffer(vb, vertexIndex);
-		void* pVarying = INDEX_VOID_PTR(varyingBuffer, k, stride);
-
-		SRPvsInput vsIn = {
-			.vertexID = vertexIndex,
-			.pVertex  = pVertex,
-			.uniform  = sp->uniform
-		};
-		p->v = (SRPvsOutput) {
-			.position = {0},
-			.pOutputVariables = pVarying
-		};
-
-		sp->vs->shader(&vsIn, &p->v);
-
-		// Perspective divide
-		double invW = 1.0 / p->v.position[3];
-		p->v.position[0] *= invW;
-		p->v.position[1] *= invW;
-		p->v.position[2] *= invW;
-		p->v.position[3] = 1.0;
+		processVertex(
+			vertexIndex, k, varyingBuffer, vb, sp,
+			&p->v, NULL
+		);
 
 		if (shouldClipPoint(p))
 			continue;
