@@ -2,7 +2,7 @@
 #define SRP_INCLUDE_MAT
 
 #include <stdio.h>
-#include "srp.h"
+#include <srp/srp.h>
 #include "window.h"
 #include "timer.h"
 #include "rad.h"

@@ -1,6 +1,6 @@
 add_subdirectory(utility)
 
-# Is not file(COPY ...) because the latter does not run every time
+# It's not file(COPY ...) because the latter does not run every time
 # the file/directory contents change
 add_custom_target(copy_res_folder ALL)
 add_custom_command(
