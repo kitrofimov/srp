@@ -1,35 +1,22 @@
 # srp
 
-A **s**oftware **r**endering **p**ipeline using only CPU computation that features:
+A **s**oftware **r**endering **p**ipeline that features:
+- Support for all main primitive types (triangles, lines, points)
 - Fully programmable vertex and fragment shaders
-- A small math library with vector and matrix structures to use in shader programming
+- Perspective-correct attribute interpolation
 - Texture mapping
 - Shader uniforms
-- Affine attribute interpolation
+- Post-VS vertex caching
+- A small math library to use in shader programming
 
-Highly inspired by OpenGL API and made mostly for learning purposes, this is my first serious project in C (WIP at the moment) and my first project in the field of computer graphics. The only dependency is [`stb_image`](https://github.com/nothings/stb/blob/master/stb_image.h).
-
-You probably *do not* want to use this in production code! If you need to, see [this awesome project](https://github.com/rswinkle/PortableGL).
+The only dependency is [`stb_image`](https://github.com/nothings/stb/blob/master/stb_image.h).
 
 Read the documentation for `master` branch [here](https://kitrofimov.github.io/srp/), or build the documentation yourself (see [Building](#building))
-
-## Goals of this project
-- Create a general-purpose rendering library (primary use case: CPU-only devices)
-- Apply the fundamentals of software design patterns to a real-world case
-- Learn basics of computer graphics
-- Learn C programming language thoroughly & acquire experience working with it
-
-## What I learned from this project so far (a section for my portfolio)
-- Advanced C programming techniques, library design
-- Importance of having a plan & an end goal (this project started as something completely different from what it is now)
-- Git workflow (+ the importance of atomic commits and meaningful commit names)
-- Premature optimization *really* is the root of all evil
-- Importance of writing clean code & adding comments
 
 ## Building
 
 ```bash
-git clone https://www.github.com/fahlerile/srp
+git clone https://www.github.com/kitrofimov/srp
 mkdir srp/build
 cd srp/build
 cmake .. -D CMAKE_BUILD_TYPE=Release
@@ -45,8 +32,6 @@ You can also build the examples with `-D BUILD_EXAMPLES=1` and the documentation
 - https://github.com/nikolausrauch/software-rasterizer
 - https://github.com/niepp/srpbr
 
-And a lot more... Here I mentioned only those projects on which I looked at as a reference while making this one. If you need more similar projects, see [this](https://github.com/topics/software-rendering) and [this](https://github.com/topics/software-rasterizer).
-
 ## References
 - General Computer Graphics concepts:
     - https://www.scratchapixel.com/
@@ -59,8 +44,6 @@ And a lot more... Here I mentioned only those projects on which I looked at as a
 - Perspective-correct interpolation:
     - https://www.comp.nus.edu.sg/%7Elowkl/publications/lowk_persp_interp_techrep.pdf
     - https://www.youtube.com/watch?v=F5X6S35SW2s
-
-And many, many more, all of which I will not find anymore...
 
 ## TODO
 - [x] Add interpolation with perspective correction
@@ -89,10 +72,15 @@ And many, many more, all of which I will not find anymore...
     - [x] Line
     - [x] Line strip
     - [x] Line loop
-- [ ] Restructure the code (Are the relationships between files clear? Is there any multiple-responsibilities?)
-- [ ] Debug stutters
+- [x] Restructure the code (Are the relationships between files clear? Is there any multiple-responsibilities?)
 - [ ] Clipping? (i.e. try to render triangle that goes slightly beyond the screen edge)
-- [ ] Image-based testing framework?
+- [ ] Debug stutters (e.g. draw cube in line mode, stutters every 1.5-2 seconds)
+- [ ] Add an example with `.obj` model loading
+- [ ] Add wireframe rendering of triangles (do OpenGL and Vulkan have this?)
+- [ ] Should this project use `double`s or `float`s?
+- [ ] Check for bottlenecks & optimize
+- [ ] Update the documentation
+- [ ] Image-based testing framework
 - [ ] Implement single-threaded binning and tile system
 - [ ] Scale to multiple threads
 
