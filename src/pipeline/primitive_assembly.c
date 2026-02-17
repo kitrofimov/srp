@@ -8,24 +8,11 @@
 #include "pipeline/primitive_assembly.h"
 #include "pipeline/vertex_processing.h"
 #include "pipeline/topology.h"
+#include "pipeline/clipping.h"
 #include "utils/message_callback_p.h"
 #include "srp/context.h"
 #include "memory/arena_p.h"
 #include "utils/voidptr.h"
-
-/** Assemble a single triangle
- *  @param[in] rawTriIdx Index of the primitive to assemble, starting from 0,
- * 						 including culled triangles
- *  @param[in] cache Pointer to the post-VS cache
- *  @param[in] varyingBuffer Buffer where vertex shader outputs will be stored
- *  @param[out] tri Assembled triangle
- *  @returns `true` if successful, `false` otherwise
- *  @see assembleTriangles() for documentation on other parameters */
-static bool assembleOneTriangle(
-    const SRPIndexBuffer* ib, const SRPVertexBuffer* vb, const SRPShaderProgram* sp,
-    const SRPFramebuffer* fb, SRPPrimitive prim, size_t startIndex, size_t rawTriIdx,
-    VertexCache* cache, void* varyingBuffer, SRPTriangle* tri
-);
 
 /** Assemble a single triangle
  *  @param[in] rawLineIdx Index of the primitive to assemble, starting from 0,
@@ -42,14 +29,14 @@ static void assembleOneLine(
 );
 
 /** Allocate buffers needed for assembling primitives
- *  @param[in] nPrimitives Number of primitives to allocate buffers for
+ *  @param[in] nUnclipped Number of primitives to allocate buffers for
  *  @param[in] primSize Size of each primitive, in bytes
  *  @param[in] sp Shader program to use
  *  @param[in] cache Post-VS cache that is going to be used
  *  @param[out] outPrimitives Will contain pointer to the array of assembled primitives
  *  @param[out] outVaryingBuffer Will contain pointer to the interpolated variables buffer */
 static void allocateBuffers(
-    size_t nPrimitives, size_t primSize, const SRPShaderProgram* sp, 
+    size_t nUnclipped, size_t primSize, const SRPShaderProgram* sp, 
     VertexCache* cache, void** outPrimitives, void** outVaryingBuffer
 );
 
@@ -68,55 +55,59 @@ bool assembleTriangles(
 )
 {
 	warnOnExcessVertexCount(ib, vb, prim, startIndex, vertexCount);
-	size_t nTriangles = computeTriangleCount(vertexCount, prim);
-	if (nTriangles == 0)
+	size_t nUnclipped = computeTriangleCount(vertexCount, prim);
+	if (nUnclipped == 0)
 		return false;
 
 	VertexCache cache;
 	SRPTriangle* triangles;
 	void* varyingBuffer;
 	allocateVertexCache(&cache, ib, startIndex, vertexCount);
-	allocateBuffers(nTriangles, sizeof(SRPTriangle), sp, &cache, (void**) &triangles, &varyingBuffer);
+	allocateBuffers(
+		nUnclipped, sizeof(SRPTriangle), sp, &cache,
+		(void**) &triangles, &varyingBuffer
+	);
+
+	SRPTriangle clipped[4];  // worst-case after clipping
+
+	void* clippedVaryings = INDEX_VOID_PTR(
+		varyingBuffer, cache.size,
+		sp->vs->nBytesPerOutputVariables
+	);
+	size_t clippedVaryingIndex = 0;
 
 	size_t primitiveID = 0;
-	for (size_t k = 0; k < nTriangles; k += 1)
+	for (size_t k = 0; k < nUnclipped; k += 1)
 	{
-		SRPTriangle* tri = &triangles[primitiveID];
-		bool success = assembleOneTriangle(
-			ib, vb, sp, fb, prim, startIndex, k, &cache, varyingBuffer, tri
-		);
+		// SRPTriangle* cur = &triangles[primitiveID];
+		SRPTriangle unclipped;
 
-		if (!success)
-			continue;
+		size_t streamIndices[3];
+		resolveTriangleTopology(startIndex, k, prim, streamIndices);
 
-		tri->id = primitiveID;
-		primitiveID++;
+		for (uint8_t i = 0; i < 3; i++)
+		{
+			size_t vertexIndex = (ib) ? indexIndexBuffer(ib, streamIndices[i]) : streamIndices[i];
+			unclipped.v[i] = *vertexCacheFetch(&cache, vertexIndex, varyingBuffer, vb, sp);
+		}
+
+		size_t nClipped = clipTriangle(&unclipped, clippedVaryings, &clippedVaryingIndex, sp, clipped);
+
+		for (size_t i = 0; i < nClipped; i++)
+		{
+			SRPTriangle* dst = &triangles[primitiveID];
+			*dst = clipped[i];
+			bool success = setupTriangle(dst, fb);
+			if (!success)
+				continue;
+			dst->id = primitiveID;
+			primitiveID++;
+		}
 	}
 
-	*outTriangleCount = primitiveID;  // Amount of non-culled triangles
+	*outTriangleCount = primitiveID;  // Total amount of triangles
 	*outTriangles = triangles;
 	return true;
-}
-
-static bool assembleOneTriangle(
-    const SRPIndexBuffer* ib, const SRPVertexBuffer* vb, const SRPShaderProgram* sp,
-    const SRPFramebuffer* fb, SRPPrimitive prim, size_t startIndex, size_t rawTriIdx,
-    VertexCache* cache, void* varyingBuffer, SRPTriangle* tri
-)
-{
-    size_t streamIndices[3];
-    resolveTriangleTopology(startIndex, rawTriIdx, prim, streamIndices);
-
-    for (uint8_t i = 0; i < 3; i++)
-    {
-        size_t vertexIndex = (ib) ? indexIndexBuffer(ib, streamIndices[i]) : streamIndices[i];
-		VertexCacheEntry* entry = vertexCacheFetch(cache, vertexIndex, varyingBuffer, vb, sp);
-		tri->v[i] = entry->data;
-		tri->invW[i] = entry->invW;
-	}
-
-	bool success = setupTriangle(tri, fb);
-    return success;
 }
 
 bool assembleLines(
@@ -166,23 +157,26 @@ static void assembleOneLine(
 	for (uint8_t i = 0; i < 2; i++)
 	{
 		size_t vertexIndex = (ib) ? indexIndexBuffer(ib, streamIndices[i]) : streamIndices[i];
-		VertexCacheEntry* entry = vertexCacheFetch(cache, vertexIndex, varyingBuffer, vb, sp);
-		line->v[i] = entry->data;
-		line->invW[i] = entry->invW;
+		line->v[i] = *vertexCacheFetch(cache, vertexIndex, varyingBuffer, vb, sp);
 	}
 
 	setupLine(line, fb);
 }
 
 static void allocateBuffers(
-    size_t nPrimitives, size_t primSize, const SRPShaderProgram* sp, 
+    size_t nUnclipped, size_t primSize, const SRPShaderProgram* sp, 
     VertexCache* cache, void** outPrimitives, void** outVaryingBuffer
 ) {
 	size_t nUniqueVertices = cache->size;
-	size_t trianglesBufferSize = primSize * nPrimitives;
-	size_t varyingBufferSize = sp->vs->nBytesPerOutputVariables * nUniqueVertices;
+	
+	// Each unclipped triangle may produce up to 4 clipped triangles
+	size_t primitivesBufferSize = primSize * nUnclipped * 4;
+	
+	// Allocating twice more to leave space for vertices created during clipping
+	/** @todo each triangle may result in 6 vertices: 3 -> 6, is 2x enough? */
+	size_t varyingBufferSize = sp->vs->nBytesPerOutputVariables * nUniqueVertices * 2;
 
-	*outPrimitives = ARENA_ALLOC(trianglesBufferSize);
+	*outPrimitives = ARENA_ALLOC(primitivesBufferSize);
 	*outVaryingBuffer = ARENA_ALLOC(varyingBufferSize);
 }
 
@@ -225,10 +219,7 @@ bool assemblePoints(
 		SRPPoint* p = &points[primitiveID];
 
 		size_t vertexIndex = (ib) ? indexIndexBuffer(ib, startIndex+k) : startIndex+k;
-		processVertex(
-			vertexIndex, k, varyingBuffer, vb, sp,
-			&p->v, NULL
-		);
+		processVertex(vertexIndex, k, varyingBuffer, vb, sp, &p->v);
 
 		p->id = primitiveID;
 		primitiveID++;

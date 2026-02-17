@@ -4,17 +4,18 @@
 #include <math.h>
 #include <stdint.h>
 #include <stdio.h>
-#include "raster/triangle.h"
 #include "srp/context.h"
 #include "srp/vertex.h"
-#include "core/framebuffer_p.h"
-#include "utils/message_callback_p.h"
 #include "srp/shaders.h"
 #include "srp/color.h"
-#include "utils/voidptr.h"
-#include "math/utils.h"
 #include "srp/vec.h"
+#include "raster/triangle.h"
 #include "raster/fragment.h"
+#include "core/framebuffer_p.h"
+#include "pipeline/vertex_processing.h"
+#include "math/utils.h"
+#include "utils/message_callback_p.h"
+#include "utils/voidptr.h"
 
 /** @file
  *  Triangle rasteization & data interpolation */
@@ -132,10 +133,11 @@ nextPixel:
 	}
 }
 
-bool setupTriangle(
-	SRPTriangle* tri, const SRPFramebuffer* fb
-)
+bool setupTriangle(SRPTriangle* tri, const SRPFramebuffer* fb)
 {
+	for (uint8_t i = 0; i < 3; i++)
+		applyPerspectiveDivide(&tri->v[i], &tri->invW[i]);
+
 	// vec3d is tightly packed, so this is safe
 	for (uint8_t i = 0; i < 3; i++)
 		tri->p_ndc[i] = (vec3d*) tri->v[i].position;

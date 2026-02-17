@@ -31,13 +31,12 @@ typedef struct SRPTriangle {
 	size_t id;             /**< ID of the primitive, starting from 0 */
 } SRPTriangle;
 
-/** Calculate internal data for triangle rasterization
+/** Setup triangle for rasterization, performing perspective divide and
+ *  calculating internal variables
  *  @param[in] tri The triangle to set up. Its `v` field is required to be filled
  *  @param[in] fb The framebuffer to use for NDC to screen-space conversion
  *  @return `false` if it is culled and should not be rasterized, `true` otherwise */
-bool setupTriangle(
-	SRPTriangle* tri, const SRPFramebuffer* fb
-);
+bool setupTriangle(SRPTriangle* tri, const SRPFramebuffer* fb);
 
 /** Rasterize a triangle
  *  @param[in] triangle Pointer to the triangle to draw

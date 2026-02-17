@@ -13,7 +13,6 @@
 typedef struct VertexCacheEntry {
 	bool valid;
 	SRPvsOutput data;
-	double invW;
 } VertexCacheEntry;
 
 /** Post-VS cache */
@@ -28,16 +27,22 @@ void allocateVertexCache(
 	VertexCache* cache, const SRPIndexBuffer* ib, size_t startIndex, size_t vertexCount
 );
 
-/** Fetch vertex shader output from post-VS cache. If not found, compute and store it
+/** Fetch vertex shader output from post-VS cache. If not found, compute and store it.
+ *  Returns clip-space positions (does not perform perspective divide)
  * 	@see assembleOneTriangle() for documentation on other parameters */
-VertexCacheEntry* vertexCacheFetch(
+SRPvsOutput* vertexCacheFetch(
 	VertexCache* cache, size_t vertexIndex, void* varyingBuffer,
 	const SRPVertexBuffer* vb, const SRPShaderProgram* sp
 );
 
-/** Run vertex shader and perform perspective divide */
+/** Run vertex shader */
 void processVertex(
 	size_t vertexIndex, size_t varyingIndex, void* varyingBuffer,
-	const SRPVertexBuffer* vb, const SRPShaderProgram* sp,
-	SRPvsOutput* outV, double* outInvW
+	const SRPVertexBuffer* vb, const SRPShaderProgram* sp, SRPvsOutput* outV
 );
+
+/** Apply perspective divide to the output of the vertex shader,
+ *  saving the 1 / W_clip value
+ *  @param[in] output Output of the vertex shader
+ *  @param[out] outInvW Pointer where 1/W value will be stored. May be NULL */
+void applyPerspectiveDivide(SRPvsOutput* output, double* outInvW);
