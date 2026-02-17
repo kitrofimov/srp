@@ -1,11 +1,11 @@
 # srp
 
 A **s**oftware **r**endering **p**ipeline that features:
-- Support for all main primitive types (triangles, lines, points)
-- Fully programmable vertex and fragment shaders
+- Pixel-perfect rasterization of all main primitive types (triangles, lines, points)
+- Fully programmable vertex and fragment shaders (+uniforms)
+- Sutherland-Hodgman triangle clipping & Liang-Barsky line clipping
 - Perspective-correct attribute interpolation
 - Texture mapping
-- Shader uniforms
 - Post-VS vertex caching
 - A small math library to use in shader programming
 
@@ -73,7 +73,10 @@ You can also build the examples with `-D BUILD_EXAMPLES=1` and the documentation
     - [x] Line strip
     - [x] Line loop
 - [x] Restructure the code (Are the relationships between files clear? Is there any multiple-responsibilities?)
-- [ ] Clipping? (i.e. try to render triangle that goes slightly beyond the screen edge)
+- [x] Clipping
+    - [x] Triangles (Sutherland-Hodgman)
+    - [x] Lines (Liang-Barsky)
+    - [x] Points
 - [ ] Debug stutters (e.g. draw cube in line mode, stutters every 1.5-2 seconds)
 - [ ] Add an example with `.obj` model loading
 - [ ] Add wireframe rendering of triangles (do OpenGL and Vulkan have this?)

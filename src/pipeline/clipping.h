@@ -14,7 +14,7 @@
  *  @return Amount of outputted triangles */
 size_t clipTriangle(const SRPTriangle* in, const SRPShaderProgram* sp, SRPTriangle* out);
 
-/** Clip the line in-place using Cohen-Sutherland algorithm
+/** Clip the line in-place using Liang-Barsky algorithm
  *  @param[in] line The line to clip
  *  @param[in] sp The shader program being used
  *  @return `true` if clipped fully (nothing left), `false` if clipped partially */
