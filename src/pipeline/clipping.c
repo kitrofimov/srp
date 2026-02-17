@@ -10,17 +10,47 @@
 #include "utils/message_callback_p.h"
 #include "utils/voidptr.h"
 
+/** Represents all possible clip planes */
+typedef enum {
+    PLANE_LEFT,
+    PLANE_RIGHT,
+    PLANE_BOTTOM,
+    PLANE_TOP,
+    PLANE_NEAR,
+    PLANE_FAR,
+    PLANE_COUNT
+} ClipPlane;
+
+/** Clip a polygon against specified plane (Sutherland-Hodgman)
+ *  @param[in] in Vertices of an input polygon
+ *  @param[in] inCount Amount of vertices the input polygon has
+ *  @param[in] plane The plane to clip against
+ *  @param[in] sp The shader program being used
+ *  @param[out] out Vertices of a clipped polygon
+ *  @return Amount of vertices the clipped polygon has */
 static size_t clipAgainstPlane(
     SRPvsOutput* in, size_t inCount, ClipPlane plane,
     const SRPShaderProgram* sp, SRPvsOutput* out
 );
 
+/** Create new vertex via interpolating between two existing ones
+ *  @param[in] a First vertex
+ *  @param[in] b Second vertex
+ *  @param[in] t Interpolation parameter: 0 -> first vertex, 1 -> second vertex
+ *  @param[in] sp The shader program being used
+ *  @param[in] out Interpolated vertex */ 
 static void interpolateVertex(
     const SRPvsOutput* a, const SRPvsOutput* b, double t,
     const SRPShaderProgram* sp, SRPvsOutput* out
 );
 
+/** Perform a deep copy of a vertex, copying its externally-stored varyings
+ *  @param[in] v Vertex to copy
+ *  @param[in] varyingSize How many bytes do varyings occupy
+ *  @param[out] out Where to store the copy */
 static void deepCopyVertex(const SRPvsOutput* v, size_t varyingSize, SRPvsOutput* out);
+
+/** Calculate the distance from the vertex to specific plane */
 static inline double planeDistance(const SRPvsOutput* v, ClipPlane p);
 
 size_t clipTriangle(const SRPTriangle* in, const SRPShaderProgram* sp, SRPTriangle* out)

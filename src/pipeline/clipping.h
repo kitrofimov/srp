@@ -6,16 +6,6 @@
 #include "raster/triangle.h"
 #include "raster/line.h"
 
-typedef enum {
-    PLANE_LEFT,
-    PLANE_RIGHT,
-    PLANE_BOTTOM,
-    PLANE_TOP,
-    PLANE_NEAR,
-    PLANE_FAR,
-    PLANE_COUNT
-} ClipPlane;
-
 /** Clip the triangle using Sutherland-Hodgman algorithm
  *  @param[in] in The triangle to clip
  *  @param[in] sp The shader program being used
