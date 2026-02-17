@@ -69,22 +69,6 @@ static void triangleInterpolateData(
 	vec4d* pPosition, SRPInterpolated* pInterpolatedBuffer
 );
 
-/** Interpolate the fragment position inside the triangle.
- *  @param[in] tri Triangle to interpolate position for
- *  @param[out] pPosition A pointer to vec4d where interpolated position will appear. */
-static void triangleInterpolatePosition(SRPTriangle* tri, vec4d* pPosition);
-
-/** Interpolate vertex attributes inside the triangle.
- *  @param[in] tri Triangle to interpolate attributes for
- *  @param[in] sp A pointer to shader program to use
- *  @param[in] pPosition A pointer to the interpolated position
- *  @param[out] pInterpolatedBuffer A pointer to the buffer where interpolated
- *              variables will appear. Must be big enough to hold all of them */
-static void triangleInterpolateAttributes(
-	SRPTriangle* tri, const SRPShaderProgram* restrict sp,
-	vec4d* pPosition, SRPInterpolated* pInterpolatedBuffer
-);
-
 /** @} */  // ingroup Rasterization
 
 void rasterizeTriangle(
@@ -264,44 +248,7 @@ static void triangleInterpolateData(
 	vec4d* pPosition, SRPInterpolated* pInterpolatedBuffer
 )
 {
-	triangleInterpolatePosition(tri, pPosition);
-	triangleInterpolateAttributes(tri, sp, pPosition, pInterpolatedBuffer);
-}
-
-static void triangleInterpolatePosition(SRPTriangle* tri, vec4d* pPosition)
-{
-	bool perspective = (srpContext.interpolationMode == SRP_INTERPOLATION_MODE_PERSPECTIVE);
-
-	pPosition->x = \
-		tri->v[0].position[0] * tri->lambda[0] + \
-		tri->v[1].position[0] * tri->lambda[1] + \
-		tri->v[2].position[0] * tri->lambda[2];
-	pPosition->y = \
-		tri->v[0].position[1] * tri->lambda[0] + \
-		tri->v[1].position[1] * tri->lambda[1] + \
-		tri->v[2].position[1] * tri->lambda[2];
-
-	// If I am not mistaken, this is linear in screen space too
-	pPosition->z = \
-		tri->v[0].position[2] * tri->lambda[0] + \
-		tri->v[1].position[2] * tri->lambda[1] + \
-		tri->v[2].position[2] * tri->lambda[2];
-
-	if (perspective)
-        pPosition->w = 1 / (
-			tri->invW[0] * tri->lambda[0] + \
-			tri->invW[1] * tri->lambda[1] + \
-			tri->invW[2] * tri->lambda[2]
-		);
-	else  // affine
-        pPosition->w = 1.;
-}
-
-static void triangleInterpolateAttributes(
-	SRPTriangle* tri, const SRPShaderProgram* restrict sp,
-	vec4d* pPosition, SRPInterpolated* pInterpolatedBuffer
-)
-{
 	const bool perspective = srpContext.interpolationMode == SRP_INTERPOLATION_MODE_PERSPECTIVE;
+	interpolatePosition(tri->v, 3, tri->lambda, tri->invW, perspective, sp, pPosition);
 	interpolateAttributes(tri->v, 3, tri->lambda, tri->invW, pPosition->w, perspective, sp, pInterpolatedBuffer);
 }

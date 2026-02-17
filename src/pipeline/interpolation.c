@@ -21,9 +21,35 @@
  *
  *  @see https://www.comp.nus.edu.sg/%7Elowkl/publications/lowk_persp_interp_techrep.pdf
  *  @see https://www.youtube.com/watch?v=F5X6S35SW2s */
+
+void interpolatePosition(
+    SRPvsOutput* vertices, size_t nVertices, const double* weights,
+    const double* invW, bool perspective, const SRPShaderProgram* sp,
+    vec4d* pPosition
+)
+{
+    for (size_t i = 0; i < 3; i++)
+    {
+        double sum = 0.;
+        for (size_t j = 0; j < nVertices; j++)
+            sum += vertices[j].position[i] * weights[j];
+        ((double*) pPosition)[i] = sum;
+    }
+
+	if (perspective)
+    {
+        double sum = 0.;
+        for (size_t j = 0; j < nVertices; j++)
+            sum += invW[j] * weights[j];
+        pPosition->w = 1 / sum;
+    }
+	else  // affine
+        pPosition->w = 1.;
+}
+
 void interpolateAttributes(
     SRPvsOutput* vertices, size_t nVertices, const double* weights,
-    const double* invW, double reciprocalInterpolatedW, bool perspective,
+    const double* invW, double reciprocalInterpolatedInvW, bool perspective,
     const SRPShaderProgram* sp, SRPInterpolated* pOutput
 )
 {
@@ -61,7 +87,7 @@ void interpolateAttributes(
                 {
                     for (size_t i = 0; i < nVertices; i++)
                         sum += ((double*) AV[i])[elemI] * invW[i] * weights[i];
-                    sum *= reciprocalInterpolatedW;
+                    sum *= reciprocalInterpolatedInvW;
                 }
                 else
                     for (size_t i = 0; i < nVertices; i++)
