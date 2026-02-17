@@ -13,6 +13,7 @@
 #include "raster/fragment.h"
 #include "core/framebuffer_p.h"
 #include "pipeline/vertex_processing.h"
+#include "pipeline/interpolation.h"
 #include "math/utils.h"
 #include "utils/message_callback_p.h"
 #include "utils/voidptr.h"
@@ -263,24 +264,6 @@ static void triangleInterpolateData(
 	vec4d* pPosition, SRPInterpolated* pInterpolatedBuffer
 )
 {
-	/** Let @f$ v_0, v_1, v_2 @f$ be points in space that form a triangle and
-	 *  @f$ a, b, c @f$ be barycentric coordinates for a point @f$ P @f$
-	 *  according to @f$ v_0, v_1, v_2 @f$ respectively. Then, by the property
-	 *  of barycentric coordinates @f$ P = av_0 + bv_1 + cv_2 @f$. This can be
-	 *  extrapolated to arbitrary values assigned to vertices, and this is called
-	 *  affine attribute interpolation.
-     *
-	 *  But this method does not take the perspective divide into account, so
-	 *  the texture (for example) will look "wrong".
-	 *
-	 *  It can be shown (see the "see also" section) that perspective-correct Z
-	 *  value can be obtained by taking the reciprocal of the linear interpolation
-	 *  between the reciprocals of input Z values, and similarly for arbitrary
-	 *  parameters.
-	 *
-	 *  @see https://www.comp.nus.edu.sg/%7Elowkl/publications/lowk_persp_interp_techrep.pdf
-	 *  @see https://www.youtube.com/watch?v=F5X6S35SW2s */
-
 	triangleInterpolatePosition(tri, pPosition);
 	triangleInterpolateAttributes(tri, sp, pPosition, pInterpolatedBuffer);
 }
@@ -298,7 +281,7 @@ static void triangleInterpolatePosition(SRPTriangle* tri, vec4d* pPosition)
 		tri->v[1].position[1] * tri->lambda[1] + \
 		tri->v[2].position[1] * tri->lambda[2];
 
-	// If I am not mistaken, this should be linear in screen space
+	// If I am not mistaken, this is linear in screen space too
 	pPosition->z = \
 		tri->v[0].position[2] * tri->lambda[0] + \
 		tri->v[1].position[2] * tri->lambda[1] + \
@@ -319,62 +302,6 @@ static void triangleInterpolateAttributes(
 	vec4d* pPosition, SRPInterpolated* pInterpolatedBuffer
 )
 {
-	// vertices[i].pOutputVariables =
-	// (                        Vi                              )
-	// (          ViA0          )(          ViA1          ) ...
-	// (ViA0E0 ViA0E1 ... ViA0En)(ViA1E0 ViA1E1 ... ViA1En) ...
-	// [V]ertex, [A]ttribute, [E]lement
-
-	bool perspective = (srpContext.interpolationMode == SRP_INTERPOLATION_MODE_PERSPECTIVE);
-
-	// Points to current attribute in output buffer
-	void* pInterpolatedAttrVoid = pInterpolatedBuffer;
-
-	size_t attrOffsetBytes = 0;
-	for (size_t attrI = 0; attrI < sp->vs->nOutputVariables; attrI++)
-	{
-		SRPVertexVariableInformation* attr = &sp->vs->outputVariablesInfo[attrI];
-		size_t elemSize = 0;
-		switch (attr->type)
-		{
-		case TYPE_DOUBLE:
-		{
-			elemSize = sizeof(double);
-			double* pInterpolatedAttr = (double*) pInterpolatedAttrVoid;
-
-			// Pointers to the current attribute of 0th, 1st and 2nd vertices
-			double* AV[3];
-			for (int i = 0; i < 3; i++)
-				AV[i] = (double*) ADD_VOID_PTR(tri->v[i].pOutputVariables, attrOffsetBytes);
-
-			if (perspective)
-				for (size_t elemI = 0; elemI < attr->nItems; elemI++)
-				{
-					pInterpolatedAttr[elemI] = pPosition->w * (
-						AV[0][elemI] * tri->invW[0] * tri->lambda[0] + \
-						AV[1][elemI] * tri->invW[1] * tri->lambda[1] + \
-						AV[2][elemI] * tri->invW[2] * tri->lambda[2]
-					);
-				}
-			else  // affine
-				for (size_t elemI = 0; elemI < attr->nItems; elemI++)
-				{
-					pInterpolatedAttr[elemI] = \
-						AV[0][elemI] * tri->lambda[0] + \
-						AV[1][elemI] * tri->lambda[1] + \
-						AV[2][elemI] * tri->lambda[2];
-				}
-			break;
-		}
-		default:
-			srpMessageCallbackHelper(
-				SRP_MESSAGE_ERROR, SRP_MESSAGE_SEVERITY_HIGH, __func__,
-				"Unexpected type (%i)", attr->type
-			);
-		}
-
-		size_t attrSize = elemSize * attr->nItems;
-		pInterpolatedAttrVoid = ADD_VOID_PTR(pInterpolatedAttrVoid, attrSize);
-		attrOffsetBytes += attrSize;
-	}
+	const bool perspective = srpContext.interpolationMode == SRP_INTERPOLATION_MODE_PERSPECTIVE;
+	interpolateAttributes(tri->v, 3, tri->lambda, tri->invW, pPosition->w, perspective, sp, pInterpolatedBuffer);
 }

@@ -4,6 +4,7 @@
 #include <string.h>
 #include <assert.h>
 #include "pipeline/clipping.h"
+#include "pipeline/interpolation.h"
 #include "memory/arena_p.h"
 #include "utils/message_callback_p.h"
 #include "utils/voidptr.h"
@@ -114,46 +115,12 @@ static void interpolateVertex(
     for (int i = 0; i < 4; i++)
         out->position[i] = a->position[i] * (1-t) + b->position[i] * t;
 
-    /** @todo duplicate interpolation logic here, in line.c and in triangle.c */
+    void* pVarying = ARENA_ALLOC(sp->vs->nBytesPerOutputVariables);
+    out->pOutputVariables = pVarying;
 
-	// Points to current attribute in output buffer
-	void* pInterpolatedAttrVoid = ARENA_ALLOC(sp->vs->nBytesPerOutputVariables);
-    out->pOutputVariables = pInterpolatedAttrVoid;
-
-	size_t attrOffsetBytes = 0;
-	for (size_t attrI = 0; attrI < sp->vs->nOutputVariables; attrI++)
-	{
-		SRPVertexVariableInformation* attr = &sp->vs->outputVariablesInfo[attrI];
-		size_t elemSize = 0;
-		switch (attr->type)
-		{
-		case TYPE_DOUBLE:
-		{
-			elemSize = sizeof(double);
-			double* pInterpolatedAttr = (double*) pInterpolatedAttrVoid;
-
-			// Pointers to the current attribute of 0th and 1st vertices
-			double* AV[2] = {
-                (double*) ADD_VOID_PTR(a->pOutputVariables, attrOffsetBytes),
-                (double*) ADD_VOID_PTR(b->pOutputVariables, attrOffsetBytes)
-            };
-
-            for (size_t elemI = 0; elemI < attr->nItems; elemI++)
-                pInterpolatedAttr[elemI] = AV[0][elemI] * (1-t) + AV[1][elemI] * t;
-
-			break;
-		}
-		default:
-			srpMessageCallbackHelper(
-				SRP_MESSAGE_ERROR, SRP_MESSAGE_SEVERITY_HIGH, __func__,
-				"Unexpected type (%i)", attr->type
-			);
-		}
-
-		size_t attrSize = elemSize * attr->nItems;
-		pInterpolatedAttrVoid = ADD_VOID_PTR(pInterpolatedAttrVoid, attrSize);
-		attrOffsetBytes += attrSize;
-	}
+    SRPvsOutput vertices[2] = {*a, *b};  /** @todo this is disgusting */
+	const double weights[2] = {1-t, t};
+    interpolateAttributes(vertices, 2, weights, NULL, 0., false, sp, pVarying);
 }
 
 static void deepCopyVertex(const SRPvsOutput* src, size_t varyingSize, SRPvsOutput* dst)
