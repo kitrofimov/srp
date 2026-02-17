@@ -6,6 +6,7 @@
 #include "pipeline/clipping.h"
 #include "pipeline/interpolation.h"
 #include "memory/arena_p.h"
+#include "math/utils.h"
 #include "utils/message_callback_p.h"
 #include "utils/voidptr.h"
 
@@ -20,7 +21,6 @@ static void interpolateVertex(
 );
 
 static void deepCopyVertex(const SRPvsOutput* v, size_t varyingSize, SRPvsOutput* out);
-static inline bool insidePlane(const SRPvsOutput* v, ClipPlane p);
 static inline double planeDistance(const SRPvsOutput* v, ClipPlane p);
 
 size_t clipTriangle(const SRPTriangle* in, const SRPShaderProgram* sp, SRPTriangle* out)
@@ -62,6 +62,43 @@ size_t clipTriangle(const SRPTriangle* in, const SRPShaderProgram* sp, SRPTriang
     return id;
 }
 
+bool clipLine(SRPLine* line, const SRPShaderProgram* sp)
+{
+    double t0 = 0., t1 = 1.;
+
+    for (int p = 0; p < PLANE_COUNT; p++)
+    {
+        double da = planeDistance(&line->v[0], (ClipPlane) p);
+        double db = planeDistance(&line->v[1], (ClipPlane) p);
+
+        if (da < 0. && db < 0.)  // Both outside
+            return true;
+
+        if (da < 0. || db < 0.)  // Only one outside
+        {
+            if (ROUGHLY_ZERO(da - db))
+                continue;
+            double t = da / (da - db);
+            if (da < 0.)
+                t0 = MAX(t0, t);  // Entry: push t0 forward
+            else
+                t1 = MIN(t1, t);  // Exit: pull t1 back
+
+            if (t0 > t1)
+                return true;  // Clipped to nothing
+        }
+    }
+
+    SRPvsOutput A = line->v[0];
+    SRPvsOutput B = line->v[1];
+    if (t0 > 0.)
+        interpolateVertex(&A, &B, t0, sp, &line->v[0]);
+    if (t1 < 1.)
+        interpolateVertex(&A, &B, t1, sp, &line->v[1]);
+
+    return false;
+}
+
 static size_t clipAgainstPlane(
     SRPvsOutput* in, size_t inCount, ClipPlane plane,
     const SRPShaderProgram* sp, SRPvsOutput* out
@@ -78,20 +115,21 @@ static size_t clipAgainstPlane(
         SRPvsOutput* current = &in[i];
         SRPvsOutput* next = &in[(i + 1) % inCount];
 
-        bool currInside = insidePlane(current, plane);
-        bool nextInside = insidePlane(next, plane);
+        double da = planeDistance(current, plane);
+        double db = planeDistance(next, plane);
+        bool currInside = da > 0;
+        bool nextInside = db > 0;
 
         if (currInside && nextInside)
         {
             deepCopyVertex(next, varyingSize, &out[outCount]);
             outCount++;
         }
-        else if (currInside != nextInside)  // Only one is outside
+        else if (currInside || nextInside)  // Only one outside
         {
-            double da = planeDistance(current, plane);
-            double db = planeDistance(next, plane);
+            if (ROUGHLY_ZERO(da - db))
+                continue;
             double t = da / (da - db);
-
             interpolateVertex(current, next, t, sp, &out[outCount]);
             outCount++;
 
@@ -129,25 +167,6 @@ static void deepCopyVertex(const SRPvsOutput* src, size_t varyingSize, SRPvsOutp
     void* mem = ARENA_ALLOC(varyingSize);
     memcpy(mem, src->pOutputVariables, varyingSize);
     dst->pOutputVariables = mem;
-}
-
-static inline bool insidePlane(const SRPvsOutput* v, ClipPlane p)
-{
-    const double x = v->position[0];
-    const double y = v->position[1];
-    const double z = v->position[2];
-    const double w = v->position[3];
-
-    switch (p)
-    {
-        case PLANE_LEFT:   return x >= -w;
-        case PLANE_RIGHT:  return x <=  w;
-        case PLANE_BOTTOM: return y >= -w;
-        case PLANE_TOP:    return y <=  w;
-        case PLANE_NEAR:   return z >= -w;
-        case PLANE_FAR:    return z <=  w;
-        default:           assert(false);
-    }
 }
 
 static inline double planeDistance(const SRPvsOutput* v, ClipPlane p)

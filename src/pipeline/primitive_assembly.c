@@ -14,20 +14,6 @@
 #include "memory/arena_p.h"
 #include "utils/voidptr.h"
 
-/** Assemble a single triangle
- *  @param[in] rawLineIdx Index of the primitive to assemble, starting from 0,
- * 						  including skipped lines
- *  @param[in] cache Pointer to the post-VS cache
- *  @param[in] varyingBuffer Buffer where vertex shader outputs will be stored
- *  @param[out] line Assembled line
- *  @returns `true` if successful, `false` otherwise
- *  @see assembleLines() for documentation on other parameters */
-static void assembleOneLine(
-    const SRPIndexBuffer* ib, const SRPVertexBuffer* vb, const SRPShaderProgram* sp,
-    const SRPFramebuffer* fb, SRPPrimitive prim, size_t startIndex, size_t rawLineIdx,
-    size_t vertexCount, VertexCache* cache, SRPLine* line
-);
-
 /** Check if there are excess vertices when drawing some kind of primitive,
  * 	send a warning if so
  *  @see assembleTriangles() for full parameter documentation */
@@ -108,7 +94,20 @@ bool assembleLines(
 	for (size_t k = 0; k < nLines; k += 1)
 	{
 		SRPLine* line = &lines[primitiveID];
-		assembleOneLine(ib, vb, sp, fb, prim, startIndex, k, vertexCount, &cache, line);
+
+		size_t streamIndices[2];
+		resolveLineTopology(startIndex, k, prim, vertexCount, streamIndices);
+
+		for (uint8_t i = 0; i < 2; i++)
+		{
+			size_t vertexIndex = (ib) ? indexIndexBuffer(ib, streamIndices[i]) : streamIndices[i];
+			line->v[i] = *vertexCacheFetch(&cache, vertexIndex, vb, sp);
+		}
+
+		if (clipLine(line, sp))  // Fully clipped
+			continue;
+
+		setupLine(line, fb);
 
 		line->id = primitiveID;
 		primitiveID++;
@@ -117,24 +116,6 @@ bool assembleLines(
 	*outLineCount = primitiveID;
 	*outLines = lines;
 	return true;
-}
-
-static void assembleOneLine(
-    const SRPIndexBuffer* ib, const SRPVertexBuffer* vb, const SRPShaderProgram* sp,
-    const SRPFramebuffer* fb, SRPPrimitive prim, size_t startIndex, size_t rawLineIdx,
-    size_t vertexCount, VertexCache* cache, SRPLine* line
-)
-{
-	size_t streamIndices[2];
-	resolveLineTopology(startIndex, rawLineIdx, prim, vertexCount, streamIndices);
-
-	for (uint8_t i = 0; i < 2; i++)
-	{
-		size_t vertexIndex = (ib) ? indexIndexBuffer(ib, streamIndices[i]) : streamIndices[i];
-		line->v[i] = *vertexCacheFetch(cache, vertexIndex, vb, sp);
-	}
-
-	setupLine(line, fb);
 }
 
 static void warnOnExcessVertexCount(

@@ -4,6 +4,7 @@
 #pragma once
 
 #include "raster/triangle.h"
+#include "raster/line.h"
 
 typedef enum {
     PLANE_LEFT,
@@ -21,3 +22,9 @@ typedef enum {
  *  @param[out] out The returned array of triangles
  *  @return Amount of outputted triangles */
 size_t clipTriangle(const SRPTriangle* in, const SRPShaderProgram* sp, SRPTriangle* out);
+
+/** Clip the line in-place using Cohen-Sutherland algorithm
+ *  @param[in] line The line to clip
+ *  @param[in] sp The shader program being used
+ *  @return `true` if clipped fully (nothing left), `false` if clipped partially */
+bool clipLine(SRPLine* line, const SRPShaderProgram* sp);
