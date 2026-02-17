@@ -21,3 +21,7 @@ void rasterizePoint(
 	SRPPoint* point, const SRPFramebuffer* fb,
 	const SRPShaderProgram* restrict sp
 );
+
+/** Perform perspective divide on a point
+ *  @param[in] p Point to setup */
+void setupPoint(SRPPoint* p);

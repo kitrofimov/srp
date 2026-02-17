@@ -4,17 +4,19 @@
 #include <math.h>
 #include <stdint.h>
 #include <stdio.h>
-#include "raster/triangle.h"
 #include "srp/context.h"
 #include "srp/vertex.h"
-#include "core/framebuffer_p.h"
-#include "utils/message_callback_p.h"
 #include "srp/shaders.h"
 #include "srp/color.h"
-#include "utils/voidptr.h"
-#include "math/utils.h"
 #include "srp/vec.h"
+#include "raster/triangle.h"
 #include "raster/fragment.h"
+#include "core/framebuffer_p.h"
+#include "pipeline/vertex_processing.h"
+#include "pipeline/interpolation.h"
+#include "math/utils.h"
+#include "utils/message_callback_p.h"
+#include "utils/voidptr.h"
 
 /** @file
  *  Triangle rasteization & data interpolation */
@@ -67,22 +69,6 @@ static void triangleInterpolateData(
 	vec4d* pPosition, SRPInterpolated* pInterpolatedBuffer
 );
 
-/** Interpolate the fragment position inside the triangle.
- *  @param[in] tri Triangle to interpolate position for
- *  @param[out] pPosition A pointer to vec4d where interpolated position will appear. */
-static void triangleInterpolatePosition(SRPTriangle* tri, vec4d* pPosition);
-
-/** Interpolate vertex attributes inside the triangle.
- *  @param[in] tri Triangle to interpolate attributes for
- *  @param[in] sp A pointer to shader program to use
- *  @param[in] pPosition A pointer to the interpolated position
- *  @param[out] pInterpolatedBuffer A pointer to the buffer where interpolated
- *              variables will appear. Must be big enough to hold all of them */
-static void triangleInterpolateAttributes(
-	SRPTriangle* tri, const SRPShaderProgram* restrict sp,
-	vec4d* pPosition, SRPInterpolated* pInterpolatedBuffer
-);
-
 /** @} */  // ingroup Rasterization
 
 void rasterizeTriangle(
@@ -96,29 +82,27 @@ void rasterizeTriangle(
 		{
 			for (uint8_t i = 0; i < 3; i++)  // Top-left rasterization rule
 			{
-				if (ROUGHLY_ZERO(tri->lambda[i]) && !tri->edgeTL[i])
+				bool inside = (tri->lambda[i] > 0.) || (ROUGHLY_ZERO(tri->lambda[i]) && tri->edgeTL[i]);
+				if (!inside)
 					goto nextPixel;
 			}
 
-			if (tri->lambda[0] >= 0 && tri->lambda[1] >= 0 && tri->lambda[2] >= 0)
-			{
-				vec4d interpolatedPosition = {0};
-				triangleInterpolateData(tri, sp, &interpolatedPosition, interpolatedBuffer);
+			vec4d interpolatedPosition = {0};
+			triangleInterpolateData(tri, sp, &interpolatedPosition, interpolatedBuffer);
 
-				SRPfsInput fsIn = {
-					.uniform = sp->uniform,
-					.interpolated = interpolatedBuffer,
-					.fragCoord = {
-						x + 0.5,
-						y + 0.5,
-						interpolatedPosition.z,
-						interpolatedPosition.w
-					},
-					.frontFacing = tri->isFrontFacing,
-					.primitiveID = tri->id,
-				};
-				emitFragment(fb, sp, x, y, &fsIn);
-			}
+			SRPfsInput fsIn = {
+				.uniform = sp->uniform,
+				.interpolated = interpolatedBuffer,
+				.fragCoord = {
+					x + 0.5,
+					y + 0.5,
+					interpolatedPosition.z,
+					interpolatedPosition.w
+				},
+				.frontFacing = tri->isFrontFacing,
+				.primitiveID = tri->id,
+			};
+			emitFragment(fb, sp, x, y, &fsIn);
 
 nextPixel:
 			for (uint8_t i = 0; i < 3; i++)
@@ -132,10 +116,11 @@ nextPixel:
 	}
 }
 
-bool setupTriangle(
-	SRPTriangle* tri, const SRPFramebuffer* fb
-)
+bool setupTriangle(SRPTriangle* tri, const SRPFramebuffer* fb)
 {
+	for (uint8_t i = 0; i < 3; i++)
+		applyPerspectiveDivide(&tri->v[i], &tri->invW[i]);
+
 	// vec3d is tightly packed, so this is safe
 	for (uint8_t i = 0; i < 3; i++)
 		tri->p_ndc[i] = (vec3d*) tri->v[i].position;
@@ -261,118 +246,7 @@ static void triangleInterpolateData(
 	vec4d* pPosition, SRPInterpolated* pInterpolatedBuffer
 )
 {
-	/** Let @f$ v_0, v_1, v_2 @f$ be points in space that form a triangle and
-	 *  @f$ a, b, c @f$ be barycentric coordinates for a point @f$ P @f$
-	 *  according to @f$ v_0, v_1, v_2 @f$ respectively. Then, by the property
-	 *  of barycentric coordinates @f$ P = av_0 + bv_1 + cv_2 @f$. This can be
-	 *  extrapolated to arbitrary values assigned to vertices, and this is called
-	 *  affine attribute interpolation.
-     *
-	 *  But this method does not take the perspective divide into account, so
-	 *  the texture (for example) will look "wrong".
-	 *
-	 *  It can be shown (see the "see also" section) that perspective-correct Z
-	 *  value can be obtained by taking the reciprocal of the linear interpolation
-	 *  between the reciprocals of input Z values, and similarly for arbitrary
-	 *  parameters.
-	 *
-	 *  @see https://www.comp.nus.edu.sg/%7Elowkl/publications/lowk_persp_interp_techrep.pdf
-	 *  @see https://www.youtube.com/watch?v=F5X6S35SW2s */
-
-	triangleInterpolatePosition(tri, pPosition);
-	triangleInterpolateAttributes(tri, sp, pPosition, pInterpolatedBuffer);
-}
-
-static void triangleInterpolatePosition(SRPTriangle* tri, vec4d* pPosition)
-{
-	bool perspective = (srpContext.interpolationMode == SRP_INTERPOLATION_MODE_PERSPECTIVE);
-
-	pPosition->x = \
-		tri->v[0].position[0] * tri->lambda[0] + \
-		tri->v[1].position[0] * tri->lambda[1] + \
-		tri->v[2].position[0] * tri->lambda[2];
-	pPosition->y = \
-		tri->v[0].position[1] * tri->lambda[0] + \
-		tri->v[1].position[1] * tri->lambda[1] + \
-		tri->v[2].position[1] * tri->lambda[2];
-
-	// If I am not mistaken, this should be linear in screen space
-	pPosition->z = \
-		tri->v[0].position[2] * tri->lambda[0] + \
-		tri->v[1].position[2] * tri->lambda[1] + \
-		tri->v[2].position[2] * tri->lambda[2];
-
-	if (perspective)
-        pPosition->w = 1 / (
-			tri->invW[0] * tri->lambda[0] + \
-			tri->invW[1] * tri->lambda[1] + \
-			tri->invW[2] * tri->lambda[2]
-		);
-	else  // affine
-        pPosition->w = 1.;
-}
-
-static void triangleInterpolateAttributes(
-	SRPTriangle* tri, const SRPShaderProgram* restrict sp,
-	vec4d* pPosition, SRPInterpolated* pInterpolatedBuffer
-)
-{
-	// vertices[i].pOutputVariables =
-	// (                        Vi                              )
-	// (          ViA0          )(          ViA1          ) ...
-	// (ViA0E0 ViA0E1 ... ViA0En)(ViA1E0 ViA1E1 ... ViA1En) ...
-	// [V]ertex, [A]ttribute, [E]lement
-
-	bool perspective = (srpContext.interpolationMode == SRP_INTERPOLATION_MODE_PERSPECTIVE);
-
-	// Points to current attribute in output buffer
-	void* pInterpolatedAttrVoid = pInterpolatedBuffer;
-
-	size_t attrOffsetBytes = 0;
-	for (size_t attrI = 0; attrI < sp->vs->nOutputVariables; attrI++)
-	{
-		SRPVertexVariableInformation* attr = &sp->vs->outputVariablesInfo[attrI];
-		size_t elemSize = 0;
-		switch (attr->type)
-		{
-		case TYPE_DOUBLE:
-		{
-			elemSize = sizeof(double);
-			double* pInterpolatedAttr = (double*) pInterpolatedAttrVoid;
-
-			// Pointers to the current attribute of 0th, 1st and 2nd vertices
-			double* AV[3];
-			for (int i = 0; i < 3; i++)
-				AV[i] = (double*) ADD_VOID_PTR(tri->v[i].pOutputVariables, attrOffsetBytes);
-
-			if (perspective)
-				for (size_t elemI = 0; elemI < attr->nItems; elemI++)
-				{
-					pInterpolatedAttr[elemI] = pPosition->w * (
-						AV[0][elemI] * tri->invW[0] * tri->lambda[0] + \
-						AV[1][elemI] * tri->invW[1] * tri->lambda[1] + \
-						AV[2][elemI] * tri->invW[2] * tri->lambda[2]
-					);
-				}
-			else  // affine
-				for (size_t elemI = 0; elemI < attr->nItems; elemI++)
-				{
-					pInterpolatedAttr[elemI] = \
-						AV[0][elemI] * tri->lambda[0] + \
-						AV[1][elemI] * tri->lambda[1] + \
-						AV[2][elemI] * tri->lambda[2];
-				}
-			break;
-		}
-		default:
-			srpMessageCallbackHelper(
-				SRP_MESSAGE_ERROR, SRP_MESSAGE_SEVERITY_HIGH, __func__,
-				"Unexpected type (%i)", attr->type
-			);
-		}
-
-		size_t attrSize = elemSize * attr->nItems;
-		pInterpolatedAttrVoid = ADD_VOID_PTR(pInterpolatedAttrVoid, attrSize);
-		attrOffsetBytes += attrSize;
-	}
+	const bool perspective = srpContext.interpolationMode == SRP_INTERPOLATION_MODE_PERSPECTIVE;
+	interpolatePosition(tri->v, 3, tri->lambda, tri->invW, perspective, sp, pPosition);
+	interpolateAttributes(tri->v, 3, tri->lambda, tri->invW, pPosition->w, perspective, sp, pInterpolatedBuffer);
 }

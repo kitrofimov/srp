@@ -15,6 +15,8 @@ set(
 	pipeline/primitive_assembly.c
 	pipeline/topology.c
 	pipeline/vertex_processing.c
+	pipeline/clipping.c
+	pipeline/interpolation.c
 	raster/triangle.c
 	raster/line.c
 	raster/point.c

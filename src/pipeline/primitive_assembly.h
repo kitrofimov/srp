@@ -29,7 +29,7 @@
  * 			 `*outTriangleCount` and `*outTriangles` are undefined */
 bool assembleTriangles(
 	const SRPIndexBuffer* ib, const SRPVertexBuffer* vb, const SRPFramebuffer* fb,
-	const SRPShaderProgram* sp, SRPPrimitive primitive, size_t startIndex, size_t count,
+	const SRPShaderProgram* sp, SRPPrimitive prim, size_t startIndex, size_t vertexCount,
 	size_t* outTriangleCount, SRPTriangle** outTriangles
 );
 

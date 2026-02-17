@@ -4,21 +4,17 @@
 /** @file
  *  Vertex processing functions implementation */
 
+#include <assert.h>
 #include "pipeline/vertex_processing.h"
 #include "memory/arena_p.h"
 #include "utils/voidptr.h"
+#include "math/utils.h"
 
 /** Compute minimal and maximal vertex indices given stream indices */
 static void computeMinMaxVI(
 	const SRPIndexBuffer* ib, size_t startIndex, size_t vertexCount,
 	size_t* outMinVI, size_t* outMaxVI
 );
-
-/** Apply perspective divide to the output of the vertex shader,
- *  saving the 1 / W_clip value
- *  @param[in] output Output of the vertex shader
- *  @param[out] outInvW Pointer where 1/W value will be stored. May be NULL */
-static void applyPerspectiveDivide(SRPvsOutput* output, double* outInvW);
 
 void allocateVertexCache(
 	VertexCache* cache, const SRPIndexBuffer* ib, size_t startIndex, size_t vertexCount
@@ -33,34 +29,29 @@ void allocateVertexCache(
 	cache->entries = ARENA_CALLOC(sizeof(VertexCacheEntry) * cache->size);
 }
 
-VertexCacheEntry* vertexCacheFetch(
-	VertexCache* cache, size_t vertexIndex,	void* varyingBuffer,
-	const SRPVertexBuffer* vb, const SRPShaderProgram* sp
+SRPvsOutput* vertexCacheFetch(
+	VertexCache* cache, size_t vertexIndex,	const SRPVertexBuffer* vb,
+	const SRPShaderProgram* sp
 )
 {
 	VertexCacheEntry* entry = &cache->entries[vertexIndex - cache->baseVertex];
 
 	if (!entry->valid)
 	{
-		processVertex(
-			vertexIndex, vertexIndex - cache->baseVertex, varyingBuffer, vb, sp,
-			&entry->data, &entry->invW
-		);
+		processVertex(vertexIndex, vertexIndex - cache->baseVertex, vb, sp, &entry->data);
 		entry->valid = true;
 	}
 
-	return entry;
+	return &entry->data;
 }
 
 void processVertex(
-	size_t vertexIndex, size_t varyingIndex, void* varyingBuffer,
-	const SRPVertexBuffer* vb, const SRPShaderProgram* sp,
-	SRPvsOutput* outV, double* outInvW
+	size_t vertexIndex, size_t varyingIndex, const SRPVertexBuffer* vb,
+	const SRPShaderProgram* sp, SRPvsOutput* outV
 )
 {
 	SRPVertex* pVertex = indexVertexBuffer(vb, vertexIndex);
-	const size_t stride = sp->vs->nBytesPerOutputVariables;
-	void* pVarying = INDEX_VOID_PTR(varyingBuffer, varyingIndex, stride);
+	void* pVarying = ARENA_ALLOC(sp->vs->nBytesPerOutputVariables);
 
 	SRPvsInput vsIn = {
 		.vertexID = vertexIndex,
@@ -73,13 +64,13 @@ void processVertex(
 	};
 
 	sp->vs->shader(&vsIn, outV);
-	applyPerspectiveDivide(outV, outInvW);
 }
 
-static void applyPerspectiveDivide(SRPvsOutput* output, double* outInvW)
+void applyPerspectiveDivide(SRPvsOutput* output, double* outInvW)
 {
     double clipW = output->position[3];
     double invW = 1.0 / clipW;
+	assert(!ROUGHLY_ZERO(invW));
 	if (outInvW != NULL)
 		*outInvW = invW;
 
