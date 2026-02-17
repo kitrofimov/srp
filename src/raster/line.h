@@ -29,7 +29,8 @@ void rasterizeLine(
 	const SRPShaderProgram* restrict sp, void* interpolatedBuffer
 );
 
-/** Calculate internal data for line rasterization
+/** Setup line for rasterization, performing perspective divide and
+ *  calculating internal variables
  *  @param[in] line The line to set up. Its `v` field is required to be filled
  *  @param[in] fb The framebuffer to use for NDC to screen-space conversion */
 void setupLine(SRPLine* line, const SRPFramebuffer* fb);

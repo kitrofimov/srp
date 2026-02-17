@@ -146,7 +146,6 @@ bool assemblePoints(
 		return false;
 
 	const size_t nPoints = count;
-
 	SRPPoint* points = ARENA_ALLOC(sizeof(SRPPoint) * nPoints);
 
 	size_t primitiveID = 0;
@@ -156,6 +155,11 @@ bool assemblePoints(
 
 		size_t vertexIndex = (ib) ? indexIndexBuffer(ib, startIndex+k) : startIndex+k;
 		processVertex(vertexIndex, k, vb, sp, &p->v);
+
+		if (clipPoint(p))
+			continue;
+
+		setupPoint(p);
 
 		p->id = primitiveID;
 		primitiveID++;

@@ -129,6 +129,20 @@ bool clipLine(SRPLine* line, const SRPShaderProgram* sp)
     return false;
 }
 
+bool clipPoint(SRPPoint* p)
+{
+    double x = p->v.position[0];
+    double y = p->v.position[1];
+    double z = p->v.position[2];
+    double w = p->v.position[3];
+
+    if (x < -w || x > w) return true;
+    if (y < -w || y > w) return true;
+    if (z < -w || z > w) return true;
+
+    return false;
+}
+
 static size_t clipAgainstPlane(
     SRPvsOutput* in, size_t inCount, ClipPlane plane,
     const SRPShaderProgram* sp, SRPvsOutput* out

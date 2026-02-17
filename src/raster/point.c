@@ -6,10 +6,11 @@
 
 #include <math.h>
 #include "raster/point.h"
+#include "raster/fragment.h"
+#include "pipeline/vertex_processing.h"
 #include "srp/context.h"
 #include "srp/color.h"
 #include "math/utils.h"
-#include "raster/fragment.h"
 
 /** Given screen-space point position, compute its math and raster boundaries.
  *  @param[in] ss Screen-space point position
@@ -63,6 +64,11 @@ void rasterizePoint(
             emitFragment(fb, sp, x, y, &fsIn);
         }
     }
+}
+
+void setupPoint(SRPPoint* p)
+{
+    applyPerspectiveDivide(&p->v, NULL);
 }
 
 static bool computeMathAndRasterBoundaries(

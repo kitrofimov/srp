@@ -5,6 +5,7 @@
 
 #include "raster/triangle.h"
 #include "raster/line.h"
+#include "raster/point.h"
 
 /** Clip the triangle using Sutherland-Hodgman algorithm
  *  @param[in] in The triangle to clip
@@ -18,3 +19,8 @@ size_t clipTriangle(const SRPTriangle* in, const SRPShaderProgram* sp, SRPTriang
  *  @param[in] sp The shader program being used
  *  @return `true` if clipped fully (nothing left), `false` if clipped partially */
 bool clipLine(SRPLine* line, const SRPShaderProgram* sp);
+
+/** Determine whether or not a point should be clipped
+ *  @param[in] p Point to test
+ *  @return `true` if point is clipped, `false` otherwise */
+bool clipPoint(SRPPoint* p);
