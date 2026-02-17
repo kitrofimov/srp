@@ -82,29 +82,27 @@ void rasterizeTriangle(
 		{
 			for (uint8_t i = 0; i < 3; i++)  // Top-left rasterization rule
 			{
-				if (ROUGHLY_ZERO(tri->lambda[i]) && !tri->edgeTL[i])
+				bool inside = (tri->lambda[i] > 0.) || (ROUGHLY_ZERO(tri->lambda[i]) && tri->edgeTL[i]);
+				if (!inside)
 					goto nextPixel;
 			}
 
-			if (tri->lambda[0] >= 0 && tri->lambda[1] >= 0 && tri->lambda[2] >= 0)
-			{
-				vec4d interpolatedPosition = {0};
-				triangleInterpolateData(tri, sp, &interpolatedPosition, interpolatedBuffer);
+			vec4d interpolatedPosition = {0};
+			triangleInterpolateData(tri, sp, &interpolatedPosition, interpolatedBuffer);
 
-				SRPfsInput fsIn = {
-					.uniform = sp->uniform,
-					.interpolated = interpolatedBuffer,
-					.fragCoord = {
-						x + 0.5,
-						y + 0.5,
-						interpolatedPosition.z,
-						interpolatedPosition.w
-					},
-					.frontFacing = tri->isFrontFacing,
-					.primitiveID = tri->id,
-				};
-				emitFragment(fb, sp, x, y, &fsIn);
-			}
+			SRPfsInput fsIn = {
+				.uniform = sp->uniform,
+				.interpolated = interpolatedBuffer,
+				.fragCoord = {
+					x + 0.5,
+					y + 0.5,
+					interpolatedPosition.z,
+					interpolatedPosition.w
+				},
+				.frontFacing = tri->isFrontFacing,
+				.primitiveID = tri->id,
+			};
+			emitFragment(fb, sp, x, y, &fsIn);
 
 nextPixel:
 			for (uint8_t i = 0; i < 3; i++)
