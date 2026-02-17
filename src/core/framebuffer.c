@@ -73,12 +73,12 @@ bool framebufferDepthTest(
 }
 
 void framebufferNDCToScreenSpace(
-	const SRPFramebuffer* this, const double* NDC, double* SS
+    const SRPFramebuffer* this, const double* NDC, double* SS
 )
 {
-	SS[0] =  (((double) this->width  - 1) / 2) * (NDC[0] + 1);
-	SS[1] = -(((double) this->height - 1) / 2) * (NDC[1] - 1),
-	SS[2] = NDC[2];
+    SS[0] = ((double) this->width  / 2.) * (NDC[0] + 1.);
+    SS[1] = ((double) this->height / 2.) * (1. - NDC[1]);
+    SS[2] = NDC[2];
 }
 
 void srpFramebufferClear(const SRPFramebuffer* this)
