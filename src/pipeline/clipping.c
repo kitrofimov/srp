@@ -38,6 +38,7 @@ size_t clipTriangle(const SRPTriangle* in, const SRPShaderProgram* sp, SRPTriang
     for (int p = 0; p < PLANE_COUNT; p++)
     {
         polyCount = clipAgainstPlane(poly, polyCount, (ClipPlane) p, sp, temp);
+        assert(polyCount <= 6);
 
         if (polyCount == 0)  // Fully clipped
             return 0;
@@ -47,7 +48,6 @@ size_t clipTriangle(const SRPTriangle* in, const SRPShaderProgram* sp, SRPTriang
     }
 
     // Triangulate (fan)
-    /** @todo is the winding right here? */
     size_t id = 0;
     for (size_t i = 1; i < polyCount-1; i++)
     {
@@ -85,7 +85,7 @@ static size_t clipAgainstPlane(
             deepCopyVertex(next, varyingSize, &out[outCount]);
             outCount++;
         }
-        else if (currInside != nextInside)  // only one is outside
+        else if (currInside != nextInside)  // Only one is outside
         {
             double da = planeDistance(current, plane);
             double db = planeDistance(next, plane);
@@ -100,7 +100,7 @@ static size_t clipAgainstPlane(
                 outCount++;
             }
         }
-        // else both outside -> emit nothing
+        // Both outside -> emit nothing
     }
 
     return outCount;

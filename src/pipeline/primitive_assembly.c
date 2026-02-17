@@ -62,7 +62,7 @@ bool assembleTriangles(
 	VertexCache cache;
 	allocateVertexCache(&cache, ib, startIndex, vertexCount);
 
-	SRPTriangle clipped[4];  // worst-case after clipping
+	SRPTriangle clipped[4];  // Worst-case after clipping
 	SRPTriangle* triangles = ARENA_ALLOC(nUnclipped * 4 * sizeof(SRPTriangle));
 	SRPTriangle* cur = triangles;
 
