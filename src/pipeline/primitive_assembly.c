@@ -28,18 +28,6 @@ static void assembleOneLine(
     size_t vertexCount, VertexCache* cache, SRPLine* line
 );
 
-/** Allocate buffers needed for assembling primitives
- *  @param[in] nUnclipped Number of primitives to allocate buffers for
- *  @param[in] primSize Size of each primitive, in bytes
- *  @param[in] sp Shader program to use
- *  @param[in] cache Post-VS cache that is going to be used
- *  @param[out] outPrimitives Will contain pointer to the array of assembled primitives
- *  @param[out] outVaryingBuffer Will contain pointer to the interpolated variables buffer */
-static void allocateBuffers(
-    size_t nUnclipped, size_t primSize, const SRPShaderProgram* sp, 
-    VertexCache* cache, void** outPrimitives, void** outVaryingBuffer
-);
-
 /** Check if there are excess vertices when drawing some kind of primitive,
  * 	send a warning if so
  *  @see assembleTriangles() for full parameter documentation */
@@ -113,10 +101,8 @@ bool assembleLines(
 		return false;
 
 	VertexCache cache;
-	SRPLine* lines;
-	void* varyingBuffer;
+	SRPLine* lines = ARENA_ALLOC(sizeof(SRPLine) * nLines);
 	allocateVertexCache(&cache, ib, startIndex, vertexCount);
-	allocateBuffers(nLines, sizeof(SRPLine), sp, &cache, (void**) &lines, &varyingBuffer);
 
 	size_t primitiveID = 0;
 	for (size_t k = 0; k < nLines; k += 1)
@@ -149,23 +135,6 @@ static void assembleOneLine(
 	}
 
 	setupLine(line, fb);
-}
-
-static void allocateBuffers(
-    size_t nUnclipped, size_t primSize, const SRPShaderProgram* sp, 
-    VertexCache* cache, void** outPrimitives, void** outVaryingBuffer
-) {
-	size_t nUniqueVertices = cache->size;
-	
-	// Each unclipped triangle may produce up to 4 clipped triangles
-	size_t primitivesBufferSize = primSize * nUnclipped * 4;
-	
-	// Allocating twice more to leave space for vertices created during clipping
-	/** @todo each triangle may result in 6 vertices: 3 -> 6, is 2x enough? */
-	size_t varyingBufferSize = sp->vs->nBytesPerOutputVariables * nUniqueVertices * 2;
-
-	*outPrimitives = ARENA_ALLOC(primitivesBufferSize);
-	*outVaryingBuffer = ARENA_ALLOC(varyingBufferSize);
 }
 
 static void warnOnExcessVertexCount(

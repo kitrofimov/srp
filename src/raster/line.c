@@ -9,6 +9,7 @@
 #include "raster/line.h"
 #include "raster/fragment.h"
 #include "pipeline/interpolation.h"
+#include "pipeline/vertex_processing.h"
 #include "srp/context.h"
 #include "utils/voidptr.h"
 #include "utils/message_callback_p.h"
@@ -77,6 +78,9 @@ void rasterizeLine(
 
 void setupLine(SRPLine* line, const SRPFramebuffer* fb) 
 {
+	for (uint8_t i = 0; i < 3; i++)
+		applyPerspectiveDivide(&line->v[i], &line->invW[i]);
+
     for (uint8_t i = 0; i < 2; i++)
         framebufferNDCToScreenSpace(fb, line->v[i].position, (double*) &line->ss[i]);
 }
