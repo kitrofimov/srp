@@ -4,32 +4,25 @@
 #include <string.h>
 #include <assert.h>
 #include "pipeline/clipping.h"
+#include "memory/arena_p.h"
 #include "utils/message_callback_p.h"
 #include "utils/voidptr.h"
 
 static size_t clipAgainstPlane(
-    SRPvsOutput* in, size_t inCount, ClipPlane plane, const SRPShaderProgram* sp,
-    void* clippedVaryings, size_t* pVaryingIndex, SRPvsOutput* out
+    SRPvsOutput* in, size_t inCount, ClipPlane plane,
+    const SRPShaderProgram* sp, SRPvsOutput* out
 );
 
 static void interpolateVertex(
-    const SRPvsOutput* a, const SRPvsOutput* b, double t, const SRPShaderProgram* sp,
-    void* clippedVaryings, size_t* pVaryingIndex, SRPvsOutput* out
+    const SRPvsOutput* a, const SRPvsOutput* b, double t,
+    const SRPShaderProgram* sp, SRPvsOutput* out
 );
 
-static void deepCopyVertex(
-    const SRPvsOutput* v, size_t varyingSize, void* clippedVaryings,
-    size_t* pVaryingIndex, SRPvsOutput* out
-);
-
+static void deepCopyVertex(const SRPvsOutput* v, size_t varyingSize, SRPvsOutput* out);
 static inline bool insidePlane(const SRPvsOutput* v, ClipPlane p);
-
 static inline double planeDistance(const SRPvsOutput* v, ClipPlane p);
 
-size_t clipTriangle(
-    const SRPTriangle* in, void* clippedVaryings, size_t* clippedVaryingIndex,
-    const SRPShaderProgram* sp, SRPTriangle* out
-)
+size_t clipTriangle(const SRPTriangle* in, const SRPShaderProgram* sp, SRPTriangle* out)
 {
     SRPvsOutput poly[6];
     SRPvsOutput temp[6];
@@ -39,14 +32,12 @@ size_t clipTriangle(
 
     // Initialize working buffers from input triangle
     for (int i = 0; i < 3; i++)
-        deepCopyVertex(&in->v[i], varyingSize, clippedVaryings, clippedVaryingIndex, &poly[i]);
+        deepCopyVertex(&in->v[i], varyingSize, &poly[i]);
 
     // Clip against all 6 planes
     for (int p = 0; p < PLANE_COUNT; p++)
     {
-        polyCount = clipAgainstPlane(
-            poly, polyCount, (ClipPlane) p, sp, clippedVaryings, clippedVaryingIndex, temp
-        );
+        polyCount = clipAgainstPlane(poly, polyCount, (ClipPlane) p, sp, temp);
 
         if (polyCount == 0)  // Fully clipped
             return 0;
@@ -71,8 +62,8 @@ size_t clipTriangle(
 }
 
 static size_t clipAgainstPlane(
-    SRPvsOutput* in, size_t inCount, ClipPlane plane, const SRPShaderProgram* sp,
-    void* clippedVaryings, size_t* pVaryingIndex, SRPvsOutput* out
+    SRPvsOutput* in, size_t inCount, ClipPlane plane,
+    const SRPShaderProgram* sp, SRPvsOutput* out
 )
 {
     if (inCount == 0)
@@ -91,10 +82,7 @@ static size_t clipAgainstPlane(
 
         if (currInside && nextInside)
         {
-            deepCopyVertex(
-                next, varyingSize, clippedVaryings,
-                pVaryingIndex, &out[outCount]
-            );
+            deepCopyVertex(next, varyingSize, &out[outCount]);
             outCount++;
         }
         else if (currInside != nextInside)  // only one is outside
@@ -103,15 +91,12 @@ static size_t clipAgainstPlane(
             double db = planeDistance(next, plane);
             double t = da / (da - db);
 
-            interpolateVertex(current, next, t, sp, clippedVaryings, pVaryingIndex, &out[outCount]);
+            interpolateVertex(current, next, t, sp, &out[outCount]);
             outCount++;
 
             if (!currInside && nextInside)
             {
-                deepCopyVertex(
-                    next, varyingSize, clippedVaryings,
-                    pVaryingIndex, &out[outCount]
-                );
+                deepCopyVertex(next, varyingSize, &out[outCount]);
                 outCount++;
             }
         }
@@ -122,8 +107,8 @@ static size_t clipAgainstPlane(
 }
 
 static void interpolateVertex(
-    const SRPvsOutput* a, const SRPvsOutput* b, double t, const SRPShaderProgram* sp,
-    void* clippedVaryings, size_t* pVaryingIndex, SRPvsOutput* out
+    const SRPvsOutput* a, const SRPvsOutput* b, double t,
+    const SRPShaderProgram* sp, SRPvsOutput* out
 )
 {
     for (int i = 0; i < 4; i++)
@@ -132,9 +117,8 @@ static void interpolateVertex(
     /** @todo duplicate interpolation logic here, in line.c and in triangle.c */
 
 	// Points to current attribute in output buffer
-	void* pInterpolatedAttrVoid = INDEX_VOID_PTR(clippedVaryings, *pVaryingIndex, sp->vs->nBytesPerOutputVariables);
+	void* pInterpolatedAttrVoid = ARENA_ALLOC(sp->vs->nBytesPerOutputVariables);
     out->pOutputVariables = pInterpolatedAttrVoid;
-    (*pVaryingIndex)++;
 
 	size_t attrOffsetBytes = 0;
 	for (size_t attrI = 0; attrI < sp->vs->nOutputVariables; attrI++)
@@ -172,16 +156,12 @@ static void interpolateVertex(
 	}
 }
 
-static void deepCopyVertex(
-    const SRPvsOutput* v, size_t varyingSize, void* clippedVaryings,
-    size_t* pVaryingIndex, SRPvsOutput* out
-)
+static void deepCopyVertex(const SRPvsOutput* src, size_t varyingSize, SRPvsOutput* dst)
 {
-    *out = *v;
-    void* pVarying = INDEX_VOID_PTR(clippedVaryings, *pVaryingIndex, varyingSize);
-    memcpy(pVarying, v->pOutputVariables, varyingSize);
-    out->pOutputVariables = pVarying;
-    (*pVaryingIndex)++;
+    *dst = *src;
+    void* mem = ARENA_ALLOC(varyingSize);
+    memcpy(mem, src->pOutputVariables, varyingSize);
+    dst->pOutputVariables = mem;
 }
 
 static inline bool insidePlane(const SRPvsOutput* v, ClipPlane p)

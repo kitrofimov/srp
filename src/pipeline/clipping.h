@@ -17,11 +17,7 @@ typedef enum {
 
 /** Clip the triangle using Sutherland-Hodgman algorithm
  *  @param[in] in The triangle to clip
- *  @param[in] clippedVaryings Pointer to the free region of varying buffer,
- *                             where varyings for new vertices will be stored
+ *  @param[in] sp The shader program being used
  *  @param[out] out The returned array of triangles
  *  @return Amount of outputted triangles */
-size_t clipTriangle(
-    const SRPTriangle* in, void* clippedVaryings, size_t* clippedVaryingIndex,
-    const SRPShaderProgram* sp, SRPTriangle* out
-);
+size_t clipTriangle(const SRPTriangle* in, const SRPShaderProgram* sp, SRPTriangle* out);

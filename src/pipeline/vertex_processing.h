@@ -31,14 +31,14 @@ void allocateVertexCache(
  *  Returns clip-space positions (does not perform perspective divide)
  * 	@see assembleOneTriangle() for documentation on other parameters */
 SRPvsOutput* vertexCacheFetch(
-	VertexCache* cache, size_t vertexIndex, void* varyingBuffer,
-	const SRPVertexBuffer* vb, const SRPShaderProgram* sp
+	VertexCache* cache, size_t vertexIndex,	const SRPVertexBuffer* vb,
+	const SRPShaderProgram* sp
 );
 
 /** Run vertex shader */
 void processVertex(
-	size_t vertexIndex, size_t varyingIndex, void* varyingBuffer,
-	const SRPVertexBuffer* vb, const SRPShaderProgram* sp, SRPvsOutput* outV
+	size_t vertexIndex, size_t varyingIndex, const SRPVertexBuffer* vb,
+	const SRPShaderProgram* sp, SRPvsOutput* outV
 );
 
 /** Apply perspective divide to the output of the vertex shader,

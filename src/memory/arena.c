@@ -21,10 +21,10 @@
 static SRPArenaBlock* newBlock(size_t capacity);
 
 /** Determine the needed block size for a given requested size
- *  @param[in] arena Pointer to the arena
+ *  @param[in] this Pointer to the arena
  *  @param[in] requested Requested size in bytes
  *  @return Needed block size in bytes */
-static size_t neededBlockSize(SRPArena* arena, size_t requested);
+static size_t neededBlockSize(SRPArena* this, size_t requested);
 
 /** @} */  // ingroup Arena_internal
 
