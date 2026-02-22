@@ -77,7 +77,7 @@ You can also build the examples with `-D BUILD_EXAMPLES=1` and the documentation
     - [x] Triangles (Sutherland-Hodgman)
     - [x] Lines (Liang-Barsky)
     - [x] Points
-- [ ] Debug stutters (e.g. draw cube in line mode, stutters every 1.5-2 seconds)
+- [x] Debug stutters (e.g. draw cube in line mode, stutters every 1.5-2 seconds)
 - [ ] Add an example with `.obj` model loading
 - [ ] Add wireframe rendering of triangles (do OpenGL and Vulkan have this?)
 - [ ] Should this project use `double`s or `float`s?

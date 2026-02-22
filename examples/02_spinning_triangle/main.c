@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <srp/srp.h>
 #include "window.h"
-#include "timer.h"
+#include "framelimiter.h"
 #include "rad.h"
 
 typedef struct Vertex
@@ -77,29 +77,34 @@ int main()
 	};
 
 	Window* window = newWindow(512, 512, "Rasterizer", false);
+	FrameLimiter limiter;
+	frameLimiterInit(&limiter, 144.);
 
 	while (window->running)
 	{
-		TIMER_START(frametime);
+		frameLimiterBegin(&limiter);
 
-		// Part of the `mat` API. Again, you can use your own functions
-		// (or an external math library) if you remove the `define`s at the
-		// top of this file (`SRP_INCLUDE_...`)
-		uniform.rotation = mat4dConstructRotate(0, 0, uniform.frameCount / 1000.);
-		srpFramebufferClear(fb);
-		srpDrawVertexBuffer(vb, fb, &shaderProgram, SRP_PRIM_TRIANGLES, 0, 3);
+		double renderTime = 0.;
+		TIME_SECTION(renderTime, {
+			// Part of the `mat` API. Again, you can use your own functions
+			// (or an external math library) if you remove the `define`s at the
+			// top of this file (`SRP_INCLUDE_...`)
+			uniform.rotation = mat4dConstructRotate(0, 0, uniform.frameCount / 1000.);
+			srpFramebufferClear(fb);
+			srpDrawVertexBuffer(vb, fb, &shaderProgram, SRP_PRIM_TRIANGLES, 0, 3);
+		});
 
 		windowPollEvents(window);
 		windowPresent(window, fb);
 
+		double frameTime = frameLimiterEnd(&limiter);
 		uniform.frameCount++;
-		TIMER_STOP(frametime);
-		printf(
-			"Frametime: %li us; FPS: %lf; Framecount: %zu\n",
-			TIMER_REPORT_US(frametime, long),
-			1. / TIMER_REPORT_S(frametime, double),
-			uniform.frameCount
-		);
+
+		if (uniform.frameCount % 100 == 0)
+			printf(
+				"Frametime: %5.3f ms; Rendering: %5.3f ms; FPS: %6.2f; RPS: %6.2f\n",
+				frameTime * 1000., renderTime * 1000., 1. / frameTime, 1. / renderTime
+			);
 	}
 
 	srpFreeVertexBuffer(vb);
