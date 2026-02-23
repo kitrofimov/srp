@@ -30,12 +30,8 @@ int main()
 	srpNewContext(&srpContext);
 	srpContextSetMessageCallback(messageCallback);
 
-	srpContextSetI(SRP_CONTEXT_FRONT_FACE, SRP_FRONT_FACE_CCW);
-	srpContextSetI(SRP_CONTEXT_CULL_FACE, SRP_CULL_FACE_BACK);
-
-	srpContextSetD(SRP_CONTEXT_POINT_SIZE, 6.);
-
-	SRPFramebuffer* fb = srpNewFramebuffer(512, 512);
+	// srpContextSetI(SRP_CONTEXT_FRONT_FACE, SRP_FRONT_FACE_CCW);
+	// srpContextSetI(SRP_CONTEXT_CULL_FACE, SRP_CULL_FACE_BACK);
 
 	OBJMesh mesh;
 	if (!loadOBJMesh("res/objects/utah_teapot.obj", &mesh))
@@ -50,13 +46,13 @@ int main()
 	srpIndexBufferCopyData(ib, TYPE_UINT32, mesh.indexCount * sizeof(uint32_t), mesh.indices);
 
 	Uniform uniform = {
-		.model = mat4dConstructRotate(RAD(-90), RAD(0), 0),
+		.model = mat4dConstructIdentity(),
 		.view = mat4dConstructView(
-			0, 1.75, -5,
+			0, 1.75, -7,
 			0, 0, 0,
 			1, 1, 1
 		),
-		.projection = mat4dConstructPerspectiveProjection(-1, 1, -1, 1, 1, 50),
+		.projection = mat4dConstructPerspectiveProjection(-1, 1, -1, 1, 1, 10),
 		.frameCount = 0
 	};
 
@@ -73,6 +69,7 @@ int main()
 		}
 	};
 
+	SRPFramebuffer* fb = srpNewFramebuffer(512, 512);
 	Window* window = newWindow(512, 512, "Rasterizer", false);
 	FrameLimiter limiter;
 	frameLimiterInit(&limiter, 144.);
@@ -139,10 +136,13 @@ void vertexShader(SRPvsInput* in, SRPvsOutput* out)
 
 void fragmentShader(SRPfsInput* in, SRPfsOutput* out)
 {
-	vec4d* outColor = (vec4d*) out->color;
-	double color = (in->fragCoord[2] + 1) / 2;
-	outColor->x = color;
-	outColor->y = color;
-	outColor->z = color;
-	outColor->w = 1.;
+    int id = in->primitiveID;
+    int r = (id * 97) % 255;
+    int g = (id * 57) % 255;
+    int b = (id * 23) % 255;
+
+    out->color[0] = r / 255.;
+    out->color[1] = g / 255.;
+    out->color[2] = b / 255.;
+    out->color[3] = 1.;
 }

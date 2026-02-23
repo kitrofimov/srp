@@ -28,7 +28,7 @@ void interpolatePosition(
     vec4d* pPosition
 )
 {
-    for (size_t i = 0; i < 3; i++)
+    for (size_t i = 0; i < 2; i++)
     {
         double sum = 0.;
         for (size_t j = 0; j < nVertices; j++)
@@ -42,9 +42,20 @@ void interpolatePosition(
         for (size_t j = 0; j < nVertices; j++)
             sum += invW[j] * weights[j];
         pPosition->w = 1 / sum;
+
+        sum = 0.;
+        for (size_t j = 0; j < nVertices; j++)
+            sum += vertices[j].position[2] * invW[j] * weights[j];
+        pPosition->z = sum;
     }
 	else  // affine
+    {
         pPosition->w = 1.;
+        double sum = 0.;
+        for (size_t j = 0; j < nVertices; j++)
+            sum += vertices[j].position[2] * weights[j];
+        pPosition->z = sum;
+    }
 }
 
 void interpolateAttributes(
