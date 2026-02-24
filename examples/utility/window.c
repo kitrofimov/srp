@@ -11,7 +11,7 @@ Window* newWindow(size_t width, size_t height, char* title, bool fullscreen)
 	);
 	this->renderer = SDL_CreateRenderer(this->window, -1, 0);
 	this->texture = SDL_CreateTexture(
-		this->renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET,
+		this->renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING,
 		width, height
 	);
 
@@ -52,4 +52,3 @@ void windowPresent(const Window* this, const SRPFramebuffer* fb)
 	SDL_RenderCopy(this->renderer, this->texture, NULL, NULL);
 	SDL_RenderPresent(this->renderer);
 }
-

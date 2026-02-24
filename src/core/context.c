@@ -12,6 +12,7 @@ void srpNewContext(SRPContext* pContext)
 	pContext->interpolationMode = SRP_INTERPOLATION_MODE_PERSPECTIVE;
 	pContext->frontFace = SRP_FRONT_FACE_CCW;
 	pContext->cullFace = SRP_CULL_FACE_NONE;
+	pContext->polygonMode = SRP_POLYGON_MODE_FILL;
 	pContext->pointSize = 1.;
 	pContext->arena = newArena(SRP_DEFAULT_ARENA_CAPACITY);
 }
@@ -54,6 +55,9 @@ void srpContextSetI(SRPContextParameter contextParameter, int data)
 		return;
 	case SRP_CONTEXT_CULL_FACE:
 		srpContext.cullFace = data;
+		return;
+	case SRP_CONTEXT_POLYGON_MODE:
+		srpContext.polygonMode = data;
 		return;
 	default:
 		srpMessageCallbackHelper(
@@ -105,6 +109,8 @@ int srpContextGetI(SRPContextParameter contextParameter)
 		return srpContext.frontFace;
 	case SRP_CONTEXT_CULL_FACE:
 		return srpContext.cullFace;
+	case SRP_CONTEXT_POLYGON_MODE:
+		return srpContext.polygonMode;
 	default:
 		srpMessageCallbackHelper(
 			SRP_MESSAGE_ERROR, SRP_MESSAGE_SEVERITY_HIGH, __func__,

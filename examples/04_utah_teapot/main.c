@@ -5,25 +5,15 @@
 #include <srp/srp.h>
 #include "window.h"
 #include "framelimiter.h"
+#include "objparser.h"
 #include "rad.h"
 
-typedef struct Vertex
-{
-	vec3d position;
-	vec3d color;
-} Vertex;
-
-typedef struct VSOutput
-{
-	vec3d color;
-} VSOutput;
-
-// A structure to hold the uniform for shaders
-// Can be used to pass arbitrary data to the shader
 typedef struct Uniform
 {
 	size_t frameCount;
-	mat4d rotation;
+	mat4d model;
+	mat4d view;
+	mat4d projection;
 } Uniform;
 
 SRPContext srpContext;
@@ -40,42 +30,48 @@ int main()
 	srpNewContext(&srpContext);
 	srpContextSetMessageCallback(messageCallback);
 
-	SRPFramebuffer* fb = srpNewFramebuffer(512, 512);
+	srpContextSetI(SRP_CONTEXT_FRONT_FACE, SRP_FRONT_FACE_CW);
+	srpContextSetI(SRP_CONTEXT_CULL_FACE, SRP_CULL_FACE_BACK);
 
-	const double R = 0.8;
-	Vertex data[3] = {
-		{.position = {0., R, 0.}, .color = {1., 0., 0.}},
-		{
-			.position = {-cos(RAD(30)) * R, -sin(RAD(30)) * R, 0.},
-			.color = {0., 0., 1.}
-		},
-		{
-			.position = { cos(RAD(30)) * R, -sin(RAD(30)) * R, 0.},
-			.color = {0., 1., 0.}
-		}
-	};
+	srpContextSetI(SRP_CONTEXT_POLYGON_MODE, SRP_POLYGON_MODE_FILL);
+
+	OBJMesh mesh;
+	if (!loadOBJMesh("res/objects/utah_teapot.obj", &mesh))
+	{
+		fprintf(stderr, "Failed to load mesh!\n");
+		return -1;
+	}
 
 	SRPVertexBuffer* vb = srpNewVertexBuffer();
-	srpVertexBufferCopyData(vb, sizeof(Vertex), sizeof(data), data);
+	SRPIndexBuffer* ib = srpNewIndexBuffer();
+	srpVertexBufferCopyData(vb, sizeof(OBJVertex), mesh.vertexCount * sizeof(OBJVertex), mesh.vertices);
+	srpIndexBufferCopyData(ib, TYPE_UINT32, mesh.indexCount * sizeof(uint32_t), mesh.indices);
 
-	// Uniform requires a cast to an opaque `SRPUniform` type to avoid
-	// a compiler warning
-	Uniform uniform = {0};
+	Uniform uniform = {
+		.model = mat4dConstructIdentity(),
+		.view = mat4dConstructView(
+			0, 1.75, -7,
+			0, 0, 0,
+			1, 1, 1
+		),
+		.projection = mat4dConstructPerspectiveProjection(-1, 1, -1, 1, 1, 10),
+		.frameCount = 0
+	};
+
 	SRPShaderProgram shaderProgram = {
 		.uniform = (SRPUniform*) &uniform,
 		.vs = &(SRPVertexShader) {
 			.shader = vertexShader,
-			.nOutputVariables = 1,
-			.outputVariablesInfo = (SRPVertexVariableInformation[]) {
-				{.nItems = 3, .type = TYPE_DOUBLE}
-			},
-			.nBytesPerOutputVariables = sizeof(VSOutput)
+			.nOutputVariables = 0,
+			.outputVariablesInfo = NULL,
+			.nBytesPerOutputVariables = 0
 		},
 		.fs = &(SRPFragmentShader) {
 			.shader = fragmentShader
 		}
 	};
 
+	SRPFramebuffer* fb = srpNewFramebuffer(512, 512);
 	Window* window = newWindow(512, 512, "Rasterizer", false);
 	FrameLimiter limiter;
 	frameLimiterInit(&limiter, 144.);
@@ -86,12 +82,11 @@ int main()
 
 		double renderTime = 0.;
 		TIME_SECTION(renderTime, {
-			// Part of the `mat` API. Again, you can use your own functions
-			// (or an external math library) if you remove the `define`s at the
-			// top of this file (`SRP_INCLUDE_...`)
-			uniform.rotation = mat4dConstructRotate(0, 0, uniform.frameCount / 1000.);
+			uniform.model = mat4dConstructRotate(
+				RAD(-90), uniform.frameCount / 200., 0
+			);
 			srpFramebufferClear(fb);
-			srpDrawVertexBuffer(vb, fb, &shaderProgram, SRP_PRIM_TRIANGLES, 0, 3);
+			srpDrawIndexBuffer(ib, vb, fb, &shaderProgram, SRP_PRIM_TRIANGLES, 0, mesh.indexCount);
 		});
 
 		windowPollEvents(window);
@@ -108,7 +103,9 @@ int main()
 	}
 
 	srpFreeVertexBuffer(vb);
+	srpFreeIndexBuffer(ib);
 	srpFreeFramebuffer(fb);
+	freeOBJMesh(&mesh);
 	freeWindow(window);
 
 	return 0;
@@ -126,31 +123,28 @@ void messageCallback(
 
 void vertexShader(SRPvsInput* in, SRPvsOutput* out)
 {
-	Vertex* pVertex = (Vertex*) in->pVertex;
+	OBJVertex* pVertex = (OBJVertex*) in->pVertex;
 	Uniform* pUniform = (Uniform*) in->uniform;
-	VSOutput* pOutVars = (VSOutput*) out->pOutputVariables;
 
 	vec3d* inPosition = &pVertex->position;
 	vec4d* outPosition = (vec4d*) out->position;
 	*outPosition = (vec4d) {
 		inPosition->x, inPosition->y, inPosition->z, 1.0
 	};
-	// Transform the position vector by the rotation matrix from uniform
-	*outPosition = mat4dMultiplyVec4d(&pUniform->rotation, *outPosition);
-
-	// Transform the color values just for fun
-	pOutVars->color.x = pVertex->color.x + sin(pUniform->frameCount * 2.5e-3) * 0.3;
-	pOutVars->color.y = pVertex->color.y + sin(pUniform->frameCount * 0.5e-3) * 0.1;
-	pOutVars->color.z = pVertex->color.z + sin(pUniform->frameCount * 5e-3) * 0.5;
+	*outPosition = mat4dMultiplyVec4d(&pUniform->model, *outPosition);
+	*outPosition = mat4dMultiplyVec4d(&pUniform->view, *outPosition);
+	*outPosition = mat4dMultiplyVec4d(&pUniform->projection, *outPosition);
 }
 
 void fragmentShader(SRPfsInput* in, SRPfsOutput* out)
 {
-	VSOutput* interpolated = (VSOutput*) in->interpolated;
-	vec4d* outColor = (vec4d*) out->color;
-	outColor->x = interpolated->color.x;
-	outColor->y = interpolated->color.y;
-	outColor->z = interpolated->color.z;
-	outColor->w = 1.;
-}
+    int id = in->primitiveID;
+    int r = (id * 97) % 255;
+    int g = (id * 57) % 255;
+    int b = (id * 23) % 255;
 
+    out->color[0] = r / 255.;
+    out->color[1] = g / 255.;
+    out->color[2] = b / 255.;
+    out->color[3] = 1.;
+}

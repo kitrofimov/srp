@@ -53,7 +53,8 @@ void rasterizePoint(
             if (px < minBP.x || px >= maxBP.x || py < minBP.y || py >= maxBP.y)
                 continue;
 
-            // No need to interpolate anything, just redirect from vertex shader to fragment shader
+            // No need to interpolate anything, just redirect outputs from
+            // vertex shader to fragment shader
             SRPfsInput fsIn = {
                 .uniform = sp->uniform,
                 .interpolated = (SRPInterpolated*) point->v.pOutputVariables,

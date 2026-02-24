@@ -22,57 +22,103 @@ static void warnOnExcessVertexCount(
 	SRPPrimitive prim, size_t startIndex, size_t vertexCount
 );
 
-bool assembleTriangles(
-	const SRPIndexBuffer* ib, const SRPVertexBuffer* vb, const SRPFramebuffer* fb,
-	const SRPShaderProgram* sp, SRPPrimitive prim, size_t startIndex, size_t vertexCount,
-	size_t* outTriangleCount, SRPTriangle** outTriangles
+/** Calculate constants for triangle assembly */
+static void resolvePolygonModeOutput(
+	size_t* nOutPrimitivesPerClippedTriangle, size_t* sizeOutPrimitive
+);
+
+bool assembleTrianglesGeneric(
+    const SRPIndexBuffer* ib, const SRPVertexBuffer* vb, const SRPFramebuffer* fb,
+    const SRPShaderProgram* sp, SRPPrimitive prim, size_t startIndex, size_t vertexCount,
+    size_t* outCount, void** outPrimitives
 )
 {
-	warnOnExcessVertexCount(ib, vb, prim, startIndex, vertexCount);
-	size_t nUnclipped = computeTriangleCount(vertexCount, prim);
-	if (nUnclipped == 0)
-		return false;
+    warnOnExcessVertexCount(ib, vb, prim, startIndex, vertexCount);
+    size_t nUnclipped = computeTriangleCount(vertexCount, prim);
+    if (nUnclipped == 0)
+    {
+        *outCount = 0;
+        *outPrimitives = NULL;
+        return false;
+    }
 
-	VertexCache cache;
-	allocateVertexCache(&cache, ib, startIndex, vertexCount);
+    VertexCache cache;
+    allocateVertexCache(&cache, ib, startIndex, vertexCount);
 
-	SRPTriangle clipped[4];  // Worst-case after clipping
-	SRPTriangle* triangles = ARENA_ALLOC(nUnclipped * 4 * sizeof(SRPTriangle));
-	SRPTriangle* cur = triangles;
+	size_t nOutPrimitivesPerClippedTriangle, sizeOutPrimitive;
+	resolvePolygonModeOutput(&nOutPrimitivesPerClippedTriangle, &sizeOutPrimitive);
 
-	size_t primitiveID = 0;
-	for (size_t k = 0; k < nUnclipped; k += 1)
-	{
-		SRPTriangle unclipped;
+    // Worst case: each triangle becomes clipped triangles
+    SRPTriangle clipped[4];
+    size_t maxTotal = nUnclipped * 4 * nOutPrimitivesPerClippedTriangle;
+    void* buffer = ARENA_ALLOC(maxTotal * sizeOutPrimitive);
+    void* cur = buffer;
 
-		size_t streamIndices[3];
-		resolveTriangleTopology(startIndex, k, prim, streamIndices);
+    size_t primitiveID = 0;
+    for (size_t k = 0; k < nUnclipped; k++)
+    {
+        SRPTriangle unclipped;
 
-		for (uint8_t i = 0; i < 3; i++)
-		{
-			size_t vertexIndex = (ib) ? indexIndexBuffer(ib, streamIndices[i]) : streamIndices[i];
-			unclipped.v[i] = *vertexCacheFetch(&cache, vertexIndex, vb, sp);
-		}
+        size_t streamIndices[3];
+        resolveTriangleTopology(startIndex, k, prim, streamIndices);
 
-		size_t nClipped = clipTriangle(&unclipped, sp, clipped);
+        for (uint8_t i = 0; i < 3; i++)
+        {
+            size_t vertexIndex = (ib) ? indexIndexBuffer(ib, streamIndices[i]) : streamIndices[i];
+            unclipped.v[i] = *vertexCacheFetch(&cache, vertexIndex, vb, sp);
+        }
 
-		for (size_t i = 0; i < nClipped; i++)
-		{
-			SRPTriangle* dst = cur;
-			*dst = clipped[i];
-			bool success = setupTriangle(dst, fb);
-			if (!success)
-				continue;
-			dst->id = primitiveID;
-			primitiveID++;
-			cur++;
-		}
-	}
+        size_t nClipped = clipTriangle(&unclipped, sp, clipped);
 
-	*outTriangleCount = primitiveID;  // Total amount of triangles
-	*outTriangles = triangles;
+        for (size_t i = 0; i < nClipped; i++)
+        {
+			if (srpContext.polygonMode == SRP_POLYGON_MODE_FILL)
+			{
+				SRPTriangle* dst = (SRPTriangle*) cur;
+				*dst = *clipped;
 
-	return true;
+				if (!setupTriangle(dst, fb))
+					continue;
+
+				dst->id = primitiveID;
+				primitiveID++;
+				cur = dst + 1;
+			}
+			else if (srpContext.polygonMode == SRP_POLYGON_MODE_LINE)
+			{
+				SRPLine* dst = (SRPLine*) cur;
+				for (uint8_t j = 0; j < 3; j++)
+				{
+					dst->v[0] = clipped[i].v[j];
+					dst->v[1] = clipped[i].v[(j + 1) % 3];
+
+					setupLine(dst, fb);
+					dst->id = primitiveID;
+					primitiveID++;
+					dst++;
+				}
+				cur = dst + 1;
+			}
+			else if (srpContext.polygonMode == SRP_POLYGON_MODE_POINT)
+			{
+				SRPPoint* dst = (SRPPoint*) cur;
+				for (uint8_t j = 0; j < 3; j++)
+				{
+					dst->v = clipped[i].v[j];
+					setupPoint(dst);
+					dst->id = primitiveID;
+					primitiveID++;
+					dst++;
+				}
+				cur = dst + 1;
+			}
+        }
+    }
+
+    *outCount = primitiveID;
+    *outPrimitives = buffer;
+
+    return true;
 }
 
 bool assembleLines(
@@ -134,6 +180,29 @@ static void warnOnExcessVertexCount(
 			SRP_MESSAGE_WARNING, SRP_MESSAGE_SEVERITY_LOW, __func__,
 			"Vertex count not divisible by 3 when drawing SRP_PRIM_TRIANGLES. The last %i vertex/vertices will be ignored\n", vertexCount % 3
 		);
+}
+
+static void resolvePolygonModeOutput(
+	size_t* nOutPrimitivesPerClippedTriangle, size_t* sizeOutPrimitive
+)
+{
+	if (srpContext.polygonMode == SRP_POLYGON_MODE_FILL)
+	{
+		*nOutPrimitivesPerClippedTriangle = 1;
+		*sizeOutPrimitive = sizeof(SRPTriangle);
+	}
+	else if (srpContext.polygonMode == SRP_POLYGON_MODE_LINE)
+	{
+		*nOutPrimitivesPerClippedTriangle = 3;
+		*sizeOutPrimitive = sizeof(SRPLine);
+	}
+	else if (srpContext.polygonMode == SRP_POLYGON_MODE_POINT)
+	{
+		*nOutPrimitivesPerClippedTriangle = 3;
+		*sizeOutPrimitive = sizeof(SRPPoint);
+	}
+	else
+		assert(false);
 }
 
 bool assemblePoints(

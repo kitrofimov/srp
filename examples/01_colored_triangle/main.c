@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <srp/srp.h>  // the only header you need to include
 #include "window.h"
-#include "timer.h"
+#include "framelimiter.h"
 #include "rad.h"
 
 // A structure to hold initial vertex data, stored in `SRPVertexBuffer`
@@ -87,31 +87,35 @@ int main()
 	};
 
 	// Is not a part of the library, this is a part of the example
-	// See examples/utility/window.*
+	// See examples/utility/window.* and examples/utility/framelimiter.*
 	Window* window = newWindow(512, 512, "Rasterizer", false);
+	FrameLimiter limiter;
+	frameLimiterInit(&limiter, 144.);
 
 	// Main rendering loop
 	size_t frameCount = 0;
 	while (window->running)
 	{
-		// Is not a part of the library, see examples/utility/timer.h
-		TIMER_START(frametime);
+		frameLimiterBegin(&limiter);
 
-		// Clear the framebuffer and draw the index buffer as triangles
-		srpFramebufferClear(fb);
-		srpDrawVertexBuffer(vb, fb, &shaderProgram, SRP_PRIM_TRIANGLES, 0, 3);
+		double renderTime = 0.;
+		TIME_SECTION(renderTime, {
+			// Clear the framebuffer and draw the index buffer as triangles
+			srpFramebufferClear(fb);
+			srpDrawVertexBuffer(vb, fb, &shaderProgram, SRP_PRIM_TRIANGLES, 0, 3);
+		});
 
 		windowPollEvents(window);
 		windowPresent(window, fb);
 
+		double frameTime = frameLimiterEnd(&limiter);
 		frameCount++;
-		TIMER_STOP(frametime);
-		printf(
-			"Frametime: %li us; FPS: %lf; Framecount: %zu\n",
-			TIMER_REPORT_US(frametime, long),
-			1. / TIMER_REPORT_S(frametime, double),
-			frameCount
-		);
+
+		if (frameCount % 100 == 0)
+			printf(
+				"Frametime: %5.3f ms; Rendering: %5.3f ms; FPS: %6.2f; RPS: %6.2f\n",
+				frameTime * 1000., renderTime * 1000., 1. / frameTime, 1. / renderTime
+			);
 	}
 
 	// Destroy objects

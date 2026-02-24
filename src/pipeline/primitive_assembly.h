@@ -10,7 +10,8 @@
 #include "srp/shaders.h"
 #include "core/buffer_p.h"
 
-/** Call the vertex shader and assemble triangles from vertex or index buffer.
+/** Call the vertex shader and assemble triangles from vertex or index buffer,
+ *  possibly converting them to lines or points according to the set polygon mode.
  *  If `ib == NULL`, assembles from vertex buffer, else from index buffer.
  *  Uses memory from SRPArena, so the returned triangles are valid until the
  *  next call to arenaReset().
@@ -19,18 +20,18 @@
  *  @param[in] fb Pointer to the framebuffer to draw to (needed for NDC to
  * 				  screen-space conversion)
  *  @param[in] sp Pointer to the shader program to use
- *  @param[in] primitive Primitive type (one of SRP_PRIM_TRIANGLES,
- * 						 SRP_PRIM_TRIANGLE_STRIP or SRP_PRIM_TRIANGLE_FAN)
+ *  @param[in] prim Primitive type (one of SRP_PRIM_TRIANGLES,
+ * 					SRP_PRIM_TRIANGLE_STRIP or SRP_PRIM_TRIANGLE_FAN)
  *  @param[in] startIndex First stream index to assemble
- *  @param[in] count Number of stream indices to assemble
- *  @param[out] outTriangleCount Amount of assembled triangles
- *  @param[out] outTriangles Pointer to the array of assembled triangles
+ *  @param[in] vertexCount Number of stream indices to assemble
+ *  @param[out] outCount Amount of assembled primitives
+ *  @param[out] outPrimitives Pointer to the array of assembled primitives
  *  @returns `true` if successful, `false` otherwise. If `false` is returned,
- * 			 `*outTriangleCount` and `*outTriangles` are undefined */
-bool assembleTriangles(
-	const SRPIndexBuffer* ib, const SRPVertexBuffer* vb, const SRPFramebuffer* fb,
-	const SRPShaderProgram* sp, SRPPrimitive prim, size_t startIndex, size_t vertexCount,
-	size_t* outTriangleCount, SRPTriangle** outTriangles
+ * 			 `*outCount` and `*outPrimitives` are 0 and NULL */
+bool assembleTrianglesGeneric(
+    const SRPIndexBuffer* ib, const SRPVertexBuffer* vb, const SRPFramebuffer* fb,
+    const SRPShaderProgram* sp, SRPPrimitive prim, size_t startIndex, size_t vertexCount,
+    size_t* outCount, void** outPrimitives
 );
 
 /** Call the vertex shader and assemble lines from vertex or index buffer.

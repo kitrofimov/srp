@@ -41,5 +41,8 @@
 #define ROUGHLY_EQUAL(a, b) (fabs((a) - (b)) <= EPSILON)
 #define ROUGHLY_ZERO(x) (fabs(x) <= EPSILON)
 
+#define ROUGHLY_LESS_OR_EQUAL(a, b) ((a) <= (b) + EPSILON)
+#define ROUGHLY_GREATER_OR_EQUAL(a, b) ((a) >= (b) - EPSILON)
+
 /** @} */  // ingroup Various_internal
 

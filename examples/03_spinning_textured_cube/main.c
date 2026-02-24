@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <srp/srp.h>
 #include "window.h"
-#include "timer.h"
+#include "framelimiter.h"
 
 typedef struct Vertex
 {
@@ -124,29 +124,36 @@ int main()
 	};
 
 	Window* window = newWindow(512, 512, "Rasterizer", false);
+	FrameLimiter limiter;
+	frameLimiterInit(&limiter, 144.);
+
 	while (window->running)
 	{
-		TIMER_START(frametime);
+		frameLimiterBegin(&limiter);
 
-		uniform.model = mat4dConstructRotate(
-			uniform.frameCount / 100.,
-			uniform.frameCount / 200.,
-			uniform.frameCount / 500.
-		);
-		srpFramebufferClear(fb);
-		srpDrawIndexBuffer(ib, vb, fb, &shaderProgram, SRP_PRIM_TRIANGLES, 0, 36);
+		double renderTime = 0.;
+		TIME_SECTION(renderTime, {
+			uniform.model = mat4dConstructRotate(
+				uniform.frameCount / 100.,
+				uniform.frameCount / 200.,
+				uniform.frameCount / 500.
+			);
+
+			srpFramebufferClear(fb);
+			srpDrawIndexBuffer(ib, vb, fb, &shaderProgram, SRP_PRIM_TRIANGLES, 0, 36);
+		});
 
 		windowPollEvents(window);
 		windowPresent(window, fb);
 
+		double frameTime = frameLimiterEnd(&limiter);
 		uniform.frameCount++;
-		TIMER_STOP(frametime);
-		printf(
-			"Frametime: %li us; FPS: %lf; Framecount: %zu\n",
-			TIMER_REPORT_US(frametime, long),
-			1. / TIMER_REPORT_S(frametime, double),
-			uniform.frameCount
-		);
+
+		if (uniform.frameCount % 100 == 0)
+			printf(
+				"Frametime: %5.3f ms; Rendering: %5.3f ms; FPS: %6.2f; RPS: %6.2f\n",
+				frameTime * 1000., renderTime * 1000., 1. / frameTime, 1. / renderTime
+			);
 	}
 
 	srpFreeTexture(uniform.texture);

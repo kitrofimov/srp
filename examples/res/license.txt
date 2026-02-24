@@ -1,0 +1,2 @@
+textures/stoneWall.png - https://opengameart.org/node/8035 (CC0)
+objects/utah_teapot.obj - https://graphics.cs.utah.edu/teapot/ (CC1)
