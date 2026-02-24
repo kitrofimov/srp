@@ -36,6 +36,14 @@ typedef enum SRPCullFace
 	SRP_CULL_FACE_FRONT_AND_BACK
 } SRPCullFace;
 
+/** Available polygon modes */
+typedef enum SRPPolygonMode
+{
+	SRP_POLYGON_MODE_FILL,
+	SRP_POLYGON_MODE_LINE,
+	SRP_POLYGON_MODE_POINT
+} SRPPolygonMode;
+
 /** Holds runtime settings. This always needs to be declared as `SRPContext
  *  srpContext` in user programs and initialized with srpNewContext() */
 typedef struct SRPContext
@@ -47,9 +55,10 @@ typedef struct SRPContext
 	void* messageCallbackUserParameter;
 	/** How to interpolate vertex attributes inside the primitive */
 	SRPInterpolationMode interpolationMode;
-	SRPFrontFace frontFace;  /**< Which face is considered front-facing */
-	SRPCullFace cullFace;    /**< Which face(s) are culled */
-	double pointSize;        /**< Size of rasterized SRP_PRIM_POINTS, in pixels */
+	SRPFrontFace frontFace;      /**< Which face is considered front-facing */
+	SRPCullFace cullFace;        /**< Which face(s) are culled */
+	SRPPolygonMode polygonMode;  /**< Triangle rendering mode */
+	double pointSize;            /**< Size of rasterized SRP_PRIM_POINTS, in pixels */
 
 	/** Arena for internal allocations. Is not exposed to the user */
 	SRPArena* arena;
@@ -62,6 +71,7 @@ typedef enum SRPContextParameter
 	SRP_CONTEXT_INTERPOLATION_MODE,
 	SRP_CONTEXT_FRONT_FACE,
 	SRP_CONTEXT_CULL_FACE,
+	SRP_CONTEXT_POLYGON_MODE,
 	SRP_CONTEXT_POINT_SIZE,
 } SRPContextParameter;
 

@@ -84,20 +84,56 @@ static void drawTriangles(
 	if (srpContext.cullFace == SRP_CULL_FACE_FRONT_AND_BACK)
 		return;
 
-	size_t triangleCount;
-	SRPTriangle* triangles;
-	bool success = assembleTriangles(
-		ib, vb, fb, sp, primitive, startIndex, count,
-		&triangleCount, &triangles
-	);
-	if (!success)
-		return;
+	if (srpContext.polygonMode == SRP_POLYGON_MODE_FILL)
+	{
+		size_t triangleCount;
+		SRPTriangle* triangles;
+		bool success = assembleTriangles(
+			ib, vb, fb, sp, primitive, startIndex, count,
+			&triangleCount, &triangles
+		);
+		if (!success)
+			return;
 
-	void* interpolatedBuffer = ARENA_ALLOC(sp->vs->nBytesPerOutputVariables);
-	for (size_t i = 0; i < triangleCount; i++)
-		rasterizeTriangle(&triangles[i], fb, sp, interpolatedBuffer);
+		void* interpolatedBuffer = ARENA_ALLOC(sp->vs->nBytesPerOutputVariables);
+		for (size_t i = 0; i < triangleCount; i++)
+			rasterizeTriangle(&triangles[i], fb, sp, interpolatedBuffer);
 
-	ARENA_RESET();
+		ARENA_RESET();
+	}
+	else if (srpContext.polygonMode == SRP_POLYGON_MODE_LINE)
+	{
+		size_t lineCount;
+		SRPLine* lines;
+		bool success = assembleTrianglesAsLines(
+			ib, vb, fb, sp, primitive, startIndex, count,
+			&lineCount, &lines
+		);
+		if (!success)
+			return;
+
+		void* interpolatedBuffer = ARENA_ALLOC(sp->vs->nBytesPerOutputVariables);
+		for (size_t i = 0; i < lineCount; i++)
+			rasterizeLine(&lines[i], fb, sp, interpolatedBuffer);
+
+		ARENA_RESET();
+	}
+	else if (srpContext.polygonMode == SRP_POLYGON_MODE_POINT)
+	{
+		size_t pointCount;
+		SRPPoint* points;
+		bool success = assembleTrianglesAsPoints(
+			ib, vb, fb, sp, primitive, startIndex, count,
+			&pointCount, &points
+		);
+		if (!success)
+			return;
+
+		for (size_t i = 0; i < pointCount; i++)
+			rasterizePoint(&points[i], fb, sp);
+
+		ARENA_RESET();
+	}
 }
 
 static void drawLines(

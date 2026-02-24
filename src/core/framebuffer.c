@@ -7,6 +7,7 @@
 #include "srp/framebuffer.h"
 #include "utils/message_callback_p.h"
 #include "utils/defines.h"
+#include "math/utils.h"
 
 /** @file
  *  Framebuffer implementation */
@@ -57,9 +58,9 @@ void framebufferDrawPixel(
 	uint32_t color
 )
 {
-	// If this is failed, this is the problem of library code =>
-	// => no point to use message callback
-	assert(depth >= -1 && depth < 1);
+	// If this is failed, this is the problem of library code
+	// Not a direct check because of floating point imprecisions
+	assert(ROUGHLY_GREATER_OR_EQUAL(depth, -1) && ROUGHLY_LESS_OR_EQUAL(depth, 1));
 	*framebufferGetPixelPointer(this, x, y) = color;
 	*framebufferGetDepthPointer(this, x, y) = depth;
 }
@@ -97,4 +98,3 @@ static double* framebufferGetDepthPointer(const SRPFramebuffer* this, size_t x, 
 {
 	return this->depth + (y * this->width + x);
 }
-

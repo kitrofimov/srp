@@ -31,7 +31,11 @@ bool assembleTriangles(
 	warnOnExcessVertexCount(ib, vb, prim, startIndex, vertexCount);
 	size_t nUnclipped = computeTriangleCount(vertexCount, prim);
 	if (nUnclipped == 0)
-		return false;
+	{
+		*outTriangleCount = 0;
+		*outTriangles = NULL;
+        return false;
+	}
 
 	VertexCache cache;
 	allocateVertexCache(&cache, ib, startIndex, vertexCount);
@@ -41,7 +45,7 @@ bool assembleTriangles(
 	SRPTriangle* cur = triangles;
 
 	size_t primitiveID = 0;
-	for (size_t k = 0; k < nUnclipped; k += 1)
+	for (size_t k = 0; k < nUnclipped; k++)
 	{
 		SRPTriangle unclipped;
 
@@ -73,6 +77,138 @@ bool assembleTriangles(
 	*outTriangles = triangles;
 
 	return true;
+}
+
+bool assembleTrianglesAsLines(
+    const SRPIndexBuffer* ib, const SRPVertexBuffer* vb, const SRPFramebuffer* fb,
+    const SRPShaderProgram* sp, SRPPrimitive prim, size_t startIndex, size_t vertexCount,
+    size_t* outLineCount, SRPLine** outLines
+)
+{
+    warnOnExcessVertexCount(ib, vb, prim, startIndex, vertexCount);
+    size_t nUnclipped = computeTriangleCount(vertexCount, prim);
+    if (nUnclipped == 0)
+	{
+		*outLineCount = 0;
+		*outLines = NULL;
+        return false;
+	}
+
+    VertexCache cache;
+    allocateVertexCache(&cache, ib, startIndex, vertexCount);
+
+    // Each unclipped triangle may produce up to 4 clipped triangles,
+    // and each clipped triangle produces 3 lines
+    SRPLine* lines = ARENA_ALLOC(nUnclipped * 4 * 3 * sizeof(SRPLine));
+    SRPLine* cur = lines;
+    SRPTriangle clipped[4]; // Worst-case after clipping
+
+    size_t primitiveID = 0;
+    for (size_t k = 0; k < nUnclipped; k++)
+    {
+        SRPTriangle unclipped;
+
+        size_t streamIndices[3];
+        resolveTriangleTopology(startIndex, k, prim, streamIndices);
+
+        for (uint8_t i = 0; i < 3; i++)
+        {
+            size_t vertexIndex = (ib) ? indexIndexBuffer(ib, streamIndices[i]) : streamIndices[i];
+            unclipped.v[i] = *vertexCacheFetch(&cache, vertexIndex, vb, sp);
+        }
+
+        size_t nClipped = clipTriangle(&unclipped, sp, clipped);
+
+        for (size_t i = 0; i < nClipped; i++)
+        {
+            SRPTriangle* t = &clipped[i];
+            SRPLine tmpLines[3];  // 3 lines for each clipped triangle
+
+			for (uint8_t j = 0; j < 3; j++)
+			{
+                SRPLine* dst = cur;
+				tmpLines[j].v[0] = t->v[j];
+				tmpLines[j].v[1] = t->v[(j+1) % 3];
+                *dst = tmpLines[j];
+
+                setupLine(dst, fb);
+                dst->id = primitiveID;
+				primitiveID++;
+                cur++;
+            }
+        }
+    }
+
+    *outLineCount = primitiveID;
+    *outLines = lines;
+
+    return true;
+}
+
+bool assembleTrianglesAsPoints(
+    const SRPIndexBuffer* ib, const SRPVertexBuffer* vb, const SRPFramebuffer* fb,
+    const SRPShaderProgram* sp, SRPPrimitive prim, size_t startIndex, size_t vertexCount,
+    size_t* outPointCount, SRPPoint** outPoints
+)
+{
+    warnOnExcessVertexCount(ib, vb, prim, startIndex, vertexCount);
+    size_t nUnclipped = computeTriangleCount(vertexCount, prim);
+    if (nUnclipped == 0)
+	{
+		*outPointCount = 0;
+		*outPoints = NULL;
+        return false;
+	}
+
+    VertexCache cache;
+    allocateVertexCache(&cache, ib, startIndex, vertexCount);
+
+    // Each unclipped triangle may produce up to 4 clipped triangles,
+    // and each clipped triangle has 3 vertices (points)
+    SRPPoint* points = ARENA_ALLOC(nUnclipped * 4 * 3 * sizeof(SRPPoint));
+    SRPPoint* cur = points;
+    SRPTriangle clipped[4]; // Worst-case after clipping
+
+    size_t primitiveID = 0;
+
+    for (size_t k = 0; k < nUnclipped; ++k)
+    {
+        SRPTriangle unclipped;
+
+        size_t streamIndices[3];
+        resolveTriangleTopology(startIndex, k, prim, streamIndices);
+
+        for (uint8_t i = 0; i < 3; ++i)
+        {
+            size_t vertexIndex = (ib) ? indexIndexBuffer(ib, streamIndices[i]) : streamIndices[i];
+            unclipped.v[i] = *vertexCacheFetch(&cache, vertexIndex, vb, sp);
+        }
+
+        size_t nClipped = clipTriangle(&unclipped, sp, clipped);
+
+        for (size_t i = 0; i < nClipped; i++)
+        {
+            SRPTriangle* t = &clipped[i];
+            SRPPoint tmpPoints[3];  // 1 vertex = 1 point
+
+            for (uint8_t j = 0; j < 3; j++)
+            {
+                SRPPoint* dst = cur;
+				tmpPoints[j].v = t->v[j];
+                *dst = tmpPoints[j];
+
+                setupPoint(dst);
+                dst->id = primitiveID;
+				primitiveID++;
+                cur++;
+            }
+        }
+    }
+
+    *outPointCount = primitiveID;
+    *outPoints = points;
+
+    return true;
 }
 
 bool assembleLines(

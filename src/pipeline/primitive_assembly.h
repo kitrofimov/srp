@@ -33,6 +33,18 @@ bool assembleTriangles(
 	size_t* outTriangleCount, SRPTriangle** outTriangles
 );
 
+bool assembleTrianglesAsLines(
+    const SRPIndexBuffer* ib, const SRPVertexBuffer* vb, const SRPFramebuffer* fb,
+    const SRPShaderProgram* sp, SRPPrimitive prim, size_t startIndex, size_t vertexCount,
+    size_t* outLineCount, SRPLine** outLines
+);
+
+bool assembleTrianglesAsPoints(
+    const SRPIndexBuffer* ib, const SRPVertexBuffer* vb, const SRPFramebuffer* fb,
+    const SRPShaderProgram* sp, SRPPrimitive prim, size_t startIndex, size_t vertexCount,
+    size_t* outPointCount, SRPPoint** outPoints
+);
+
 /** Call the vertex shader and assemble lines from vertex or index buffer.
  *  If `ib == NULL`, assembles from vertex buffer, else from index buffer.
  *  Uses memory from SRPArena, so the returned points are valid until the
