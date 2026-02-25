@@ -4,10 +4,10 @@
 #include "srp/shaders.h"
 #include "srp/vec.h"
 
-void interpolatePosition(
+void interpolateDepthAndW(
     SRPvsOutput* vertices, size_t nVertices, const double* weights,
     const double* invW, bool perspective, const SRPShaderProgram* sp,
-    vec4d* pPosition
+    double* depth, double* reciprocalInterpolatedInvW
 );
 
 void interpolateAttributes(

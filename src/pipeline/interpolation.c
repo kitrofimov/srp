@@ -22,39 +22,31 @@
  *  @see https://www.comp.nus.edu.sg/%7Elowkl/publications/lowk_persp_interp_techrep.pdf
  *  @see https://www.youtube.com/watch?v=F5X6S35SW2s */
 
-void interpolatePosition(
+void interpolateDepthAndW(
     SRPvsOutput* vertices, size_t nVertices, const double* weights,
     const double* invW, bool perspective, const SRPShaderProgram* sp,
-    vec4d* pPosition
+    double* depth, double* reciprocalInterpolatedInvW
 )
 {
-    for (size_t i = 0; i < 2; i++)
-    {
-        double sum = 0.;
-        for (size_t j = 0; j < nVertices; j++)
-            sum += vertices[j].position[i] * weights[j];
-        ((double*) pPosition)[i] = sum;
-    }
-
 	if (perspective)
     {
         double sum = 0.;
         for (size_t j = 0; j < nVertices; j++)
             sum += invW[j] * weights[j];
-        pPosition->w = 1 / sum;
+        *reciprocalInterpolatedInvW = 1 / sum;
 
         sum = 0.;
         for (size_t j = 0; j < nVertices; j++)
             sum += vertices[j].position[2] * invW[j] * weights[j];
-        pPosition->z = sum;
+        *depth = sum;
     }
 	else  // affine
     {
-        pPosition->w = 1.;
+        *reciprocalInterpolatedInvW = 1.;
         double sum = 0.;
         for (size_t j = 0; j < nVertices; j++)
             sum += vertices[j].position[2] * weights[j];
-        pPosition->z = sum;
+        *depth = sum;
     }
 }
 

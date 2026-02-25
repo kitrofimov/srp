@@ -18,12 +18,13 @@
  *  @param[in] line Line to interpolate data for
  *  @param[in] t Interpolation parameter (0 -> 0th vertex; 1 -> 1st vertex)
  *  @param[in] sp A pointer to shader program to use
- *  @param[out] pPosition A pointer to vec4d where interpolated position will appear.
  *  @param[out] pInterpolatedBuffer A pointer to the buffer where interpolated
- *              variables will appear. Must be big enough to hold all of them */
+ *              variables will appear. Must be big enough to hold all of them
+ *  @param[out] depth Fragment depth
+ *  @param[out] recIntInvW Reciprocal of interpolated inverse Wclip */
 static void lineInterpolateData(
 	SRPLine* line, double t, const SRPShaderProgram* restrict sp,
-	vec4d* pPosition, SRPInterpolated* pInterpolatedBuffer
+	SRPInterpolated* pInterpolatedBuffer, double* depth, double* recIntInvW
 );
 
 void rasterizeLine(
@@ -53,18 +54,13 @@ void rasterizeLine(
         int px = (int) round(x);
         int py = (int) round(y);
 
-        vec4d interpolatedPosition = {0};
-        lineInterpolateData(line, t, sp, &interpolatedPosition, interpolatedBuffer);
+        double depth, recIntInvW;
+        lineInterpolateData(line, t, sp, interpolatedBuffer, &depth, &recIntInvW);
 
         SRPfsInput fsIn = {
             .uniform = sp->uniform,
             .interpolated = interpolatedBuffer,
-            .fragCoord = {
-                px + 0.5,
-                py + 0.5,
-                interpolatedPosition.z,
-                interpolatedPosition.w
-            },
+            .fragCoord = { px + 0.5, py + 0.5, depth, recIntInvW },
             .frontFacing = true,
             .primitiveID = line->id,
         };
@@ -87,11 +83,11 @@ void setupLine(SRPLine* line, const SRPFramebuffer* fb)
 
 static void lineInterpolateData(
 	SRPLine* line, double t, const SRPShaderProgram* restrict sp,
-	vec4d* pPosition, SRPInterpolated* pInterpolatedBuffer
+	SRPInterpolated* pInterpolatedBuffer, double* depth, double* recIntInvW
 )
 {
 	const bool perspective = srpContext.interpolationMode == SRP_INTERPOLATION_MODE_PERSPECTIVE;
 	const double weights[2] = {1-t, t};
-	interpolatePosition(line->v, 2, weights, line->invW, perspective, sp, pPosition);
-	interpolateAttributes(line->v, 2, weights, line->invW, pPosition->w, perspective, sp, pInterpolatedBuffer);
+	interpolateDepthAndW(line->v, 2, weights, line->invW, perspective, sp, depth, recIntInvW);
+	interpolateAttributes(line->v, 2, weights, line->invW, *recIntInvW, perspective, sp, pInterpolatedBuffer);
 }

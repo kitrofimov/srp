@@ -61,12 +61,13 @@ static bool isEdgeFlatTopOrLeft(const vec3d* restrict edge);
 /** Interpolate the fragment position and vertex variables inside the triangle.
  *  @param[in] tri Triangle to interpolate data for
  *  @param[in] sp A pointer to shader program to use
- *  @param[out] pPosition A pointer to vec4d where interpolated position will appear.
  *  @param[out] pInterpolatedBuffer A pointer to the buffer where interpolated
- *              variables will appear. Must be big enough to hold all of them */
+ *              variables will appear. Must be big enough to hold all of them
+ *  @param[out] depth Fragment depth
+ *  @param[out] recIntInvW Reciprocal of interpolated inverse Wclip */
 static void triangleInterpolateData(
 	SRPTriangle* tri, const SRPShaderProgram* restrict sp,
-	vec4d* pPosition, SRPInterpolated* pInterpolatedBuffer
+	SRPInterpolated* pInterpolatedBuffer, double* depth, double* recIntInvW
 );
 
 /** @} */  // ingroup Rasterization
@@ -87,18 +88,13 @@ void rasterizeTriangle(
 					goto nextPixel;
 			}
 
-			vec4d interpolatedPosition = {0};
-			triangleInterpolateData(tri, sp, &interpolatedPosition, interpolatedBuffer);
+			double depth, recIntInvW;
+			triangleInterpolateData(tri, sp, interpolatedBuffer, &depth, &recIntInvW);
 
 			SRPfsInput fsIn = {
 				.uniform = sp->uniform,
 				.interpolated = interpolatedBuffer,
-				.fragCoord = {
-					x + 0.5,
-					y + 0.5,
-					interpolatedPosition.z,
-					interpolatedPosition.w
-				},
+				.fragCoord = { x + 0.5, y + 0.5, depth, recIntInvW },
 				.frontFacing = tri->isFrontFacing,
 				.primitiveID = tri->id,
 			};
@@ -243,10 +239,10 @@ static bool isEdgeFlatTopOrLeft(const vec3d* restrict edge)
 
 static void triangleInterpolateData(
 	SRPTriangle* tri, const SRPShaderProgram* restrict sp,
-	vec4d* pPosition, SRPInterpolated* pInterpolatedBuffer
+	SRPInterpolated* pInterpolatedBuffer, double* depth, double* recIntInvW
 )
 {
 	const bool perspective = srpContext.interpolationMode == SRP_INTERPOLATION_MODE_PERSPECTIVE;
-	interpolatePosition(tri->v, 3, tri->lambda, tri->invW, perspective, sp, pPosition);
-	interpolateAttributes(tri->v, 3, tri->lambda, tri->invW, pPosition->w, perspective, sp, pInterpolatedBuffer);
+	interpolateDepthAndW(tri->v, 3, tri->lambda, tri->invW, perspective, sp, depth, recIntInvW);
+	interpolateAttributes(tri->v, 3, tri->lambda, tri->invW, *recIntInvW, perspective, sp, pInterpolatedBuffer);
 }
