@@ -3,6 +3,7 @@
 
 #include <string.h>
 #include <assert.h>
+#include <stdlib.h>
 #include "pipeline/clipping.h"
 #include "pipeline/interpolation.h"
 #include "memory/arena_p.h"
@@ -228,6 +229,6 @@ static inline double planeDistance(const SRPvsOutput* v, ClipPlane p)
         case PLANE_TOP:    return w - y;
         case PLANE_NEAR:   return z + w;
         case PLANE_FAR:    return w - z;
-        default:           assert(false);
+        default:           abort();
     }
 }

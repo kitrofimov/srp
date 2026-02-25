@@ -6,7 +6,6 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <assert.h>
 #include "core/buffer_p.h"
 #include "pipeline/draw.h"
 #include "utils/message_callback_p.h"

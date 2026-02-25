@@ -4,7 +4,7 @@
 /** @file
  *  Primitive assembly implementation */
 
-#include <assert.h>
+#include <stdlib.h>
 #include "pipeline/primitive_assembly.h"
 #include "pipeline/vertex_processing.h"
 #include "pipeline/topology.h"
@@ -202,7 +202,7 @@ static void resolvePolygonModeOutput(
 		*sizeOutPrimitive = sizeof(SRPPoint);
 	}
 	else
-		assert(false);
+		abort();
 }
 
 bool assemblePoints(

@@ -4,7 +4,7 @@
 /** @file
  *  Topology-related functions implementation */
 
-#include <assert.h>
+#include <stdlib.h>
 #include "pipeline/topology.h"
 
 size_t computeTriangleCount(size_t vertexCount, SRPPrimitive prim)
@@ -14,7 +14,7 @@ size_t computeTriangleCount(size_t vertexCount, SRPPrimitive prim)
 	else if (prim == SRP_PRIM_TRIANGLE_STRIP || prim == SRP_PRIM_TRIANGLE_FAN)
 		return (vertexCount >= 3) ? vertexCount - 2 : 0;
 	else
-		assert(false && "Invalid primitive type");
+		abort();
 }
 
 void resolveTriangleTopology(size_t base, size_t rawTriIdx, SRPPrimitive prim, size_t* out)
@@ -40,7 +40,7 @@ void resolveTriangleTopology(size_t base, size_t rawTriIdx, SRPPrimitive prim, s
 		out[2] = base + rawTriIdx + 2;
 	}
 	else
-		assert(false && "Invalid primitive type");
+		abort();
 }
 
 size_t computeLineCount(size_t vertexCount, SRPPrimitive prim)
@@ -52,7 +52,7 @@ size_t computeLineCount(size_t vertexCount, SRPPrimitive prim)
 	else if (prim == SRP_PRIM_LINE_LOOP)
 		return (vertexCount != 1) ? vertexCount : 0;
 	else
-		assert(false && "Invalid primitive type");
+		abort();
 }
 
 void resolveLineTopology(
@@ -75,5 +75,5 @@ void resolveLineTopology(
 		out[1] = base + ((rawLineIdx + 1) % vertexCount);
 	}
 	else
-		assert(false && "Invalid primitive type");
+		abort();
 }
