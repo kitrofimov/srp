@@ -88,6 +88,6 @@ static void lineInterpolateData(
 {
 	const bool perspective = srpContext.interpolationMode == SRP_INTERPOLATION_MODE_PERSPECTIVE;
 	const double weights[2] = {1-t, t};
-	interpolateDepthAndW(line->v, 2, weights, line->invW, perspective, sp, depth, recIntInvW);
+	interpolateDepthAndWLine(line->v, weights, line->invW, perspective, sp, depth, recIntInvW);
 	interpolateAttributes(line->v, 2, weights, line->invW, *recIntInvW, perspective, sp, pInterpolatedBuffer);
 }

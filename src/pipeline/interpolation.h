@@ -4,9 +4,15 @@
 #include "srp/shaders.h"
 #include "srp/vec.h"
 
-void interpolateDepthAndW(
-    SRPvsOutput* vertices, size_t nVertices, const double* weights,
-    const double* invW, bool perspective, const SRPShaderProgram* sp,
+void interpolateDepthAndWTriangle(
+    SRPvsOutput* vertices, const double* weights, const double* invW,
+    bool perspective, const SRPShaderProgram* sp,
+    double* depth, double* reciprocalInterpolatedInvW
+);
+
+void interpolateDepthAndWLine(
+    SRPvsOutput* vertices, const double* weights, const double* invW,
+    bool perspective, const SRPShaderProgram* sp,
     double* depth, double* reciprocalInterpolatedInvW
 );
 

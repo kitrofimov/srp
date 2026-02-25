@@ -243,6 +243,6 @@ static void triangleInterpolateData(
 )
 {
 	const bool perspective = srpContext.interpolationMode == SRP_INTERPOLATION_MODE_PERSPECTIVE;
-	interpolateDepthAndW(tri->v, 3, tri->lambda, tri->invW, perspective, sp, depth, recIntInvW);
+	interpolateDepthAndWTriangle(tri->v, tri->lambda, tri->invW, perspective, sp, depth, recIntInvW);
 	interpolateAttributes(tri->v, 3, tri->lambda, tri->invW, *recIntInvW, perspective, sp, pInterpolatedBuffer);
 }
