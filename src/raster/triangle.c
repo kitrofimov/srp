@@ -139,9 +139,11 @@ bool setupTriangle(SRPTriangle* tri, const SRPFramebuffer* fb)
 	if (ROUGHLY_ZERO(areaX2))
 		return false;
 
+	// FP errors may lead to one of these being -1 => triangle not drawn
+	// Hence assuring it's at least 0
 	tri->minBP = (vec2) {
-		floor(MIN(tri->ss[0].x, MIN(tri->ss[1].x, tri->ss[2].x))),
-		floor(MIN(tri->ss[0].y, MIN(tri->ss[1].y, tri->ss[2].y)))
+		MAX(floor(MIN(tri->ss[0].x, MIN(tri->ss[1].x, tri->ss[2].x))), 0),
+		MAX(floor(MIN(tri->ss[0].y, MIN(tri->ss[1].y, tri->ss[2].y))), 0)
 	};
 	tri->maxBP = (vec2) {
 		ceil(MAX(tri->ss[0].x, MAX(tri->ss[1].x, tri->ss[2].x))),
