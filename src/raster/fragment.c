@@ -14,12 +14,31 @@ void emitFragment(
     int x, int y, SRPfsInput* fsIn
 )
 {
+    const bool overwrite = sp->fs->doesOverwriteDepth;
+    const double interpolatedDepth = fsIn->fragCoord[2];
+
     SRPfsOutput fsOut = {
         .color = {0},
         .fragDepth = NAN
     };
 
+    double depth = interpolatedDepth;
+
+    // Early depth test
+    if (!overwrite && !framebufferDepthTest(fb, x, y, depth))
+        return;
+
     sp->fs->shader(fsIn, &fsOut);
+
+    if (overwrite)
+    {
+        // Resolve final depth
+        if (!isnan(fsOut.fragDepth))
+            depth = fsOut.fragDepth;
+
+        if (!framebufferDepthTest(fb, x, y, depth))
+            return;
+    }
 
     SRPColor color = {
         CLAMP(0, 255, fsOut.color[0] * 255),
@@ -28,9 +47,5 @@ void emitFragment(
         CLAMP(0, 255, fsOut.color[3] * 255)
     };
 
-    // If depth wasn't overridden by the user's fragment shader
-    double depth = isnan(fsOut.fragDepth) ? fsIn->fragCoord[2] : fsOut.fragDepth;
-
-    if (framebufferDepthTest(fb, x, y, depth))
-        framebufferDrawPixel(fb, x, y, depth, SRP_COLOR_TO_UINT32_T(color));
+    framebufferDrawPixel(fb, x, y, depth, SRP_COLOR_TO_UINT32_T(color));
 }

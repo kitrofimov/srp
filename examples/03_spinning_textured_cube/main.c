@@ -119,7 +119,8 @@ int main()
 			.nBytesPerOutputVariables = sizeof(VSOutput)
 		},
 		.fs = &(SRPFragmentShader) {
-			.shader = fragmentShader
+			.shader = fragmentShader,
+			.doesOverwriteDepth = false
 		}
 	};
 
