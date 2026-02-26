@@ -8,21 +8,21 @@
 
 typedef struct Vertex
 {
-	vec3d position;
-	vec2d uv;
+	vec3 position;
+	vec2 uv;
 } Vertex;
 
 typedef struct VSOutput
 {
-	vec2d uv;
+	vec2 uv;
 } VSOutput;
 
 typedef struct Uniform
 {
 	size_t frameCount;
-	mat4d model;
-	mat4d view;
-	mat4d projection;
+	mat4 model;
+	mat4 view;
+	mat4 projection;
 	SRPTexture* texture;
 } Uniform;
 
@@ -93,13 +93,13 @@ int main()
 	srpIndexBufferCopyData(ib, TYPE_UINT8, sizeof(indices), indices);
 
 	Uniform uniform = {
-		.model = mat4dConstructIdentity(),
-		.view = mat4dConstructView(
+		.model = mat4ConstructIdentity(),
+		.view = mat4ConstructView(
 			0, 0, -3,
 			0, 0, 0,
 			1, 1, 1
 		),
-		.projection = mat4dConstructPerspectiveProjection(-1, 1, -1, 1, 1, 50),
+		.projection = mat4ConstructPerspectiveProjection(-1, 1, -1, 1, 1, 50),
 		.texture = srpNewTexture(
 			"./res/textures/stoneWall.png",
 			TW_REPEAT, TW_REPEAT,
@@ -114,12 +114,13 @@ int main()
 			.shader = vertexShader,
 			.nOutputVariables = 1,
 			.outputVariablesInfo = (SRPVertexVariableInformation[])	{
-				{.nItems = 2, .type = TYPE_DOUBLE}
+				{.nItems = 2, .type = TYPE_FLOAT}
 			},
 			.nBytesPerOutputVariables = sizeof(VSOutput)
 		},
 		.fs = &(SRPFragmentShader) {
-			.shader = fragmentShader
+			.shader = fragmentShader,
+			.doesOverwriteDepth = false
 		}
 	};
 
@@ -131,9 +132,9 @@ int main()
 	{
 		frameLimiterBegin(&limiter);
 
-		double renderTime = 0.;
+		float renderTime = 0.;
 		TIME_SECTION(renderTime, {
-			uniform.model = mat4dConstructRotate(
+			uniform.model = mat4ConstructRotate(
 				uniform.frameCount / 100.,
 				uniform.frameCount / 200.,
 				uniform.frameCount / 500.
@@ -146,7 +147,7 @@ int main()
 		windowPollEvents(window);
 		windowPresent(window, fb);
 
-		double frameTime = frameLimiterEnd(&limiter);
+		float frameTime = frameLimiterEnd(&limiter);
 		uniform.frameCount++;
 
 		if (uniform.frameCount % 100 == 0)
@@ -181,14 +182,14 @@ void vertexShader(SRPvsInput* in, SRPvsOutput* out)
 	Uniform* pUniform = (Uniform*) in->uniform;
 	VSOutput* pOutVars = (VSOutput*) out->pOutputVariables;
 
-	vec3d* inPosition = &pVertex->position;
-	vec4d* outPosition = (vec4d*) out->position;
-	*outPosition = (vec4d) {
+	vec3* inPosition = &pVertex->position;
+	vec4* outPosition = (vec4*) out->position;
+	*outPosition = (vec4) {
 		inPosition->x, inPosition->y, inPosition->z, 1.0
 	};
-	*outPosition = mat4dMultiplyVec4d(&pUniform->model, *outPosition);
-	*outPosition = mat4dMultiplyVec4d(&pUniform->view, *outPosition);
-	*outPosition = mat4dMultiplyVec4d(&pUniform->projection, *outPosition);
+	*outPosition = mat4MultiplyVec4(&pUniform->model, *outPosition);
+	*outPosition = mat4MultiplyVec4(&pUniform->view, *outPosition);
+	*outPosition = mat4MultiplyVec4(&pUniform->projection, *outPosition);
 
 	pOutVars->uv.x = pVertex->uv.x;
 	pOutVars->uv.y = pVertex->uv.y;
@@ -198,9 +199,9 @@ void fragmentShader(SRPfsInput* in, SRPfsOutput* out)
 {
 	VSOutput* interpolated = (VSOutput*) in->interpolated;
 	Uniform* pUniform = (Uniform*) in->uniform;
-	vec4d* outColor = (vec4d*) out->color;
+	vec3* outColor = (vec3*) out->color;
 
-	vec2d uv = interpolated->uv;
-	srpTextureGetFilteredColor(pUniform->texture, uv.x, uv.y, (double*) outColor);
+	vec2 uv = interpolated->uv;
+	srpTextureGetFilteredColor(pUniform->texture, uv.x, uv.y, (float*) outColor);
 }
 

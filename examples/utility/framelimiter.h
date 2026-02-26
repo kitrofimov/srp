@@ -12,11 +12,11 @@
     }
 
 typedef struct FrameLimiter {
-    double targetFPS;
-    double targetFrameTime;  // in seconds
+    float targetFPS;
+    float targetFrameTime;  // in seconds
     struct timespec lastFrameTime;
 } FrameLimiter;
 
-void frameLimiterInit(FrameLimiter* limiter, double fps);
+void frameLimiterInit(FrameLimiter* limiter, float fps);
 void frameLimiterBegin(FrameLimiter* limiter);
-double frameLimiterEnd(FrameLimiter* limiter);
+float frameLimiterEnd(FrameLimiter* limiter);

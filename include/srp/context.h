@@ -58,7 +58,7 @@ typedef struct SRPContext
 	SRPFrontFace frontFace;      /**< Which face is considered front-facing */
 	SRPCullFace cullFace;        /**< Which face(s) are culled */
 	SRPPolygonMode polygonMode;  /**< Triangle rendering mode */
-	double pointSize;            /**< Size of rasterized SRP_PRIM_POINTS, in pixels */
+	float pointSize;            /**< Size of rasterized SRP_PRIM_POINTS, in pixels */
 
 	/** Arena for internal allocations. Is not exposed to the user */
 	SRPArena* arena;
@@ -97,10 +97,10 @@ void srpContextSetP(SRPContextParameter contextParameter, void* data);
  *  @param[in] data The value you want to assign to specified context parameter */
 void srpContextSetI(SRPContextParameter contextParameter, int data);
 
-/** Set a double parameter in the context
+/** Set a float parameter in the context
  *  @param[in] contextParameter The context parameter you want to modify
  *  @param[in] data The value you want to assign to specified context parameter */
-void srpContextSetD(SRPContextParameter contextParameter, double data);
+void srpContextSetF(SRPContextParameter contextParameter, float data);
 
 /** Get a pointer parameter in the context
  *  @param[in] contextParameter The context parameter you want to get
@@ -112,10 +112,10 @@ void* srpContextGetP(SRPContextParameter contextParameter);
  *  @return Requested parameter or 0 on error */
 int srpContextGetI(SRPContextParameter contextParameter);
 
-/** Get a double parameter in the context
+/** Get a float parameter in the context
  *  @param[in] contextParameter The context parameter you want to get
  *  @return Requested parameter or 0 on error */
-double srpContextGetD(SRPContextParameter contextParameter);
+float srpContextGetF(SRPContextParameter contextParameter);
 
 /** @} */  // defgroup Context
 

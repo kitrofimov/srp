@@ -4,7 +4,8 @@
 /** @file
  *  Primitive assembly implementation */
 
-#include <assert.h>
+#include <string.h>
+#include <stdlib.h>
 #include "pipeline/primitive_assembly.h"
 #include "pipeline/vertex_processing.h"
 #include "pipeline/topology.h"
@@ -43,7 +44,7 @@ bool assembleTrianglesGeneric(
     }
 
     VertexCache cache;
-    allocateVertexCache(&cache, ib, startIndex, vertexCount);
+    allocateVertexCache(&cache, ib, startIndex, vertexCount, sp->vs->nBytesPerOutputVariables);
 
 	size_t nOutPrimitivesPerClippedTriangle, sizeOutPrimitive;
 	resolvePolygonModeOutput(&nOutPrimitivesPerClippedTriangle, &sizeOutPrimitive);
@@ -75,7 +76,7 @@ bool assembleTrianglesGeneric(
 			if (srpContext.polygonMode == SRP_POLYGON_MODE_FILL)
 			{
 				SRPTriangle* dst = (SRPTriangle*) cur;
-				*dst = *clipped;
+				*dst = clipped[i];
 
 				if (!setupTriangle(dst, fb))
 					continue;
@@ -97,7 +98,7 @@ bool assembleTrianglesGeneric(
 					primitiveID++;
 					dst++;
 				}
-				cur = dst + 1;
+				cur = dst;
 			}
 			else if (srpContext.polygonMode == SRP_POLYGON_MODE_POINT)
 			{
@@ -110,7 +111,7 @@ bool assembleTrianglesGeneric(
 					primitiveID++;
 					dst++;
 				}
-				cur = dst + 1;
+				cur = dst;
 			}
         }
     }
@@ -134,7 +135,7 @@ bool assembleLines(
 
 	VertexCache cache;
 	SRPLine* lines = ARENA_ALLOC(sizeof(SRPLine) * nLines);
-	allocateVertexCache(&cache, ib, startIndex, vertexCount);
+	allocateVertexCache(&cache, ib, startIndex, vertexCount, sp->vs->nBytesPerOutputVariables);
 
 	size_t primitiveID = 0;
 	for (size_t k = 0; k < nLines; k += 1)
@@ -202,7 +203,7 @@ static void resolvePolygonModeOutput(
 		*sizeOutPrimitive = sizeof(SRPPoint);
 	}
 	else
-		assert(false);
+		abort();
 }
 
 bool assemblePoints(
@@ -216,14 +217,15 @@ bool assemblePoints(
 
 	const size_t nPoints = count;
 	SRPPoint* points = ARENA_ALLOC(sizeof(SRPPoint) * nPoints);
+	void* varyingBlock = ARENA_ALLOC(sp->vs->nBytesPerOutputVariables * nPoints);
 
 	size_t primitiveID = 0;
-	for (size_t k = 0; k < nPoints; k += 1)
+	for (size_t k = 0; k < nPoints; k++)
 	{
 		SRPPoint* p = &points[primitiveID];
 
 		size_t vertexIndex = (ib) ? indexIndexBuffer(ib, startIndex+k) : startIndex+k;
-		processVertex(vertexIndex, k, vb, sp, &p->v);
+		processVertex(vertexIndex, varyingBlock, k, vb, sp, &p->v);
 
 		if (clipPoint(p))
 			continue;

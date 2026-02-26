@@ -4,9 +4,9 @@
 #include <stddef.h>
 
 typedef struct OBJVertex {
-    vec3d position;
-    vec2d uv;
-    vec3d normal;
+    vec3 position;
+    vec2 uv;
+    vec3 normal;
 } OBJVertex;
 
 typedef struct OBJMesh {

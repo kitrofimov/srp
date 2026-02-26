@@ -58,7 +58,7 @@ void srpFreeTexture(SRPTexture* this)
 }
 
 void srpTextureGetFilteredColor(
-	const SRPTexture* this, double u, double v, double out[4]
+	const SRPTexture* this, float u, float v, float out[4]
 )
 {
 	if (u < 0 || u > 1)
@@ -68,15 +68,15 @@ void srpTextureGetFilteredColor(
 		v = (this->wrappingModeY == TW_REPEAT) ? v - floor(v) : fmax(0.0, fmin(1.0, v));
 
 	// V axis is pointed down-up, but images are stored up-down, so (1-v) here
-	double x = this->wdthMinusOne * u;
-	double y = this->heightMinusOne * (1-v);
+	float x = this->wdthMinusOne * u;
+	float y = this->heightMinusOne * (1-v);
 	size_t xi = (size_t) (x + 0.5);
 	size_t yi = (size_t) (y + 0.5);
 
 	// Each pixel is N_CHANNELS_REQUESTED bytes, and an image is stored row-major
 	uint8_t* start = \
 		INDEX_VOID_PTR(this->data, xi + yi * this->width, N_CHANNELS_REQUESTED);
-	const double inv255 = 1. / 255.;
+	const float inv255 = 1. / 255.;
 	out[0] = start[0] * inv255;
 	out[1] = start[1] * inv255;
 	out[2] = start[2] * inv255;

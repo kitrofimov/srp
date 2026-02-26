@@ -19,7 +19,7 @@
  *  @return `true` if point is fully OOB, `false` otherwise
  */
 static bool computeMathAndRasterBoundaries(
-    vec3d ss, double halfSize, const SRPFramebuffer* fb, vec2d* outMinBP, vec2d* outMaxBP,
+    vec3 ss, float halfSize, const SRPFramebuffer* fb, vec2* outMinBP, vec2* outMaxBP,
     int* outMinX, int* outMaxX, int* outMinY, int* outMaxY
 );
 
@@ -28,12 +28,12 @@ void rasterizePoint(
     const SRPShaderProgram* restrict sp
 )
 {
-    const double pointSize = srpContext.pointSize;
-    vec3d ss;
-    vec2d minBP, maxBP;
+    const float pointSize = srpContext.pointSize;
+    vec3 ss;
+    vec2 minBP, maxBP;
     int minX, maxX, minY, maxY;
 
-    framebufferNDCToScreenSpace(fb, point->v.position, (double*) &ss);
+    framebufferNDCToScreenSpace(fb, point->v.position, (float*) &ss);
     bool success = computeMathAndRasterBoundaries(
         ss, pointSize, fb, &minBP, &maxBP, &minX, &maxX, &minY, &maxY
     );
@@ -46,8 +46,8 @@ void rasterizePoint(
         for (int x = minX; x <= maxX; x++)
         {
             // Pixel center
-            const double px = x + 0.5;
-            const double py = y + 0.5;
+            const float px = x + 0.5;
+            const float py = y + 0.5;
 
             // Square coverage test
             if (px < minBP.x || px >= maxBP.x || py < minBP.y || py >= maxBP.y)
@@ -73,17 +73,17 @@ void setupPoint(SRPPoint* p)
 }
 
 static bool computeMathAndRasterBoundaries(
-    vec3d ss, double pointSize, const SRPFramebuffer* fb, vec2d* outMinBP, vec2d* outMaxBP,
+    vec3 ss, float pointSize, const SRPFramebuffer* fb, vec2* outMinBP, vec2* outMaxBP,
     int* outMinX, int* outMaxX, int* outMinY, int* outMaxY
 )
 {
-    double halfSize = pointSize * 0.5;
+    float halfSize = pointSize * 0.5;
 
-    vec2d minBP = {
+    vec2 minBP = {
         ss.x - halfSize,
         ss.y - halfSize,
     };
-    vec2d maxBP = {
+    vec2 maxBP = {
         ss.x + halfSize,
         ss.y + halfSize,
     };

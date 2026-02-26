@@ -37,4 +37,3 @@
 	#endif
 #endif
 /** @} */  // ingroup Various_internal
-

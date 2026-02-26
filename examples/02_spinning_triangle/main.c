@@ -9,13 +9,13 @@
 
 typedef struct Vertex
 {
-	vec3d position;
-	vec3d color;
+	vec3 position;
+	vec3 color;
 } Vertex;
 
 typedef struct VSOutput
 {
-	vec3d color;
+	vec3 color;
 } VSOutput;
 
 // A structure to hold the uniform for shaders
@@ -23,7 +23,7 @@ typedef struct VSOutput
 typedef struct Uniform
 {
 	size_t frameCount;
-	mat4d rotation;
+	mat4 rotation;
 } Uniform;
 
 SRPContext srpContext;
@@ -42,7 +42,7 @@ int main()
 
 	SRPFramebuffer* fb = srpNewFramebuffer(512, 512);
 
-	const double R = 0.8;
+	const float R = 0.8;
 	Vertex data[3] = {
 		{.position = {0., R, 0.}, .color = {1., 0., 0.}},
 		{
@@ -67,12 +67,13 @@ int main()
 			.shader = vertexShader,
 			.nOutputVariables = 1,
 			.outputVariablesInfo = (SRPVertexVariableInformation[]) {
-				{.nItems = 3, .type = TYPE_DOUBLE}
+				{.nItems = 3, .type = TYPE_FLOAT}
 			},
 			.nBytesPerOutputVariables = sizeof(VSOutput)
 		},
 		.fs = &(SRPFragmentShader) {
-			.shader = fragmentShader
+			.shader = fragmentShader,
+			.doesOverwriteDepth = false
 		}
 	};
 
@@ -84,12 +85,12 @@ int main()
 	{
 		frameLimiterBegin(&limiter);
 
-		double renderTime = 0.;
+		float renderTime = 0.;
 		TIME_SECTION(renderTime, {
 			// Part of the `mat` API. Again, you can use your own functions
 			// (or an external math library) if you remove the `define`s at the
 			// top of this file (`SRP_INCLUDE_...`)
-			uniform.rotation = mat4dConstructRotate(0, 0, uniform.frameCount / 1000.);
+			uniform.rotation = mat4ConstructRotate(0, 0, uniform.frameCount / 1000.);
 			srpFramebufferClear(fb);
 			srpDrawVertexBuffer(vb, fb, &shaderProgram, SRP_PRIM_TRIANGLES, 0, 3);
 		});
@@ -97,7 +98,7 @@ int main()
 		windowPollEvents(window);
 		windowPresent(window, fb);
 
-		double frameTime = frameLimiterEnd(&limiter);
+		float frameTime = frameLimiterEnd(&limiter);
 		uniform.frameCount++;
 
 		if (uniform.frameCount % 100 == 0)
@@ -130,13 +131,13 @@ void vertexShader(SRPvsInput* in, SRPvsOutput* out)
 	Uniform* pUniform = (Uniform*) in->uniform;
 	VSOutput* pOutVars = (VSOutput*) out->pOutputVariables;
 
-	vec3d* inPosition = &pVertex->position;
-	vec4d* outPosition = (vec4d*) out->position;
-	*outPosition = (vec4d) {
+	vec3* inPosition = &pVertex->position;
+	vec4* outPosition = (vec4*) out->position;
+	*outPosition = (vec4) {
 		inPosition->x, inPosition->y, inPosition->z, 1.0
 	};
 	// Transform the position vector by the rotation matrix from uniform
-	*outPosition = mat4dMultiplyVec4d(&pUniform->rotation, *outPosition);
+	*outPosition = mat4MultiplyVec4(&pUniform->rotation, *outPosition);
 
 	// Transform the color values just for fun
 	pOutVars->color.x = pVertex->color.x + sin(pUniform->frameCount * 2.5e-3) * 0.3;
@@ -147,7 +148,7 @@ void vertexShader(SRPvsInput* in, SRPvsOutput* out)
 void fragmentShader(SRPfsInput* in, SRPfsOutput* out)
 {
 	VSOutput* interpolated = (VSOutput*) in->interpolated;
-	vec4d* outColor = (vec4d*) out->color;
+	vec4* outColor = (vec4*) out->color;
 	outColor->x = interpolated->color.x;
 	outColor->y = interpolated->color.y;
 	outColor->z = interpolated->color.z;

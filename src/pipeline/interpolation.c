@@ -22,45 +22,58 @@
  *  @see https://www.comp.nus.edu.sg/%7Elowkl/publications/lowk_persp_interp_techrep.pdf
  *  @see https://www.youtube.com/watch?v=F5X6S35SW2s */
 
-void interpolatePosition(
-    SRPvsOutput* vertices, size_t nVertices, const double* weights,
-    const double* invW, bool perspective, const SRPShaderProgram* sp,
-    vec4d* pPosition
+void interpolateDepthAndWTriangle(
+    SRPvsOutput* vertices, const float* weights, const float* invW,
+    bool perspective, const SRPShaderProgram* sp,
+    float* depth, float* reciprocalInterpolatedInvW
 )
 {
-    for (size_t i = 0; i < 2; i++)
-    {
-        double sum = 0.;
-        for (size_t j = 0; j < nVertices; j++)
-            sum += vertices[j].position[i] * weights[j];
-        ((double*) pPosition)[i] = sum;
-    }
-
 	if (perspective)
     {
-        double sum = 0.;
-        for (size_t j = 0; j < nVertices; j++)
-            sum += invW[j] * weights[j];
-        pPosition->w = 1 / sum;
-
-        sum = 0.;
-        for (size_t j = 0; j < nVertices; j++)
-            sum += vertices[j].position[2] * invW[j] * weights[j];
-        pPosition->z = sum;
+        *reciprocalInterpolatedInvW = 1 / (
+            invW[0] * weights[0] + \
+            invW[1] * weights[1] + \
+            invW[2] * weights[2]
+        );
+        *depth = vertices[0].position[2] * invW[0] * weights[0] + \
+                 vertices[1].position[2] * invW[1] * weights[1] + \
+                 vertices[2].position[2] * invW[2] * weights[2];
     }
 	else  // affine
     {
-        pPosition->w = 1.;
-        double sum = 0.;
-        for (size_t j = 0; j < nVertices; j++)
-            sum += vertices[j].position[2] * weights[j];
-        pPosition->z = sum;
+        *reciprocalInterpolatedInvW = 1.;
+        *depth = vertices[0].position[2] * weights[0] + \
+                 vertices[1].position[2] * weights[1] + \
+                 vertices[2].position[2] * weights[2];
+    }
+}
+
+void interpolateDepthAndWLine(
+    SRPvsOutput* vertices, const float* weights, const float* invW,
+    bool perspective, const SRPShaderProgram* sp,
+    float* depth, float* reciprocalInterpolatedInvW
+)
+{
+	if (perspective)
+    {
+        *reciprocalInterpolatedInvW = 1 / (
+            invW[0] * weights[0] +\
+            invW[1] * weights[1]
+        );
+        *depth = vertices[0].position[2] * invW[0] * weights[0] + \
+                 vertices[1].position[2] * invW[1] * weights[1];
+    }
+	else  // affine
+    {
+        *reciprocalInterpolatedInvW = 1.;
+        *depth = vertices[0].position[2] * weights[0] + \
+                 vertices[1].position[2] * weights[1];
     }
 }
 
 void interpolateAttributes(
-    SRPvsOutput* vertices, size_t nVertices, const double* weights,
-    const double* invW, double reciprocalInterpolatedInvW, bool perspective,
+    SRPvsOutput* vertices, size_t nVertices, const float* weights,
+    const float* invW, float reciprocalInterpolatedInvW, bool perspective,
     const SRPShaderProgram* sp, SRPInterpolated* pOutput
 )
 {
@@ -83,26 +96,26 @@ void interpolateAttributes(
 
         switch (attr->type)
         {
-        case TYPE_DOUBLE:
-            elemSize = sizeof(double);
-            double* pInterpolatedAttr = (double*) pAttrVoid;
+        case TYPE_FLOAT:
+            elemSize = sizeof(float);
+            float* pInterpolatedAttr = (float*) pAttrVoid;
 
 			for (int i = 0; i < 3; i++)
 				AV[i] = ADD_VOID_PTR(vertices[i].pOutputVariables, attrOffsetBytes);
 
             for (size_t elemI = 0; elemI < attr->nItems; elemI++)
             {
-                double sum = 0.;
+                float sum = 0.;
 
                 if (perspective)
                 {
                     for (size_t i = 0; i < nVertices; i++)
-                        sum += ((double*) AV[i])[elemI] * invW[i] * weights[i];
+                        sum += ((float*) AV[i])[elemI] * invW[i] * weights[i];
                     sum *= reciprocalInterpolatedInvW;
                 }
                 else
                     for (size_t i = 0; i < nVertices; i++)
-                        sum += ((double*) AV[i])[elemI] * weights[i];
+                        sum += ((float*) AV[i])[elemI] * weights[i];
 
                 pInterpolatedAttr[elemI] = sum;
             }

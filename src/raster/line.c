@@ -18,12 +18,13 @@
  *  @param[in] line Line to interpolate data for
  *  @param[in] t Interpolation parameter (0 -> 0th vertex; 1 -> 1st vertex)
  *  @param[in] sp A pointer to shader program to use
- *  @param[out] pPosition A pointer to vec4d where interpolated position will appear.
  *  @param[out] pInterpolatedBuffer A pointer to the buffer where interpolated
- *              variables will appear. Must be big enough to hold all of them */
+ *              variables will appear. Must be big enough to hold all of them
+ *  @param[out] depth Fragment depth
+ *  @param[out] recIntInvW Reciprocal of interpolated inverse Wclip */
 static void lineInterpolateData(
-	SRPLine* line, double t, const SRPShaderProgram* restrict sp,
-	vec4d* pPosition, SRPInterpolated* pInterpolatedBuffer
+	SRPLine* line, float t, const SRPShaderProgram* restrict sp,
+	SRPInterpolated* pInterpolatedBuffer, float* depth, float* recIntInvW
 );
 
 void rasterizeLine(
@@ -31,40 +32,35 @@ void rasterizeLine(
 	const SRPShaderProgram* restrict sp, void* interpolatedBuffer
 )
 {
-    const vec3d* ss = line->ss;  // alias
+    const vec3* ss = line->ss;  // alias
 
-    double dx = ss[1].x - ss[0].x;
-    double dy = ss[1].y - ss[0].y;
+    float dx = ss[1].x - ss[0].x;
+    float dy = ss[1].y - ss[0].y;
 
     int steps = (int) ceil(fmax(fabs(dx), fabs(dy)));
 	if (steps == 0)
 		steps = 1;
 
-    double xInc = dx / steps;
-    double yInc = dy / steps;
-    double tInc = 1. / steps;
+    float xInc = dx / steps;
+    float yInc = dy / steps;
+    float tInc = 1. / steps;
 
-    double x = ss[0].x;
-    double y = ss[0].y;
-    double t = 0.;
+    float x = ss[0].x;
+    float y = ss[0].y;
+    float t = 0.;
 
     for (int i = 0; i <= steps; i++)
     {
         int px = (int) round(x);
         int py = (int) round(y);
 
-        vec4d interpolatedPosition = {0};
-        lineInterpolateData(line, t, sp, &interpolatedPosition, interpolatedBuffer);
+        float depth, recIntInvW;
+        lineInterpolateData(line, t, sp, interpolatedBuffer, &depth, &recIntInvW);
 
         SRPfsInput fsIn = {
             .uniform = sp->uniform,
             .interpolated = interpolatedBuffer,
-            .fragCoord = {
-                px + 0.5,
-                py + 0.5,
-                interpolatedPosition.z,
-                interpolatedPosition.w
-            },
+            .fragCoord = { px + 0.5, py + 0.5, depth, recIntInvW },
             .frontFacing = true,
             .primitiveID = line->id,
         };
@@ -82,16 +78,16 @@ void setupLine(SRPLine* line, const SRPFramebuffer* fb)
 		applyPerspectiveDivide(&line->v[i], &line->invW[i]);
 
     for (uint8_t i = 0; i < 2; i++)
-        framebufferNDCToScreenSpace(fb, line->v[i].position, (double*) &line->ss[i]);
+        framebufferNDCToScreenSpace(fb, line->v[i].position, (float*) &line->ss[i]);
 }
 
 static void lineInterpolateData(
-	SRPLine* line, double t, const SRPShaderProgram* restrict sp,
-	vec4d* pPosition, SRPInterpolated* pInterpolatedBuffer
+	SRPLine* line, float t, const SRPShaderProgram* restrict sp,
+	SRPInterpolated* pInterpolatedBuffer, float* depth, float* recIntInvW
 )
 {
 	const bool perspective = srpContext.interpolationMode == SRP_INTERPOLATION_MODE_PERSPECTIVE;
-	const double weights[2] = {1-t, t};
-	interpolatePosition(line->v, 2, weights, line->invW, perspective, sp, pPosition);
-	interpolateAttributes(line->v, 2, weights, line->invW, pPosition->w, perspective, sp, pInterpolatedBuffer);
+	const float weights[2] = {1-t, t};
+	interpolateDepthAndWLine(line->v, weights, line->invW, perspective, sp, depth, recIntInvW);
+	interpolateAttributes(line->v, 2, weights, line->invW, *recIntInvW, perspective, sp, pInterpolatedBuffer);
 }

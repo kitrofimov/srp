@@ -12,8 +12,8 @@
 
 typedef struct SRPLine {
 	SRPvsOutput v[2];  /**< Output of the vertex shader */
-	vec3d ss[2];	   /**< Vertices' positions in screen-space */
-	double invW[2];    /**< 1 / clip-space W. Needed for perspective-correct interpolation */
+	vec3 ss[2];	       /**< Vertices' positions in screen-space */
+	float invW[2];     /**< 1 / clip-space W. Needed for perspective-correct interpolation */
 	size_t id;         /**< ID of the primitive, starting from 0 */
 } SRPLine;
 

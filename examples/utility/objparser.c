@@ -11,9 +11,9 @@ bool loadOBJMesh(const char* path, OBJMesh* mesh)
     if (!file) return false;
 
     // Temporary storage for positions, uvs, normals
-    vec3d* tempPositions = malloc(sizeof(vec3d) * 65536);
-    vec2d* tempUVs       = malloc(sizeof(vec2d) * 65536);
-    vec3d* tempNormals   = malloc(sizeof(vec3d) * 65536);
+    vec3* tempPositions = malloc(sizeof(vec3) * 65536);
+    vec2* tempUVs       = malloc(sizeof(vec2) * 65536);
+    vec3* tempNormals   = malloc(sizeof(vec3) * 65536);
     size_t posCount = 0, uvCount = 0, normalCount = 0;
 
     // Allocate mesh arrays (will realloc if needed)
@@ -27,23 +27,23 @@ bool loadOBJMesh(const char* path, OBJMesh* mesh)
     {
         if (line[0] == 'v' && line[1] == ' ' && posCount < 65536)  // Vertex position
         {
-            double x, y, z;
-            sscanf(line, "v %lf %lf %lf", &x, &y, &z);
-            tempPositions[posCount] = (vec3d) {x, y, z};
+            float x, y, z;
+            sscanf(line, "v %f %f %f", &x, &y, &z);
+            tempPositions[posCount] = (vec3) {x, y, z};
             posCount++;
         }
         else if (line[0] == 'v' && line[1] == 't' && uvCount < 65536)  // Texture coord
         {
-            double u, v;
-            sscanf(line, "vt %lf %lf", &u, &v);
-            tempUVs[uvCount] = (vec2d) {u, v};
+            float u, v;
+            sscanf(line, "vt %f %f", &u, &v);
+            tempUVs[uvCount] = (vec2) {u, v};
             uvCount++;
         }
         else if (line[0] == 'v' && line[1] == 'n' && normalCount < 65536) // Normals
         {
-            double nx, ny, nz;
-            sscanf(line, "vn %lf %lf %lf", &nx, &ny, &nz);
-            tempNormals[normalCount] = (vec3d) {nx, ny, nz};
+            float nx, ny, nz;
+            sscanf(line, "vn %f %f %f", &nx, &ny, &nz);
+            tempNormals[normalCount] = (vec3) {nx, ny, nz};
             normalCount++;
         }
         else if (line[0] == 'f')  // Face

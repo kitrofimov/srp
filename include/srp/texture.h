@@ -52,7 +52,7 @@ void srpFreeTexture(SRPTexture* this);
  *  @param[out] out An array of 4 values each in [0, 1] interval, representing
  *                  RGBA8888 color (0.0 = 0x0; 1.0 = 0xFF) */
 void srpTextureGetFilteredColor(
-	const SRPTexture* this, double u, double v, double out[4]
+	const SRPTexture* this, float u, float v, float out[4]
 );
 
 /** Holds all possible arguments to SRPTexture getters and setters

@@ -5,6 +5,7 @@
  *  Fragment emission implementation */
 
 #include <math.h>
+#include <assert.h>
 #include "raster/fragment.h"
 #include "srp/color.h"
 #include "math/utils.h"
@@ -14,12 +15,39 @@ void emitFragment(
     int x, int y, SRPfsInput* fsIn
 )
 {
+    assert(x >= 0 && x < fb->width);
+    assert(y >= 0 && y < fb->width);
+
+    const bool overwrite = sp->fs->doesOverwriteDepth;
+    const float interpolatedDepth = fsIn->fragCoord[2];
+
     SRPfsOutput fsOut = {
         .color = {0},
         .fragDepth = NAN
     };
 
+    float depth = interpolatedDepth;
+
+    uint32_t* pColor;
+    float* pDepth;
+    framebufferGetColorAndDepthPointers(fb, x, y, &pColor, &pDepth);
+    const float storedDepth = *pDepth;
+
+    // Early depth test
+    if (!overwrite && depth <= storedDepth)
+        return;
+
     sp->fs->shader(fsIn, &fsOut);
+
+    if (overwrite)
+    {
+        // Resolve final depth
+        if (!isnan(fsOut.fragDepth))
+            depth = fsOut.fragDepth;
+
+        if (depth <= storedDepth)
+            return;
+    }
 
     SRPColor color = {
         CLAMP(0, 255, fsOut.color[0] * 255),
@@ -28,9 +56,10 @@ void emitFragment(
         CLAMP(0, 255, fsOut.color[3] * 255)
     };
 
-    // If depth wasn't overridden by the user's fragment shader
-    double depth = isnan(fsOut.fragDepth) ? fsIn->fragCoord[2] : fsOut.fragDepth;
+	// If this is failed, this is the problem of library code
+	// Not a direct check because of floating point imprecisions
+	assert(ROUGHLY_GREATER_OR_EQUAL(depth, -1) && ROUGHLY_LESS_OR_EQUAL(depth, 1));
 
-    if (framebufferDepthTest(fb, x, y, depth))
-        framebufferDrawPixel(fb, x, y, depth, SRP_COLOR_TO_UINT32_T(color));
+	*pColor = SRP_COLOR_TO_UINT32_T(color);
+	*pDepth = depth;
 }
