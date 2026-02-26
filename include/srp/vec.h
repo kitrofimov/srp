@@ -27,19 +27,19 @@ typedef struct vec4 { float x, y, z, w; } vec4;
 
 #pragma pack(pop)
 
-/** Subtract two `vec3`s
- *  @param[in] a First vector @param[in] b Second vector
- *  @return The difference between first and second vectors */
+vec2 vec2Add(vec2 a, vec2 b);
+vec2 vec2Subtract(vec2 a, vec2 b);
+float vec2DotProduct(vec2 a, vec2 b);
+vec2 vec2MultiplyScalar(vec2 a, float b);
+
+vec3 vec3Add(vec3 a, vec3 b);
 vec3 vec3Subtract(vec3 a, vec3 b);
+float vec3DotProduct(vec3 a, vec3 b);
+vec3 vec3MultiplyScalar(vec3 a, float b);
 
-/** Add two `vec4`s
- *  @param[in] a First vector @param[in] b Second vector
- *  @return The sum of first and second vectors */
 vec4 vec4Add(vec4 a, vec4 b);
-
-/** Multiply a `vec4` by a `float` scalar
- *  @param[in] a Vector @param[in] b Scalar
- *  @return The result of vector-scalar multiplication */
+vec4 vec4Subtract(vec4 a, vec4 b);
+float vec4DotProduct(vec4 a, vec4 b);
 vec4 vec4MultiplyScalar(vec4 a, float b);
 
 /** @} */  // defgroup Vector

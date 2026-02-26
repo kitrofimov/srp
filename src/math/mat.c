@@ -206,4 +206,3 @@ SRP_FORCEINLINE mat4 mat4ConstructPerspectiveProjection(
 
 	return mat4MultiplyMat4(&orthogonal, &perspective);
 }
-
