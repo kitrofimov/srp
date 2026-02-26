@@ -6,7 +6,7 @@
 #include "utils/defines.h"
 #include "srp/mat.h"
 
-SRP_FORCEINLINE vec4 mat4MultiplyVec4(const mat4* m, vec4 v)
+SRP_FORCEINLINE vec4 mat4MultiplyVec4(const mat4* restrict m, vec4 v)
 {
     vec4 r;
 
@@ -37,7 +37,7 @@ SRP_FORCEINLINE vec4 mat4MultiplyVec4(const mat4* m, vec4 v)
     return r;
 }
 
-SRP_FORCEINLINE mat4 mat4MultiplyMat4(const mat4* a, const mat4* b)
+SRP_FORCEINLINE mat4 mat4MultiplyMat4(const mat4* restrict a, const mat4* restrict b)
 {
     mat4 r;
 	const float (*A)[4] = a->data;
