@@ -15,6 +15,9 @@ void emitFragment(
     int x, int y, SRPfsInput* fsIn
 )
 {
+    assert(x >= 0 && x < fb->width);
+    assert(y >= 0 && y < fb->width);
+
     const bool overwrite = sp->fs->doesOverwriteDepth;
     const float interpolatedDepth = fsIn->fragCoord[2];
 

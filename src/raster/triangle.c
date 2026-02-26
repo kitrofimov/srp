@@ -146,8 +146,8 @@ bool setupTriangle(SRPTriangle* tri, const SRPFramebuffer* fb)
 		MAX(floor(MIN(tri->ss[0].y, MIN(tri->ss[1].y, tri->ss[2].y))), 0)
 	};
 	tri->maxBP = (vec2) {
-		ceil(MAX(tri->ss[0].x, MAX(tri->ss[1].x, tri->ss[2].x))),
-		ceil(MAX(tri->ss[0].y, MAX(tri->ss[1].y, tri->ss[2].y)))
+		MIN(ceil(MAX(tri->ss[0].x, MAX(tri->ss[1].x, tri->ss[2].x))), fb->width),
+		MIN(ceil(MAX(tri->ss[0].y, MAX(tri->ss[1].y, tri->ss[2].y))), fb->height)
 	};
 
 	calculateBarycentrics(tri, areaX2, (vec2) {tri->minBP.x + 0.5, tri->minBP.y + 0.5});
