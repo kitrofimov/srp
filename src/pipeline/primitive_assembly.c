@@ -4,6 +4,7 @@
 /** @file
  *  Primitive assembly implementation */
 
+#include <string.h>
 #include <stdlib.h>
 #include "pipeline/primitive_assembly.h"
 #include "pipeline/vertex_processing.h"
@@ -75,7 +76,7 @@ bool assembleTrianglesGeneric(
 			if (srpContext.polygonMode == SRP_POLYGON_MODE_FILL)
 			{
 				SRPTriangle* dst = (SRPTriangle*) cur;
-				*dst = *clipped;
+				*dst = clipped[i];
 
 				if (!setupTriangle(dst, fb))
 					continue;
