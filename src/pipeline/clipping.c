@@ -129,6 +129,15 @@ static inline uint8_t computeClipCode(const SRPvsOutput* v) {
 
 bool clipLine(SRPLine* line, const SRPShaderProgram* sp)
 {
+    uint8_t c0 = computeClipCode(&line->v[0]);
+    uint8_t c1 = computeClipCode(&line->v[1]);
+
+    if ((c0 | c1) == 0)  // Trivial accept
+        return false;
+
+    if ((c0 & c1) != 0)  // Trivial reject
+        return true;
+
     float t0 = 0., t1 = 1.;
 
     for (int p = 0; p < PLANE_COUNT; p++)
