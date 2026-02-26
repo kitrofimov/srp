@@ -72,27 +72,30 @@ size_t clipTriangle(const SRPTriangle* in, const SRPShaderProgram* sp, SRPTriang
     if ((c0 & c1 & c2) != 0)  // Trivial reject
         return 0;
 
-    SRPvsOutput poly[6];
-    SRPvsOutput temp[6];
+    SRPvsOutput bufferA[6];
+    SRPvsOutput bufferB[6];
+    
+    SRPvsOutput* src = bufferA;
+    SRPvsOutput* dst = bufferB;
     size_t polyCount = 3;
 
     const size_t varyingSize = sp->vs->nBytesPerOutputVariables;
 
-    // Initialize working buffers from input triangle
+    // Initialize the buffer from input triangle
     for (int i = 0; i < 3; i++)
-        deepCopyVertex(&in->v[i], varyingSize, &poly[i]);
+        deepCopyVertex(&in->v[i], varyingSize, &src[i]);
 
-    // Clip against all 6 planes
     for (int p = 0; p < PLANE_COUNT; p++)
     {
-        polyCount = clipAgainstPlane(poly, polyCount, (ClipPlane) p, sp, temp);
+        polyCount = clipAgainstPlane(src, polyCount, (ClipPlane) p, sp, dst);
         assert(polyCount <= 6);
 
         if (polyCount == 0)  // Fully clipped
             return 0;
 
-        for (size_t i = 0; i < polyCount; i++)  // Swap buffers
-            poly[i] = temp[i];
+        SRPvsOutput* tmp = src;
+        src = dst;
+        dst = tmp;
     }
 
     // Triangulate (fan)
@@ -100,9 +103,9 @@ size_t clipTriangle(const SRPTriangle* in, const SRPShaderProgram* sp, SRPTriang
     for (size_t i = 1; i < polyCount-1; i++)
     {
         SRPTriangle* tri = &out[id];
-        tri->v[0] = poly[0];
-        tri->v[1] = poly[i];
-        tri->v[2] = poly[i+1];
+        tri->v[0] = src[0];
+        tri->v[1] = src[i];
+        tri->v[2] = src[i+1];
         id++;
     }
 
