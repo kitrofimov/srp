@@ -48,40 +48,17 @@ You can also build the examples with `-D BUILD_EXAMPLES=1` and the documentation
 ## TODO
 - [x] Add interpolation with perspective correction
 - [x] Split the construction and rasterization of triangles in the pipeline
-- [x] Fix rasterization rules (see the gaps between triangles in `03_spinning_textured_cube` example)
-- [x] Fix unnecessary allocations in `assembleTriangles()`
-- [x] Get rid of dynamic memory allocation in draw calls
-    - [x] `malloc`s
-    - [x] VLA inside `rasterizeTriangle()`
-- [x] Refactor / rewrite initial barycentric calculations
-- [x] Fix overly late backface culling
+- [x] Fix rasterization rules
+- [x] Get rid of dynamic memory allocation in the hot path (`malloc` and VLA)
 - [x] Make CW/CCW vertex order configurable
-- [x] Investigate the behaviour of degenerate triangles (area = 0)
-- [x] Refactor / rewrite interpolation logic
-    - Perspective-correct interpolation doesn't seem to be right, especially when culling the front faces of the cube in example 03
-    - However, both before and after commit f10b4163b43bd3842adc1a651a2d5bbc54ae099b produce pixel-identical results
-    - [x] Is perspective-correct interpolation for triangles wrong? Revisit the formulas & math. Using strange `1 / Zndc` instead of `1 / Wclip`?
-    - Fixed in b810e73ce6739ff32add7b7cba0ac84704ed94d6
-- [x] Check for bottlenecks
 - [x] Implement other primitives (lines, points, lines/triangles strip/adjacency etc.)
-    - https://wikis.khronos.org/opengl/Primitive
-    - [x] Triangle
-    - [x] Triangle strip
-    - [x] Triangle fan
-    - [x] Points
-    - [x] Line
-    - [x] Line strip
-    - [x] Line loop
-- [x] Restructure the code (Are the relationships between files clear? Is there any multiple-responsibilities?)
+- [x] Project refactoring
 - [x] Clipping
-    - [x] Triangles (Sutherland-Hodgman)
-    - [x] Lines (Liang-Barsky)
-    - [x] Points
 - [x] Debug stutters (e.g. draw cube in line mode, stutters every 1.5-2 seconds)
 - [x] Add an example with `.obj` model loading
 - [x] Add wireframe rendering of triangles (polygon rendering mode)
-- [ ] Should this project use `double`s or `float`s?
-- [ ] Check for bottlenecks & optimize
+- [x] Use `float`s everywhere (instead of `double`s)
+- [x] Check for bottlenecks & optimize
 - [ ] Update the documentation
 - [ ] Image-based testing framework
 - [ ] Implement single-threaded binning and tile system
