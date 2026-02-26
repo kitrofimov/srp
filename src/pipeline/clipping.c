@@ -22,6 +22,8 @@ typedef enum {
     PLANE_COUNT
 } ClipPlane;
 
+static inline uint8_t computeClipCode(const SRPvsOutput* v);
+
 /** Clip a polygon against specified plane (Sutherland-Hodgman)
  *  @param[in] in Vertices of an input polygon
  *  @param[in] inCount Amount of vertices the input polygon has
@@ -54,8 +56,22 @@ static void deepCopyVertex(const SRPvsOutput* v, size_t varyingSize, SRPvsOutput
 /** Calculate the distance from the vertex to specific plane */
 static inline float planeDistance(const SRPvsOutput* v, ClipPlane p);
 
+
 size_t clipTriangle(const SRPTriangle* in, const SRPShaderProgram* sp, SRPTriangle* out)
 {
+    uint8_t c0 = computeClipCode(&in->v[0]);
+    uint8_t c1 = computeClipCode(&in->v[1]);
+    uint8_t c2 = computeClipCode(&in->v[2]);
+
+    if ((c0 | c1 | c2) == 0)  // Trivial accept
+    {
+        out[0] = *in; 
+        return 1;
+    }
+
+    if ((c0 & c1 & c2) != 0)  // Trivial reject
+        return 0;
+
     SRPvsOutput poly[6];
     SRPvsOutput temp[6];
     size_t polyCount = 3;
@@ -91,6 +107,24 @@ size_t clipTriangle(const SRPTriangle* in, const SRPShaderProgram* sp, SRPTriang
     }
 
     return id;
+}
+
+static inline uint8_t computeClipCode(const SRPvsOutput* v) {
+    uint8_t code = 0;
+    const float x = v->position[0];
+    const float y = v->position[1];
+    const float z = v->position[2];
+    const float w = v->position[3];
+
+    // 0 = inside; 1 = outside
+    code |= (x + w < 0) << 0;  // PLANE_LEFT
+    code |= (w - x < 0) << 1;  // PLANE_RIGHT
+    code |= (y + w < 0) << 2;  // PLANE_BOTTOM
+    code |= (w - y < 0) << 3;  // PLANE_TOP
+    code |= (z + w < 0) << 4;  // PLANE_NEAR
+    code |= (w - z < 0) << 5;  // PLANE_FAR
+
+    return code;
 }
 
 bool clipLine(SRPLine* line, const SRPShaderProgram* sp)
