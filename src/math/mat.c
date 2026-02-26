@@ -6,64 +6,65 @@
 #include "utils/defines.h"
 #include "srp/mat.h"
 
-SRP_FORCEINLINE vec4 mat4GetColumn(const mat4* a, uint8_t index)
+SRP_FORCEINLINE vec4 mat4MultiplyVec4(const mat4* m, vec4 v)
 {
-	if (index >= 4)
-	{
-		srpMessageCallbackHelper(
-			SRP_MESSAGE_ERROR, SRP_MESSAGE_SEVERITY_HIGH, __func__,
-			"Attempt to OBB access mat4 (read): column index (%i)", index
-		);
-		return VEC4_ZERO;
-	}
+    vec4 r;
 
-	return (vec4) {
-		a->data[0][index],
-		a->data[1][index],
-		a->data[2][index],
-		a->data[3][index]
-	};
+    r.x =
+        m->data[0][0] * v.x +
+        m->data[0][1] * v.y +
+        m->data[0][2] * v.z +
+        m->data[0][3] * v.w;
+
+    r.y =
+        m->data[1][0] * v.x +
+        m->data[1][1] * v.y +
+        m->data[1][2] * v.z +
+        m->data[1][3] * v.w;
+
+    r.z =
+        m->data[2][0] * v.x +
+        m->data[2][1] * v.y +
+        m->data[2][2] * v.z +
+        m->data[2][3] * v.w;
+
+    r.w =
+        m->data[3][0] * v.x +
+        m->data[3][1] * v.y +
+        m->data[3][2] * v.z +
+        m->data[3][3] * v.w;
+
+    return r;
 }
-
-SRP_FORCEINLINE void mat4SetColumn(mat4* a, vec4 column, uint8_t index)
-{
-	if (index >= 4)
-	{
-		srpMessageCallbackHelper(
-			SRP_MESSAGE_ERROR, SRP_MESSAGE_SEVERITY_HIGH, __func__,
-			"Attempt to OBB access mat4 (write): column index (%i)", index
-		);
-		return;
-	}
-
-	a->data[0][index] = column.x;
-	a->data[1][index] = column.y;
-	a->data[2][index] = column.z;
-	a->data[3][index] = column.w;
-}
-
-SRP_FORCEINLINE vec4 mat4MultiplyVec4(const mat4* a, vec4 b)
-{
-	vec4 res = {0};
-	for (uint8_t i = 0; i < 4; i++)
-	{
-		res = vec4Add(res, vec4MultiplyScalar(
-			mat4GetColumn(a, i), vec4Index(b, i)
-		));
-	}
-	return res;
-}
-
 
 SRP_FORCEINLINE mat4 mat4MultiplyMat4(const mat4* a, const mat4* b)
 {
-	mat4 res = {0};
-	for (uint8_t i = 0; i < 4; i++)
-	{
-		vec4 column = mat4MultiplyVec4(a, mat4GetColumn(b, i));
-		mat4SetColumn(&res, column, i);
-	}
-	return res;
+    mat4 r;
+	const float (*A)[4] = a->data;
+    const float (*B)[4] = b->data;
+    float (*R)[4] = r.data;
+
+    R[0][0] = A[0][0] * B[0][0] + A[0][1] * B[1][0] + A[0][2] * B[2][0] + A[0][3] * B[3][0];
+    R[0][1] = A[0][0] * B[0][1] + A[0][1] * B[1][1] + A[0][2] * B[2][1] + A[0][3] * B[3][1];
+    R[0][2] = A[0][0] * B[0][2] + A[0][1] * B[1][2] + A[0][2] * B[2][2] + A[0][3] * B[3][2];
+    R[0][3] = A[0][0] * B[0][3] + A[0][1] * B[1][3] + A[0][2] * B[2][3] + A[0][3] * B[3][3];
+
+    R[1][0] = A[1][0] * B[0][0] + A[1][1] * B[1][0] + A[1][2] * B[2][0] + A[1][3] * B[3][0];
+    R[1][1] = A[1][0] * B[0][1] + A[1][1] * B[1][1] + A[1][2] * B[2][1] + A[1][3] * B[3][1];
+    R[1][2] = A[1][0] * B[0][2] + A[1][1] * B[1][2] + A[1][2] * B[2][2] + A[1][3] * B[3][2];
+    R[1][3] = A[1][0] * B[0][3] + A[1][1] * B[1][3] + A[1][2] * B[2][3] + A[1][3] * B[3][3];
+
+    R[2][0] = A[2][0] * B[0][0] + A[2][1] * B[1][0] + A[2][2] * B[2][0] + A[2][3] * B[3][0];
+    R[2][1] = A[2][0] * B[0][1] + A[2][1] * B[1][1] + A[2][2] * B[2][1] + A[2][3] * B[3][1];
+    R[2][2] = A[2][0] * B[0][2] + A[2][1] * B[1][2] + A[2][2] * B[2][2] + A[2][3] * B[3][2];
+    R[2][3] = A[2][0] * B[0][3] + A[2][1] * B[1][3] + A[2][2] * B[2][3] + A[2][3] * B[3][3];
+
+    R[3][0] = A[3][0] * B[0][0] + A[3][1] * B[1][0] + A[3][2] * B[2][0] + A[3][3] * B[3][0];
+    R[3][1] = A[3][0] * B[0][1] + A[3][1] * B[1][1] + A[3][2] * B[2][1] + A[3][3] * B[3][1];
+    R[3][2] = A[3][0] * B[0][2] + A[3][1] * B[1][2] + A[3][2] * B[2][2] + A[3][3] * B[3][2];
+    R[3][3] = A[3][0] * B[0][3] + A[3][1] * B[1][3] + A[3][2] * B[2][3] + A[3][3] * B[3][3];
+
+    return r;
 }
 
 SRP_FORCEINLINE mat4 mat4ConstructIdentity()

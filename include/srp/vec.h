@@ -36,14 +36,11 @@ vec3 vec3Subtract(vec3 a, vec3 b);
  *  @param[in] a First vector @param[in] b Second vector
  *  @return The sum of first and second vectors */
 vec4 vec4Add(vec4 a, vec4 b);
+
 /** Multiply a `vec4` by a `float` scalar
  *  @param[in] a Vector @param[in] b Scalar
  *  @return The result of vector-scalar multiplication */
 vec4 vec4MultiplyScalar(vec4 a, float b);
-/** Index a `vec4`
- *  @param[in] a Vector to be indexed @param[in] index Index (0-based)
- *  @return The value stored at `index`th element of the vector */
-float vec4Index(vec4 a, uint8_t index);
 
 /** @} */  // defgroup Vector
 

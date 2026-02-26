@@ -34,17 +34,3 @@ SRP_FORCEINLINE vec4 vec4MultiplyScalar(vec4 a, float b)
 		a.w * b
 	};
 }
-
-SRP_FORCEINLINE float vec4Index(vec4 a, uint8_t index)
-{
-	if (index >= 4)
-	{
-		srpMessageCallbackHelper(
-			SRP_MESSAGE_ERROR, SRP_MESSAGE_SEVERITY_HIGH, __func__,
-			"Attempt to OBB access vec4: index (%i)", index
-		);
-		return 0;
-	}
-	return ((float*) &a)[index];
-}
-

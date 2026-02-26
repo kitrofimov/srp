@@ -14,17 +14,6 @@
 /** Represents a 4x4 matrix of `float`s, stores data in row-major order */
 typedef struct mat4 { float data[4][4]; } mat4;
 
-/** Get the `index`th column of the matrix A
- *  @param a Pointer to a matrix A
- *  @param index Index of a column to get
- *  @return indexth column of the matrix A */
-vec4 mat4GetColumn(const mat4* a, uint8_t index);
-/** Set the `index`th column of the *a matrix to column
- *  @param a Pointer to a matrix
- *  @param column A new column
- *  @param index Index of a column to modify */
-void mat4SetColumn(mat4* a, vec4 column, uint8_t index);
-
 /** Multiply mat4 by vec4
  *  @param a Pointer to a matrix A
  *  @param b Vector B
