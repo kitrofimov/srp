@@ -47,12 +47,6 @@ static void interpolateVertex(
     const SRPShaderProgram* sp, SRPvsOutput* out
 );
 
-/** Perform a deep copy of a vertex, copying its externally-stored varyings
- *  @param[in] v Vertex to copy
- *  @param[in] varyingSize How many bytes do varyings occupy
- *  @param[out] out Where to store the copy */
-static void deepCopyVertex(const SRPvsOutput* v, size_t varyingSize, SRPvsOutput* out);
-
 /** Calculate the distance from the vertex to specific plane */
 static inline float planeDistance(const SRPvsOutput* v, ClipPlane p);
 
@@ -79,11 +73,9 @@ size_t clipTriangle(const SRPTriangle* in, const SRPShaderProgram* sp, SRPTriang
     SRPvsOutput* dst = bufferB;
     size_t polyCount = 3;
 
-    const size_t varyingSize = sp->vs->nBytesPerOutputVariables;
-
     // Initialize the buffer from input triangle
     for (int i = 0; i < 3; i++)
-        deepCopyVertex(&in->v[i], varyingSize, &src[i]);
+        src[i] = in->v[i];
 
     for (int p = 0; p < PLANE_COUNT; p++)
     {
@@ -198,7 +190,6 @@ static size_t clipAgainstPlane(
     if (inCount == 0)
         return 0;
 
-    const size_t varyingSize = sp->vs->nBytesPerOutputVariables;
     size_t outCount = 0;
 
     for (size_t i = 0; i < inCount; i++)
@@ -208,12 +199,12 @@ static size_t clipAgainstPlane(
 
         float da = planeDistance(current, plane);
         float db = planeDistance(next, plane);
-        bool currInside = da > 0;
-        bool nextInside = db > 0;
+        bool currInside = da >= 0;
+        bool nextInside = db >= 0;
 
         if (currInside && nextInside)
         {
-            deepCopyVertex(next, varyingSize, &out[outCount]);
+            out[outCount] = *next;
             outCount++;
         }
         else if (currInside || nextInside)  // Only one outside
@@ -226,7 +217,7 @@ static size_t clipAgainstPlane(
 
             if (!currInside && nextInside)
             {
-                deepCopyVertex(next, varyingSize, &out[outCount]);
+                out[outCount] = *next;
                 outCount++;
             }
         }
@@ -250,14 +241,6 @@ static void interpolateVertex(
     SRPvsOutput vertices[2] = {*a, *b};  /** @todo this is disgusting */
 	const float weights[2] = {1-t, t};
     interpolateAttributes(vertices, 2, weights, NULL, 0., false, sp, pVarying);
-}
-
-static void deepCopyVertex(const SRPvsOutput* src, size_t varyingSize, SRPvsOutput* dst)
-{
-    *dst = *src;
-    void* mem = ARENA_ALLOC(varyingSize);
-    memcpy(mem, src->pOutputVariables, varyingSize);
-    dst->pOutputVariables = mem;
 }
 
 static inline float planeDistance(const SRPvsOutput* v, ClipPlane p)
