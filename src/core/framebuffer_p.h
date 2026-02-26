@@ -21,7 +21,7 @@
  *                   the [-1, 1] interval
  *  @param[in] color RBGA8888 color to draw. */
 void framebufferDrawPixel(
-	const SRPFramebuffer* this, size_t x, size_t y, double depth,
+	const SRPFramebuffer* this, size_t x, size_t y, float depth,
 	uint32_t color
 );
 
@@ -31,18 +31,18 @@ void framebufferDrawPixel(
  *  @param[in] depth Depth value to test
  *  @return Whether or not the fragment has passed the depth test. */
 bool framebufferDepthTest(
-	const SRPFramebuffer* this, size_t x, size_t y, double depth
+	const SRPFramebuffer* this, size_t x, size_t y, float depth
 );
 
 /** Convert Normalized Device Coordinates to screen-space coordiantes
  *  @param[in] this The pointer to SRPFramebuffer, as returned
  *                    from srpNewFramebuffer
- *  @param[in] NDC Pointer to 3-element double array containing NDC position
- *  @param[out] SS Pointer to 3-element double array that will contain SS
- *                   position after the call. The z-component is the same as
- *                   z-component of NDC coordinates. */
+ *  @param[in] NDC Pointer to 3-element float array containing NDC position
+ *  @param[out] SS Pointer to 3-element float array that will contain SS
+ *                 position after the call. The z-component is the same as
+ *                 z-component of NDC coordinates. */
 void framebufferNDCToScreenSpace
-	(const SRPFramebuffer* this, const double* NDC, double* SS);
+	(const SRPFramebuffer* this, const float* NDC, float* SS);
 
 /** @} */  // ingroup Framebuffer
 

@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include "framelimiter.h"
 
-void frameLimiterInit(FrameLimiter* limiter, double fps)
+void frameLimiterInit(FrameLimiter* limiter, float fps)
 {
     limiter->targetFPS = fps;
     limiter->targetFrameTime = 1.0 / fps;
@@ -16,15 +16,15 @@ void frameLimiterBegin(FrameLimiter* limiter)
     timespec_get(&limiter->lastFrameTime, TIME_UTC);
 }
 
-double frameLimiterEnd(FrameLimiter* limiter)
+float frameLimiterEnd(FrameLimiter* limiter)
 {
     struct timespec now;
     timespec_get(&now, TIME_UTC);
 
-    double dt = (now.tv_sec - limiter->lastFrameTime.tv_sec) +
+    float dt = (now.tv_sec - limiter->lastFrameTime.tv_sec) +
                 (now.tv_nsec - limiter->lastFrameTime.tv_nsec) / 1e9;
 
-    double sleepTime = limiter->targetFrameTime - dt;
+    float sleepTime = limiter->targetFrameTime - dt;
     if (sleepTime > 0)
     {
         struct timespec ts = {

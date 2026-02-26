@@ -13,15 +13,15 @@
 // Is not necessary, just convenient to use
 typedef struct Vertex
 {
-	vec3d position;
-	vec3d color;
+	vec3 position;
+	vec3 color;
 } Vertex;
 
 // A structure to hold custom outputs from vertex shader, these will be
 // interpolated inside the primitive
 typedef struct VSOutput
 {
-	vec3d color;
+	vec3 color;
 } VSOutput;
 
 // Library context, you should always define *and initialize* (see later) this!
@@ -50,7 +50,7 @@ int main()
 
 	// Initializing vertex and index data, computations made here (sin, cos, etc.
 	// are only to build an quilateral triangle
-	const double R = 0.8;
+	const float R = 0.8;
 	Vertex data[3] = {
 		{.position = {0., R, 0.}, .color = {1., 0., 0.}},
 		{
@@ -77,7 +77,7 @@ int main()
 			// that is necessary to interpolate them inside the primitive
 			.nOutputVariables = 1,
 			.outputVariablesInfo = (SRPVertexVariableInformation[]) {
-				{.nItems = 3, .type = TYPE_DOUBLE}
+				{.nItems = 3, .type = TYPE_FLOAT}
 			},
 			.nBytesPerOutputVariables = sizeof(VSOutput)
 		},
@@ -99,7 +99,7 @@ int main()
 	{
 		frameLimiterBegin(&limiter);
 
-		double renderTime = 0.;
+		float renderTime = 0.;
 		TIME_SECTION(renderTime, {
 			// Clear the framebuffer and draw the index buffer as triangles
 			srpFramebufferClear(fb);
@@ -109,7 +109,7 @@ int main()
 		windowPollEvents(window);
 		windowPresent(window, fb);
 
-		double frameTime = frameLimiterEnd(&limiter);
+		float frameTime = frameLimiterEnd(&limiter);
 		frameCount++;
 
 		if (frameCount % 100 == 0)
@@ -143,12 +143,12 @@ void vertexShader(SRPvsInput* in, SRPvsOutput* out)
 	Vertex* pVertex = (Vertex*) in->pVertex;
 	VSOutput* pOutVars = (VSOutput*) out->pOutputVariables;
 
-	// `out->position` is defined as `double[4]`, but we cast it to `vec4d*`
-	// `vec` structures are tightly packed, so it is safe to cast float/double
+	// `out->position` is defined as `float[4]`, but we cast it to `vec4*`
+	// `vec` structures are tightly packed, so it is safe to cast float/float
 	// arrays to vecXf/vecXd and vice versa!
-	vec3d* inPosition = &pVertex->position;
-	vec4d* outPosition = (vec4d*) out->position;
-	*outPosition = (vec4d) {
+	vec3* inPosition = &pVertex->position;
+	vec4* outPosition = (vec4*) out->position;
+	*outPosition = (vec4) {
 		inPosition->x, inPosition->y, inPosition->z, 1.0
 	};
 	pOutVars->color = pVertex->color;
@@ -164,7 +164,7 @@ void fragmentShader(SRPfsInput* in, SRPfsOutput* out)
 	VSOutput* interpolated = (VSOutput*) in->interpolated;
 
 	// See `vertexShader` comments
-	vec4d* outColor = (vec4d*) out->color;
+	vec4* outColor = (vec4*) out->color;
 	outColor->x = interpolated->color.x;
 	outColor->y = interpolated->color.y;
 	outColor->z = interpolated->color.z;

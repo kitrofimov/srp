@@ -41,7 +41,7 @@ static size_t clipAgainstPlane(
  *  @param[in] sp The shader program being used
  *  @param[in] out Interpolated vertex */ 
 static void interpolateVertex(
-    const SRPvsOutput* a, const SRPvsOutput* b, double t,
+    const SRPvsOutput* a, const SRPvsOutput* b, float t,
     const SRPShaderProgram* sp, SRPvsOutput* out
 );
 
@@ -52,7 +52,7 @@ static void interpolateVertex(
 static void deepCopyVertex(const SRPvsOutput* v, size_t varyingSize, SRPvsOutput* out);
 
 /** Calculate the distance from the vertex to specific plane */
-static inline double planeDistance(const SRPvsOutput* v, ClipPlane p);
+static inline float planeDistance(const SRPvsOutput* v, ClipPlane p);
 
 size_t clipTriangle(const SRPTriangle* in, const SRPShaderProgram* sp, SRPTriangle* out)
 {
@@ -95,12 +95,12 @@ size_t clipTriangle(const SRPTriangle* in, const SRPShaderProgram* sp, SRPTriang
 
 bool clipLine(SRPLine* line, const SRPShaderProgram* sp)
 {
-    double t0 = 0., t1 = 1.;
+    float t0 = 0., t1 = 1.;
 
     for (int p = 0; p < PLANE_COUNT; p++)
     {
-        double da = planeDistance(&line->v[0], (ClipPlane) p);
-        double db = planeDistance(&line->v[1], (ClipPlane) p);
+        float da = planeDistance(&line->v[0], (ClipPlane) p);
+        float db = planeDistance(&line->v[1], (ClipPlane) p);
 
         if (da < 0. && db < 0.)  // Both outside
             return true;
@@ -109,7 +109,7 @@ bool clipLine(SRPLine* line, const SRPShaderProgram* sp)
         {
             if (ROUGHLY_ZERO(da - db))
                 continue;
-            double t = da / (da - db);
+            float t = da / (da - db);
             if (da < 0.)
                 t0 = MAX(t0, t);  // Entry: push t0 forward
             else
@@ -132,10 +132,10 @@ bool clipLine(SRPLine* line, const SRPShaderProgram* sp)
 
 bool clipPoint(SRPPoint* p)
 {
-    double x = p->v.position[0];
-    double y = p->v.position[1];
-    double z = p->v.position[2];
-    double w = p->v.position[3];
+    float x = p->v.position[0];
+    float y = p->v.position[1];
+    float z = p->v.position[2];
+    float w = p->v.position[3];
 
     if (x < -w || x > w) return true;
     if (y < -w || y > w) return true;
@@ -160,8 +160,8 @@ static size_t clipAgainstPlane(
         SRPvsOutput* current = &in[i];
         SRPvsOutput* next = &in[(i + 1) % inCount];
 
-        double da = planeDistance(current, plane);
-        double db = planeDistance(next, plane);
+        float da = planeDistance(current, plane);
+        float db = planeDistance(next, plane);
         bool currInside = da > 0;
         bool nextInside = db > 0;
 
@@ -174,7 +174,7 @@ static size_t clipAgainstPlane(
         {
             if (ROUGHLY_ZERO(da - db))
                 continue;
-            double t = da / (da - db);
+            float t = da / (da - db);
             interpolateVertex(current, next, t, sp, &out[outCount]);
             outCount++;
 
@@ -191,7 +191,7 @@ static size_t clipAgainstPlane(
 }
 
 static void interpolateVertex(
-    const SRPvsOutput* a, const SRPvsOutput* b, double t,
+    const SRPvsOutput* a, const SRPvsOutput* b, float t,
     const SRPShaderProgram* sp, SRPvsOutput* out
 )
 {
@@ -202,7 +202,7 @@ static void interpolateVertex(
     out->pOutputVariables = pVarying;
 
     SRPvsOutput vertices[2] = {*a, *b};  /** @todo this is disgusting */
-	const double weights[2] = {1-t, t};
+	const float weights[2] = {1-t, t};
     interpolateAttributes(vertices, 2, weights, NULL, 0., false, sp, pVarying);
 }
 
@@ -214,12 +214,12 @@ static void deepCopyVertex(const SRPvsOutput* src, size_t varyingSize, SRPvsOutp
     dst->pOutputVariables = mem;
 }
 
-static inline double planeDistance(const SRPvsOutput* v, ClipPlane p)
+static inline float planeDistance(const SRPvsOutput* v, ClipPlane p)
 {
-    const double x = v->position[0];
-    const double y = v->position[1];
-    const double z = v->position[2];
-    const double w = v->position[3];
+    const float x = v->position[0];
+    const float y = v->position[1];
+    const float z = v->position[2];
+    const float w = v->position[3];
 
     switch (p)
     {

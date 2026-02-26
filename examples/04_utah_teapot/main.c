@@ -11,9 +11,9 @@
 typedef struct Uniform
 {
 	size_t frameCount;
-	mat4d model;
-	mat4d view;
-	mat4d projection;
+	mat4 model;
+	mat4 view;
+	mat4 projection;
 } Uniform;
 
 SRPContext srpContext;
@@ -48,13 +48,13 @@ int main()
 	srpIndexBufferCopyData(ib, TYPE_UINT32, mesh.indexCount * sizeof(uint32_t), mesh.indices);
 
 	Uniform uniform = {
-		.model = mat4dConstructIdentity(),
-		.view = mat4dConstructView(
+		.model = mat4ConstructIdentity(),
+		.view = mat4ConstructView(
 			0, 1.75, -7,
 			0, 0, 0,
 			1, 1, 1
 		),
-		.projection = mat4dConstructPerspectiveProjection(-1, 1, -1, 1, 1, 10),
+		.projection = mat4ConstructPerspectiveProjection(-1, 1, -1, 1, 1, 10),
 		.frameCount = 0
 	};
 
@@ -83,7 +83,7 @@ int main()
 
 		double renderTime = 0.;
 		TIME_SECTION(renderTime, {
-			uniform.model = mat4dConstructRotate(
+			uniform.model = mat4ConstructRotate(
 				RAD(-90), uniform.frameCount / 200., 0
 			);
 			srpFramebufferClear(fb);
@@ -127,14 +127,14 @@ void vertexShader(SRPvsInput* in, SRPvsOutput* out)
 	OBJVertex* pVertex = (OBJVertex*) in->pVertex;
 	Uniform* pUniform = (Uniform*) in->uniform;
 
-	vec3d* inPosition = &pVertex->position;
-	vec4d* outPosition = (vec4d*) out->position;
-	*outPosition = (vec4d) {
+	vec3* inPosition = &pVertex->position;
+	vec4* outPosition = (vec4*) out->position;
+	*outPosition = (vec4) {
 		inPosition->x, inPosition->y, inPosition->z, 1.0
 	};
-	*outPosition = mat4dMultiplyVec4d(&pUniform->model, *outPosition);
-	*outPosition = mat4dMultiplyVec4d(&pUniform->view, *outPosition);
-	*outPosition = mat4dMultiplyVec4d(&pUniform->projection, *outPosition);
+	*outPosition = mat4MultiplyVec4(&pUniform->model, *outPosition);
+	*outPosition = mat4MultiplyVec4(&pUniform->view, *outPosition);
+	*outPosition = mat4MultiplyVec4(&pUniform->projection, *outPosition);
 }
 
 void fragmentShader(SRPfsInput* in, SRPfsOutput* out)

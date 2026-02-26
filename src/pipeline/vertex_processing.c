@@ -66,10 +66,10 @@ void processVertex(
 	sp->vs->shader(&vsIn, outV);
 }
 
-void applyPerspectiveDivide(SRPvsOutput* output, double* outInvW)
+void applyPerspectiveDivide(SRPvsOutput* output, float* outInvW)
 {
-    double clipW = output->position[3];
-    double invW = 1.0 / clipW;
+    float clipW = output->position[3];
+    float invW = 1.0 / clipW;
 	assert(!ROUGHLY_ZERO(invW));
 	if (outInvW != NULL)
 		*outInvW = invW;

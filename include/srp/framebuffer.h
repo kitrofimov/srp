@@ -19,7 +19,7 @@ typedef struct SRPFramebuffer
 	size_t height;    /**< Height */
 	size_t size;      /**< N of pixels (width*height) */
 	uint32_t* color;  /**< Pointer to color buffer */
-	double* depth;    /**< Pointer to depth buffer */
+	float* depth;    /**< Pointer to depth buffer */
 } SRPFramebuffer;
 
 /** Create a framebuffer

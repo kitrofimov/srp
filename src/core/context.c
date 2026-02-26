@@ -68,7 +68,7 @@ void srpContextSetI(SRPContextParameter contextParameter, int data)
 	}
 }
 
-void srpContextSetD(SRPContextParameter contextParameter, double data)
+void srpContextSetF(SRPContextParameter contextParameter, float data)
 {
 	switch (contextParameter)
 	{
@@ -120,7 +120,7 @@ int srpContextGetI(SRPContextParameter contextParameter)
 	}
 }
 
-double srpContextGetD(SRPContextParameter contextParameter)
+float srpContextGetF(SRPContextParameter contextParameter)
 {
 	switch (contextParameter)
 	{

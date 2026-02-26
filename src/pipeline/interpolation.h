@@ -5,19 +5,19 @@
 #include "srp/vec.h"
 
 void interpolateDepthAndWTriangle(
-    SRPvsOutput* vertices, const double* weights, const double* invW,
+    SRPvsOutput* vertices, const float* weights, const float* invW,
     bool perspective, const SRPShaderProgram* sp,
-    double* depth, double* reciprocalInterpolatedInvW
+    float* depth, float* reciprocalInterpolatedInvW
 );
 
 void interpolateDepthAndWLine(
-    SRPvsOutput* vertices, const double* weights, const double* invW,
+    SRPvsOutput* vertices, const float* weights, const float* invW,
     bool perspective, const SRPShaderProgram* sp,
-    double* depth, double* reciprocalInterpolatedInvW
+    float* depth, float* reciprocalInterpolatedInvW
 );
 
 void interpolateAttributes(
-    SRPvsOutput* vertices, size_t nVertices, const double* weights,
-    const double* invW, double reciprocalInterpolatedInvW, bool perspective,
+    SRPvsOutput* vertices, size_t nVertices, const float* weights,
+    const float* invW, float reciprocalInterpolatedInvW, bool perspective,
     const SRPShaderProgram* sp, SRPInterpolated* pOutput
 );

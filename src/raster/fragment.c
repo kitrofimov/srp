@@ -15,14 +15,14 @@ void emitFragment(
 )
 {
     const bool overwrite = sp->fs->doesOverwriteDepth;
-    const double interpolatedDepth = fsIn->fragCoord[2];
+    const float interpolatedDepth = fsIn->fragCoord[2];
 
     SRPfsOutput fsOut = {
         .color = {0},
         .fragDepth = NAN
     };
 
-    double depth = interpolatedDepth;
+    float depth = interpolatedDepth;
 
     // Early depth test
     if (!overwrite && !framebufferDepthTest(fb, x, y, depth))

@@ -45,4 +45,4 @@ void processVertex(
  *  saving the 1 / W_clip value
  *  @param[in] output Output of the vertex shader
  *  @param[out] outInvW Pointer where 1/W value will be stored. May be NULL */
-void applyPerspectiveDivide(SRPvsOutput* output, double* outInvW);
+void applyPerspectiveDivide(SRPvsOutput* output, float* outInvW);

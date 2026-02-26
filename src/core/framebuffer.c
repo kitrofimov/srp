@@ -26,7 +26,7 @@ static uint32_t* framebufferGetPixelPointer
  *  @param[in] this Pointer to SRPFramebuffer
  *  @param[in] x,y Position of requested pixel
  *  @return Requested pointer */
-static double* framebufferGetDepthPointer
+static float* framebufferGetDepthPointer
 	(const SRPFramebuffer* this, size_t x, size_t y);
 
 /** @} */  // ingroup Framebuffer_internal
@@ -39,7 +39,7 @@ SRPFramebuffer* srpNewFramebuffer(size_t width, size_t height)
 	this->height = height;
 	this->size = width * height;
 	this->color = SRP_MALLOC(sizeof(uint32_t) * this->size);
-	this->depth = SRP_MALLOC(sizeof(double) * this->size);
+	this->depth = SRP_MALLOC(sizeof(float) * this->size);
 
 	return this;
 }
@@ -54,7 +54,7 @@ void srpFreeFramebuffer(SRPFramebuffer* this)
 // The `const` qualifier is completely legal: only the buffer pointed to by
 // `framebuffer->color` is modified, not the structure itself!
 void framebufferDrawPixel(
-	const SRPFramebuffer* this, size_t x, size_t y, double depth,
+	const SRPFramebuffer* this, size_t x, size_t y, float depth,
 	uint32_t color
 )
 {
@@ -66,19 +66,19 @@ void framebufferDrawPixel(
 }
 
 bool framebufferDepthTest(
-	const SRPFramebuffer* this, size_t x, size_t y, double depth
+	const SRPFramebuffer* this, size_t x, size_t y, float depth
 )
 {
-	double* pStoredDepth = framebufferGetDepthPointer(this, x, y);
+	float* pStoredDepth = framebufferGetDepthPointer(this, x, y);
 	return (depth > *pStoredDepth);
 }
 
 void framebufferNDCToScreenSpace(
-    const SRPFramebuffer* this, const double* NDC, double* SS
+    const SRPFramebuffer* this, const float* NDC, float* SS
 )
 {
-    SS[0] = ((double) this->width  / 2.) * (NDC[0] + 1.);
-    SS[1] = ((double) this->height / 2.) * (1. - NDC[1]);
+    SS[0] = ((float) this->width  / 2.) * (NDC[0] + 1.);
+    SS[1] = ((float) this->height / 2.) * (1. - NDC[1]);
     SS[2] = NDC[2];
 }
 
@@ -94,7 +94,7 @@ static uint32_t* framebufferGetPixelPointer(const SRPFramebuffer* this, size_t x
 	return this->color + (y * this->width + x);
 }
 
-static double* framebufferGetDepthPointer(const SRPFramebuffer* this, size_t x, size_t y)
+static float* framebufferGetDepthPointer(const SRPFramebuffer* this, size_t x, size_t y)
 {
 	return this->depth + (y * this->width + x);
 }

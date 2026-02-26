@@ -27,8 +27,8 @@
 /** Get a parallelogram's signed area. The two vectors define a parallelogram.
  *  Used for barycentric coordinates' initialization in
  *  calculateBarycentrics() */
-static double signedAreaParallelogram(
-	const vec3d* restrict a, const vec3d* restrict b
+static float signedAreaParallelogram(
+	const vec3* restrict a, const vec3* restrict b
 );
 
 /** Determine if a triangle should be culled (back-face culling)
@@ -49,14 +49,14 @@ static void triangleChangeWinding(SRPTriangle* tri);
  * 				   its `ss` and `edge` fields initialized.
  *  @param[in] areaX2 The triangle's area multiplied by 2 (to avoid division)
  *  @param[in] point Point to calculate barycentric coordinates for (screen-space) */
-static void calculateBarycentrics(SRPTriangle* tri, double areaX2, vec2d point);
+static void calculateBarycentrics(SRPTriangle* tri, float areaX2, vec2 point);
 
 /** Check if a triangle's edge is flat top or left. Assumes counter-clockwise
  *  vertex order!
  *  @param[in] edge A pointer to an edge vector (pointing from one vertex
  *  to the other)
  *  @return Whether or not this edge is flat top or left */
-static bool isEdgeFlatTopOrLeft(const vec3d* restrict edge);
+static bool isEdgeFlatTopOrLeft(const vec3* restrict edge);
 
 /** Interpolate the fragment position and vertex variables inside the triangle.
  *  @param[in] tri Triangle to interpolate data for
@@ -67,7 +67,7 @@ static bool isEdgeFlatTopOrLeft(const vec3d* restrict edge);
  *  @param[out] recIntInvW Reciprocal of interpolated inverse Wclip */
 static void triangleInterpolateData(
 	SRPTriangle* tri, const SRPShaderProgram* restrict sp,
-	SRPInterpolated* pInterpolatedBuffer, double* depth, double* recIntInvW
+	SRPInterpolated* pInterpolatedBuffer, float* depth, float* recIntInvW
 );
 
 /** @} */  // ingroup Rasterization
@@ -88,7 +88,7 @@ void rasterizeTriangle(
 					goto nextPixel;
 			}
 
-			double depth, recIntInvW;
+			float depth, recIntInvW;
 			triangleInterpolateData(tri, sp, interpolatedBuffer, &depth, &recIntInvW);
 
 			SRPfsInput fsIn = {
@@ -117,9 +117,9 @@ bool setupTriangle(SRPTriangle* tri, const SRPFramebuffer* fb)
 	for (uint8_t i = 0; i < 3; i++)
 		applyPerspectiveDivide(&tri->v[i], &tri->invW[i]);
 
-	// vec3d is tightly packed, so this is safe
+	// vec3 is tightly packed, so this is safe
 	for (uint8_t i = 0; i < 3; i++)
-		tri->p_ndc[i] = (vec3d*) tri->v[i].position;
+		tri->p_ndc[i] = (vec3*) tri->v[i].position;
 
 	bool isCCW;
 	if (shouldCullTriangle(tri, &isCCW, &tri->isFrontFacing))
@@ -129,26 +129,26 @@ bool setupTriangle(SRPTriangle* tri, const SRPFramebuffer* fb)
 		triangleChangeWinding(tri);
 
 	for (size_t i = 0; i < 3; i++)
-		framebufferNDCToScreenSpace(fb, (double*) tri->p_ndc[i], (double*) &tri->ss[i]);
+		framebufferNDCToScreenSpace(fb, (float*) tri->p_ndc[i], (float*) &tri->ss[i]);
 
 	for (size_t i = 0; i < 3; i++)
-		tri->edge[i] = vec3dSubtract(tri->ss[(i+1) % 3], tri->ss[i]);
+		tri->edge[i] = vec3Subtract(tri->ss[(i+1) % 3], tri->ss[i]);
 
 	// Cull degenerate triangles (using SS area!)
-	double areaX2 = fabs(signedAreaParallelogram(&tri->edge[0], &tri->edge[2]));
+	float areaX2 = fabs(signedAreaParallelogram(&tri->edge[0], &tri->edge[2]));
 	if (ROUGHLY_ZERO(areaX2))
 		return false;
 
-	tri->minBP = (vec2d) {
+	tri->minBP = (vec2) {
 		floor(MIN(tri->ss[0].x, MIN(tri->ss[1].x, tri->ss[2].x))),
 		floor(MIN(tri->ss[0].y, MIN(tri->ss[1].y, tri->ss[2].y)))
 	};
-	tri->maxBP = (vec2d) {
+	tri->maxBP = (vec2) {
 		ceil(MAX(tri->ss[0].x, MAX(tri->ss[1].x, tri->ss[2].x))),
 		ceil(MAX(tri->ss[0].y, MAX(tri->ss[1].y, tri->ss[2].y)))
 	};
 
-	calculateBarycentrics(tri, areaX2, (vec2d) {tri->minBP.x + 0.5, tri->minBP.y + 0.5});
+	calculateBarycentrics(tri, areaX2, (vec2) {tri->minBP.x + 0.5, tri->minBP.y + 0.5});
 
 	for (uint8_t i = 0; i < 3; i++)
 	{
@@ -161,9 +161,9 @@ bool setupTriangle(SRPTriangle* tri, const SRPFramebuffer* fb)
 
 static bool shouldCullTriangle(const SRPTriangle* tri, bool* isCCW, bool* isFrontFacing)
 {
-	vec3d edge0 = vec3dSubtract(*tri->p_ndc[1], *tri->p_ndc[0]);
-	vec3d edge1 = vec3dSubtract(*tri->p_ndc[2], *tri->p_ndc[0]);
-	double signedArea = signedAreaParallelogram(&edge0, &edge1);
+	vec3 edge0 = vec3Subtract(*tri->p_ndc[1], *tri->p_ndc[0]);
+	vec3 edge1 = vec3Subtract(*tri->p_ndc[2], *tri->p_ndc[0]);
+	float signedArea = signedAreaParallelogram(&edge0, &edge1);
 	*isCCW = signedArea > 0;
 
 	// Should have already been handled, but just in case
@@ -189,24 +189,24 @@ static void triangleChangeWinding(SRPTriangle* tri)
 	tri->v[1] = tri->v[2];
 	tri->v[2] = temp1;
 
-	double temp2 = tri->invW[1];
+	float temp2 = tri->invW[1];
 	tri->invW[1] = tri->invW[2];
 	tri->invW[2] = temp2;
 }
 
-static void calculateBarycentrics(SRPTriangle* tri, double areaX2, vec2d point)
+static void calculateBarycentrics(SRPTriangle* tri, float areaX2, vec2 point)
 {
-	vec3d AP = {
+	vec3 AP = {
 		point.x - tri->ss[0].x,
 		point.y - tri->ss[0].y,
 		0
 	};
-	vec3d BP = {
+	vec3 BP = {
 		point.x - tri->ss[1].x,
 		point.y - tri->ss[1].y,
 		0
 	};
-	vec3d CP = {
+	vec3 CP = {
 		point.x - tri->ss[2].x,
 		point.y - tri->ss[2].y,
 		0
@@ -225,21 +225,21 @@ static void calculateBarycentrics(SRPTriangle* tri, double areaX2, vec2d point)
 	tri->dldy[2] = -tri->edge[0].x / areaX2;
 }
 
-static double signedAreaParallelogram(
-	const vec3d* restrict a, const vec3d* restrict b
+static float signedAreaParallelogram(
+	const vec3* restrict a, const vec3* restrict b
 )
 {
 	return a->x * b->y - a->y * b->x;
 }
 
-static bool isEdgeFlatTopOrLeft(const vec3d* restrict edge)
+static bool isEdgeFlatTopOrLeft(const vec3* restrict edge)
 {
 	return ((edge->x > 0) && ROUGHLY_ZERO(edge->y)) || (edge->y < 0);
 }
 
 static void triangleInterpolateData(
 	SRPTriangle* tri, const SRPShaderProgram* restrict sp,
-	SRPInterpolated* pInterpolatedBuffer, double* depth, double* recIntInvW
+	SRPInterpolated* pInterpolatedBuffer, float* depth, float* recIntInvW
 )
 {
 	const bool perspective = srpContext.interpolationMode == SRP_INTERPOLATION_MODE_PERSPECTIVE;

@@ -15,20 +15,20 @@
 
 /** Represents a triangle and stores data needed for its rasterization */
 typedef struct SRPTriangle {
-	SRPvsOutput v[3];      /**< Output of the vertex shader */
-	vec3d* p_ndc[3];       /**< Pointer to vertices' positions in NDC */
-	vec3d ss[3];	       /**< Vertices' positions in screen-space */
-	vec3d edge[3];         /**< Screen space edge vectors */
-	bool edgeTL[3];        /**< Whether or not the edge is flat top or left */
-	vec2d minBP;           /**< Minimum bounding point (screen-space) */
-	vec2d maxBP;           /**< Maximum bounding point (screen-space) */
-	double lambda[3];      /**< Barycentric coordinates at the current pixel */
-	double lambda_row[3];  /**< Barycentric coordinates at the beginning of the row */
-	double dldx[3];        /**< Barycentric coordinates' delta values for +X movement */
-	double dldy[3];        /**< Barycentric coordinates' delta values for +Y movement */
-	double invW[3];        /**< 1 / clip-space W. Needed for perspective-correct interpolation */
-	bool isFrontFacing;    /**< Whether or not the triangle is front-facing */
-	size_t id;             /**< ID of the primitive, starting from 0 */
+	SRPvsOutput v[3];     /**< Output of the vertex shader */
+	vec3* p_ndc[3];       /**< Pointer to vertices' positions in NDC */
+	vec3 ss[3];	          /**< Vertices' positions in screen-space */
+	vec3 edge[3];         /**< Screen space edge vectors */
+	bool edgeTL[3];       /**< Whether or not the edge is flat top or left */
+	vec2 minBP;           /**< Minimum bounding point (screen-space) */
+	vec2 maxBP;           /**< Maximum bounding point (screen-space) */
+	float lambda[3];      /**< Barycentric coordinates at the current pixel */
+	float lambda_row[3];  /**< Barycentric coordinates at the beginning of the row */
+	float dldx[3];        /**< Barycentric coordinates' delta values for +X movement */
+	float dldy[3];        /**< Barycentric coordinates' delta values for +Y movement */
+	float invW[3];        /**< 1 / clip-space W. Needed for perspective-correct interpolation */
+	bool isFrontFacing;   /**< Whether or not the triangle is front-facing */
+	size_t id;            /**< ID of the primitive, starting from 0 */
 } SRPTriangle;
 
 /** Setup triangle for rasterization, performing perspective divide and
