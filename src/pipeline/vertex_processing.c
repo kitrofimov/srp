@@ -17,7 +17,8 @@ static void computeMinMaxVI(
 );
 
 void allocateVertexCache(
-	VertexCache* cache, const SRPIndexBuffer* ib, size_t startIndex, size_t vertexCount
+	VertexCache* cache, const SRPIndexBuffer* ib, size_t startIndex,
+	size_t vertexCount, size_t varyingSize
 )
 {
 	size_t minVI, maxVI;
@@ -27,6 +28,7 @@ void allocateVertexCache(
 	cache->baseVertex = minVI;
 	cache->size = maxVI - minVI + 1;
 	cache->entries = ARENA_CALLOC(sizeof(VertexCacheEntry) * cache->size);
+	cache->varyingBlock = ARENA_ALLOC(varyingSize * cache->size);
 }
 
 SRPvsOutput* vertexCacheFetch(
@@ -38,7 +40,10 @@ SRPvsOutput* vertexCacheFetch(
 
 	if (!entry->valid)
 	{
-		processVertex(vertexIndex, vertexIndex - cache->baseVertex, vb, sp, &entry->data);
+		processVertex(
+			vertexIndex, cache->varyingBlock, vertexIndex - cache->baseVertex,
+			vb, sp, &entry->data
+		);
 		entry->valid = true;
 	}
 
@@ -46,12 +51,12 @@ SRPvsOutput* vertexCacheFetch(
 }
 
 void processVertex(
-	size_t vertexIndex, size_t varyingIndex, const SRPVertexBuffer* vb,
-	const SRPShaderProgram* sp, SRPvsOutput* outV
+	size_t vertexIndex, void* varyingBlock, size_t varyingIndex,
+	const SRPVertexBuffer* vb, const SRPShaderProgram* sp, SRPvsOutput* outV
 )
 {
 	SRPVertex* pVertex = indexVertexBuffer(vb, vertexIndex);
-	void* pVarying = ARENA_ALLOC(sp->vs->nBytesPerOutputVariables);
+	void* pVarying = INDEX_VOID_PTR(varyingBlock, varyingIndex, sp->vs->nBytesPerOutputVariables);
 
 	SRPvsInput vsIn = {
 		.vertexID = vertexIndex,

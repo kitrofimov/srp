@@ -20,11 +20,13 @@ typedef struct VertexCache {
 	VertexCacheEntry* entries;
 	size_t baseVertex;
 	size_t size;
+	void* varyingBlock;
 } VertexCache;
 
 /** Allocate post-VS vertex cache */
 void allocateVertexCache(
-	VertexCache* cache, const SRPIndexBuffer* ib, size_t startIndex, size_t vertexCount
+	VertexCache* cache, const SRPIndexBuffer* ib, size_t startIndex,
+	size_t vertexCount, size_t varyingSize
 );
 
 /** Fetch vertex shader output from post-VS cache. If not found, compute and store it.
@@ -37,8 +39,8 @@ SRPvsOutput* vertexCacheFetch(
 
 /** Run vertex shader */
 void processVertex(
-	size_t vertexIndex, size_t varyingIndex, const SRPVertexBuffer* vb,
-	const SRPShaderProgram* sp, SRPvsOutput* outV
+	size_t vertexIndex, void* varyingBlock, size_t varyingIndex,
+	const SRPVertexBuffer* vb, const SRPShaderProgram* sp, SRPvsOutput* outV
 );
 
 /** Apply perspective divide to the output of the vertex shader,
