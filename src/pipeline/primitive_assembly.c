@@ -97,7 +97,7 @@ bool assembleTrianglesGeneric(
 					primitiveID++;
 					dst++;
 				}
-				cur = dst + 1;
+				cur = dst;
 			}
 			else if (srpContext.polygonMode == SRP_POLYGON_MODE_POINT)
 			{
@@ -110,7 +110,7 @@ bool assembleTrianglesGeneric(
 					primitiveID++;
 					dst++;
 				}
-				cur = dst + 1;
+				cur = dst;
 			}
         }
     }
