@@ -2,34 +2,13 @@
 // Licensed under GNU GPLv3
 
 #include <stdio.h>
-#include <assert.h>
 #include <string.h>
-#include "srp/framebuffer.h"
+#include "core/framebuffer_p.h"
 #include "utils/message_callback_p.h"
-#include "utils/defines.h"
 #include "math/utils.h"
 
 /** @file
  *  Framebuffer implementation */
-
-/** @ingroup Framebuffer_internal
- *  @{ */
-
-/** Get pointer to a pixel inside color buffer
- *  @param[in] this Pointer to SRPFramebuffer
- *  @param[in] x,y Position of requested pixel
- *  @return Requested pointer */
-static uint32_t* framebufferGetPixelPointer
-	(const SRPFramebuffer* this, size_t x, size_t y);
-
-/** Get pointer to a pixel inside depth buffer
- *  @param[in] this Pointer to SRPFramebuffer
- *  @param[in] x,y Position of requested pixel
- *  @return Requested pointer */
-static float* framebufferGetDepthPointer
-	(const SRPFramebuffer* this, size_t x, size_t y);
-
-/** @} */  // ingroup Framebuffer_internal
 
 SRPFramebuffer* srpNewFramebuffer(size_t width, size_t height)
 {
@@ -51,26 +30,14 @@ void srpFreeFramebuffer(SRPFramebuffer* this)
 	SRP_FREE(this);
 }
 
-// The `const` qualifier is completely legal: only the buffer pointed to by
-// `framebuffer->color` is modified, not the structure itself!
-void framebufferDrawPixel(
-	const SRPFramebuffer* this, size_t x, size_t y, float depth,
-	uint32_t color
+SRP_FORCEINLINE void framebufferGetColorAndDepthPointers(
+	const SRPFramebuffer* this, size_t x, size_t y,
+	uint32_t** pColor, float** pDepth
 )
 {
-	// If this is failed, this is the problem of library code
-	// Not a direct check because of floating point imprecisions
-	assert(ROUGHLY_GREATER_OR_EQUAL(depth, -1) && ROUGHLY_LESS_OR_EQUAL(depth, 1));
-	*framebufferGetPixelPointer(this, x, y) = color;
-	*framebufferGetDepthPointer(this, x, y) = depth;
-}
-
-bool framebufferDepthTest(
-	const SRPFramebuffer* this, size_t x, size_t y, float depth
-)
-{
-	float* pStoredDepth = framebufferGetDepthPointer(this, x, y);
-	return (depth > *pStoredDepth);
+    size_t idx = y * this->width + x;
+    *pColor = &this->color[idx];
+    *pDepth = &this->depth[idx];
 }
 
 void framebufferNDCToScreenSpace(
@@ -87,14 +54,4 @@ void srpFramebufferClear(const SRPFramebuffer* this)
 	memset(this->color, 0x00, this->size * sizeof(uint32_t));
     for (size_t i = 0; i < this->size; i++)
         this->depth[i] = -1.;
-}
-
-static uint32_t* framebufferGetPixelPointer(const SRPFramebuffer* this, size_t x, size_t y)
-{
-	return this->color + (y * this->width + x);
-}
-
-static float* framebufferGetDepthPointer(const SRPFramebuffer* this, size_t x, size_t y)
-{
-	return this->depth + (y * this->width + x);
 }

@@ -8,30 +8,14 @@
 
 #include <stdbool.h>
 #include "srp/framebuffer.h"
+#include "utils/defines.h"
 
 /** @ingroup Framebuffer
  *  @{ */
 
-/** Draw a pixel in a framebuffer with specified depth, making no depth checks
- *  @param[in] this The pointer to SRPFramebuffer, as returned 
- *                  from srpNewFramebuffer
- *  @param[in] x,y Position at which to draw the pixel. X-axis points
- *                 from left to right, Y-axis - from top to bottom
- *  @param[in] depth Depth value to assign to the pixel, assumed to be inside
- *                   the [-1, 1] interval
- *  @param[in] color RBGA8888 color to draw. */
-void framebufferDrawPixel(
-	const SRPFramebuffer* this, size_t x, size_t y, float depth,
-	uint32_t color
-);
-
-/** Draw a pixel in a framebuffer with specified depth, making no depth checks
- *  @param[in] this The pointer to SRPFramebuffer
- *  @param[in] x,y Position at which to test the depth
- *  @param[in] depth Depth value to test
- *  @return Whether or not the fragment has passed the depth test. */
-bool framebufferDepthTest(
-	const SRPFramebuffer* this, size_t x, size_t y, float depth
+void framebufferGetColorAndDepthPointers(
+	const SRPFramebuffer* this, size_t x, size_t y,
+	uint32_t** pColor, float** pDepth
 );
 
 /** Convert Normalized Device Coordinates to screen-space coordiantes
