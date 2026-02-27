@@ -2,11 +2,15 @@
 // Licensed under GNU GPLv3
 
 /** @file
- *  Message callback declaration and helper functions */
+ *  @ingroup Context_internal
+ *  Message callback declaration */
 
 #pragma once
 
 #include "srp/message_callback.h"
+
+/** @ingroup Context_internal
+ *  @{ */
 
 /** A helper function used by the library implementation to make callbacks easier
  *  @param[in] type Message type
@@ -20,3 +24,4 @@ void srpMessageCallbackHelper(
 	const char* sourceFunction, const char* format, ...
 );
 
+/** @} */  // ingroup Context_internal

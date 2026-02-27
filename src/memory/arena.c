@@ -1,32 +1,32 @@
 // Software Rendering Pipeline (SRP) library
 // Licensed under GNU GPLv3
 
+/** @file
+ *  @ingroup Memory_allocation
+ *  SRPArena and related functions implementation */
+
 #include <string.h>
 #include "memory/arena_p.h"
 #include "utils/defines.h"
 #include "utils/voidptr.h"
 
+/** @ingroup Memory_allocation
+ *  @{ */
+
+/** Find such a number A which fulfills the requirements: A % align == 0; A > x */
 #define ALIGN_UP(x, align) (((x) + ((align) - 1)) & ~((align) - 1))
 #define ALIGN_8_UP(x) (ALIGN_UP(x, 8))
-
-/** @file
- *  Arena implementation */
-
-/** @ingroup Arena_internal
- *  @{ */
 
 /** Allocate new block
  *  @param[in] capacity Capacity of the block in bytes
  *  @return Pointer to the newly allocated block */
 static SRPArenaBlock* newBlock(size_t capacity);
 
-/** Determine the needed block size for a given requested size
+/** Determine the needed block size for a given requested size. Grows in a 2^x fashion
  *  @param[in] this Pointer to the arena
  *  @param[in] requested Requested size in bytes
  *  @return Needed block size in bytes */
 static size_t neededBlockSize(SRPArena* this, size_t requested);
-
-/** @} */  // ingroup Arena_internal
 
 static SRPArenaBlock* newBlock(size_t capacity)
 {
@@ -114,3 +114,5 @@ void arenaReset(SRPArena* this)
         this->current = this->head;
     }
 }
+
+/** @} */  // ingroup Memory_allocation

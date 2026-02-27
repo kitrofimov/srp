@@ -1,9 +1,16 @@
 // Software Rendering Pipeline (SRP) library
 // Licensed under GNU GPLv3
 
+/** @file
+ *  @ingroup Context_internal
+ *  SRPContext implementation */
+
 #include "utils/message_callback_p.h"
 #include "srp/context.h"
 #include "memory/arena_p.h"
+
+/** @ingroup Context_internal
+ *  @{ */
 
 void srpNewContext(SRPContext* pContext)
 {
@@ -134,3 +141,5 @@ float srpContextGetF(SRPContextParameter contextParameter)
 		return 0.;
 	}
 }
+
+/** @} */  // ingroup Context_internal

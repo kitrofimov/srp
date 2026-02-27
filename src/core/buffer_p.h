@@ -4,7 +4,8 @@
 #pragma once
 
 /** @file
- *  Private header for `include/buffer.h` */
+ *  @ingroup Buffer_internal
+ *  Private header for `include/srp/buffer.h` */
 
 #include "srp/buffer.h"
 
@@ -21,7 +22,7 @@ struct SRPVertexBuffer
 
 struct SRPIndexBuffer
 {
-	SRPType indicesType;     /**< Type of stored indices @see srpIndexBufferCopyData */
+	SRPType indicesType;     /**< Type of stored indices @see srpIndexBufferCopyData() */
 	size_t nBytesPerIndex;   /**< How many bytes does one index occupy */
 	size_t nIndices;         /**< How many indices does this index buffer contain */
 	size_t nBytesAllocated;  /**< How many bytes was already allocated for `data` */

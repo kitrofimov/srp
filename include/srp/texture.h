@@ -4,6 +4,7 @@
 #pragma once
 
 /** @file
+ *  @ingroup Texture
  *  SRPTexture and related functions */
 
 #include <stdint.h>
@@ -16,15 +17,9 @@
 /** Holds texture wrapping modes @see SRPTexture */
 typedef enum
 {
-	TW_REPEAT,
-	TW_CLAMP_TO_EDGE
+	TW_REPEAT,        /**< Repeat the texture when it's wrapped */
+	TW_CLAMP_TO_EDGE  /**< Clamp the texture to the edge when it's wrapped */
 } SRPTextureWrappingMode;
-
-/** Holds texture filtering modes @see SRPTexture */
-typedef enum
-{
-	TF_NEAREST
-} SRPTextureFilteringMode;
 
 /** A structure to represent a texture */
 typedef struct SRPTexture SRPTexture;
@@ -33,14 +28,11 @@ typedef struct SRPTexture SRPTexture;
  *  @param[in] image A filesystem path to an image. Most popular image types
  *					 are supported
  *	@param[in] wrappingModeX,wrappingModeY Wrapping modes to use in X and Y axes
- *	@param[in] filteringModeMagnifying,filteringModeMinifying
- *	           Texture filtering mode to use when magnifying or minifying the texture
  *	@return A pointer to the constructed texture */
 SRPTexture* srpNewTexture(
 	const char* image,
-	SRPTextureWrappingMode wrappingModeX, SRPTextureWrappingMode wrappingModeY,
-	SRPTextureFilteringMode filteringModeMagnifying,
-	SRPTextureFilteringMode filteringModeMinifying
+	SRPTextureWrappingMode wrappingModeX,
+	SRPTextureWrappingMode wrappingModeY
 );
 /** Free a texture
  *  @param[in] this A pointer to the texture, as returned by srpNewTexture() */
@@ -60,9 +52,7 @@ void srpTextureGetFilteredColor(
 typedef enum SRPTextureParameter
 {
 	SRP_TEXTURE_WRAPPING_MODE_X,
-	SRP_TEXTURE_WRAPPING_MODE_Y,
-	SRP_TEXTURE_FILTERING_MODE_MAGNIFYING,
-	SRP_TEXTURE_FILTERING_MODE_MINIFYING,
+	SRP_TEXTURE_WRAPPING_MODE_Y
 } SRPTextureParameter;
 
  /** Get a parameter from existing SRPTexture
@@ -76,5 +66,4 @@ int srpTextureGet(SRPTexture* this, SRPTextureParameter parameter);
   *  @param[in] data A value to set */
 void srpTextureSet(SRPTexture* this, SRPTextureParameter parameter, int data);
 
-/** @} */  // defgroup Texture
-
+/** @} */  // ingroup Texture

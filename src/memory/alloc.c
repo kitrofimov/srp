@@ -1,9 +1,16 @@
 // Software Rendering Pipeline (SRP) library
 // Licensed under GNU GPLv3
 
+/** @file
+ *  @ingroup Memory_allocation
+ *  Internal wrappers for `malloc`, `realloc`, and `free` */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "memory/alloc.h"
+
+/** @ingroup Memory_allocation
+ *  @{ */
 
 void* srpMalloc(unsigned long size)
 {
@@ -12,11 +19,6 @@ void* srpMalloc(unsigned long size)
 		return p;
 	fprintf(stderr, "libsrp: malloc returned NULL (out of memory), aborting...\n");
 	abort();
-}
-
-void srpFree(void* p)
-{
-	free(p);
 }
 
 void* srpRealloc(void* p, unsigned long size)
@@ -28,3 +30,4 @@ void* srpRealloc(void* p, unsigned long size)
 	abort();
 }
 
+/** @} */  // ingroup Memory_allocation

@@ -2,7 +2,8 @@
 // Licensed under GNU GPLv3
 
 /** @file
- *  Private header for `include/framebuffer.h` */
+ * 	@ingroup Framebuffer_internal
+ *  Private header for `include/srp/framebuffer.h` */
 
 #pragma once
 
@@ -10,9 +11,14 @@
 #include "srp/framebuffer.h"
 #include "utils/defines.h"
 
-/** @ingroup Framebuffer
+/** @ingroup Framebuffer_internal
  *  @{ */
 
+/** Get pointers inside color and depth buffers for pixel at (x, y)
+ *  @param[in] this Pointer to the SRPFramebuffer
+ *  @param[in] x,y Coordinates of the needed pixel
+ *  @param[out] pColor Pointer to the color buffer
+ *  @param[out] pDepth Pointer to the depth buffer */
 void framebufferGetColorAndDepthPointers(
 	const SRPFramebuffer* this, size_t x, size_t y,
 	uint32_t** pColor, float** pDepth
@@ -28,5 +34,4 @@ void framebufferGetColorAndDepthPointers(
 void framebufferNDCToScreenSpace
 	(const SRPFramebuffer* this, const float* NDC, float* SS);
 
-/** @} */  // ingroup Framebuffer
-
+/** @} */  // ingroup Framebuffer_internal

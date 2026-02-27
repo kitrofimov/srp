@@ -2,7 +2,8 @@
 // Licensed under GNU GPLv3
 
 /** @file
- *  Private header for `include/texture.h` */
+ *  @ingroup Texture_internal
+ *  Private header for `include/srp/texture.h` */
 
 #pragma once
 
@@ -13,16 +14,13 @@
 
 struct SRPTexture
 {
-	uint8_t* data;
-	int width, height;
-	int wdthMinusOne, heightMinusOne;
-	SRPTextureWrappingMode wrappingModeX;
-	SRPTextureWrappingMode wrappingModeY;
-
-	// Not used yet
-	SRPTextureFilteringMode filteringModeMagnifying;
-	SRPTextureFilteringMode filteringModeMinifying;
+	uint8_t* data;       /**< The pixel data of the image */
+	int width;           /**< X-dimension of the texture */
+	int height;          /**< Y-dimension of the texture */
+	int widthMinusOne;   /**< Precomputed for optimization */
+	int heightMinusOne;  /**< Precomputed for optimization */
+	SRPTextureWrappingMode wrappingModeX;  /**< Wrapping mode for X axis */
+	SRPTextureWrappingMode wrappingModeY;  /**< Wrapping mode for Y axis */
 };
 
 /** @} */  // ingroup Texture_internal
-

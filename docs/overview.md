@@ -1,16 +1,18 @@
 Overview {#mainpage}
 ========
 
-SRP (stands for Software Rendering Pipeline) is an OpenGL-like CPU graphics library written in C with minimal dependencies. It was made as a hobby programming project, so it is probably not the best idea to use it in production code (see [PortableGL](https://github.com/rswinkle/PortableGL), for example). The source code (and more information) is available on [Github](https://www.github.com/fahlerile/srp).
+SRP (stands for <b>s</b>oftware <b>r</b>endering <b>p</b>ipeline) is an OpenGL-like CPU graphics library written in C with minimal dependencies. It was made as a hobby programming project. The source code (and more information) is available on [Github](https://www.github.com/fahlerile/srp).
 
-A nice way to get familiar with API is to read <a href="examples.html">Examples</a> or <a href="group__API__reference.html">API reference</a>. If you are interested in implmentation details, see <a href="group__Implementation.html">Implementation</a>.
+A nice way to get familiar with API is to read <a href="examples.html">Examples</a> or <a href="group__API__reference.html">API reference</a>. If you are interested in implmentation details, see <a href="group__Internal.html">Internal documentation</a>.
 
-Here is a graph showing the pipeline (red edges - the main path from a draw call to a fragment on the screen, green nodes - objects created by user):
+Here is a graph overviewing the pipeline: (red edges - the main path from a draw call to a fragment on the screen, green nodes - objects created by user)
 
 @dot
     graph {
         vertex_data [label="Vertex data"];
         index_data [label="Index data"];
+        vertex_cache [label="Vertex cache"];
+        primitive_assembly [label="Primitive assembly"];
 
         VertexBuffer [color=green];
         IndexBuffer [color=green];
@@ -29,7 +31,6 @@ Here is a graph showing the pipeline (red edges - the main path from a draw call
 
         edge [color=red];
 
-        Drawcall -- VertexShader -- Rasterizer -- Interpolator -- FragmentShader;
+        Drawcall -- primitive_assembly -- vertex_cache -- VertexShader -- Clipping -- Rasterizer -- Interpolator -- FragmentShader;
     }
 @enddot
-

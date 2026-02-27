@@ -2,12 +2,17 @@
 // Licensed under GNU GPLv3
 
 /** @file
+ *  @ingroup Rasterization
  *  Point rasterization */
 
 #include "core/framebuffer_p.h"
 #include "srp/shaders.h"
 #include "srp/vec.h"
 
+/** @ingroup Rasterization
+ *  @{ */
+
+/** Point primitive. Stores data needed for its rasterization */
 typedef struct SRPPoint {
 	SRPvsOutput v;  /**< Output of the vertex shader */
 	size_t id;      /**< ID of the primitive, starting from 0 */
@@ -22,6 +27,9 @@ void rasterizePoint(
 	const SRPShaderProgram* restrict sp
 );
 
-/** Perform perspective divide on a point
+/** Perform perspective divide on a point. Created to be structurally similar
+ *  to setupTriangle(), setupLine()
  *  @param[in] p Point to setup */
 void setupPoint(SRPPoint* p);
+
+/** @} */  // ingroup Rasterization

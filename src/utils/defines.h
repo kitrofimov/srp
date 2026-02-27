@@ -11,10 +11,11 @@
 #if defined(SRP_MALLOC) && defined(SRP_FREE) && defined(SRP_REALLOC)
 	// ok
 #elif !defined(SRP_MALLOC) && !defined(SRP_FREE) && !defined(SRP_REALLOC)
+	#include <stdlib.h>
 	#include "memory/alloc.h"
 	#define SRP_MALLOC(s) srpMalloc(s)
 	#define SRP_REALLOC(p, s) srpRealloc(p, s)
-	#define SRP_FREE(p) srpFree(p)
+	#define SRP_FREE(p) free(p)
 #else
 	#error "Must define all or none of SRP_MALLOC, SRP_FREE, and SRP_REALLOC"
 #endif

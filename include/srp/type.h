@@ -4,6 +4,7 @@
 #pragma once
 
 /** @file
+ *  @ingroup Various
  *  Functions and types to help dealing with opaque types */
 
 #include <stdint.h>
@@ -12,7 +13,7 @@
 /** @ingroup Various
  *  @{ */
 
-/** Represents data types, this is needed for internal handling of opaque types */
+/** Represents data types. This is needed for internal handling of opaque types */
 typedef enum SRPType
 {
 	TYPE_UINT8 = 0,

@@ -2,13 +2,17 @@
 // Licensed under GNU GPLv3
 
 /** @file
- *  Vertex processing functions implementation */
+ *  @ingroup Vertex_processing
+ *  Vertex processing & post-VS cache implementation */
 
 #include <assert.h>
 #include "pipeline/vertex_processing.h"
 #include "memory/arena_p.h"
 #include "utils/voidptr.h"
 #include "math/utils.h"
+
+/** @ingroup Vertex_processing
+ *  @{ */
 
 /** Compute minimal and maximal vertex indices given stream indices */
 static void computeMinMaxVI(
@@ -36,14 +40,12 @@ SRPvsOutput* vertexCacheFetch(
 	const SRPShaderProgram* sp
 )
 {
-	VertexCacheEntry* entry = &cache->entries[vertexIndex - cache->baseVertex];
+	size_t idx = vertexIndex - cache->baseVertex;
+	VertexCacheEntry* entry = &cache->entries[idx];
 
 	if (!entry->valid)
 	{
-		processVertex(
-			vertexIndex, cache->varyingBlock, vertexIndex - cache->baseVertex,
-			vb, sp, &entry->data
-		);
+		processVertex(vertexIndex, cache->varyingBlock, idx, vb, sp, &entry->data);
 		entry->valid = true;
 	}
 
@@ -108,3 +110,5 @@ static void computeMinMaxVI(
 	*outMinVI = minVI;
 	*outMaxVI = maxVI;
 }
+
+/** @} */  // ingroup Vertex_processing

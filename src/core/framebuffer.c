@@ -1,14 +1,18 @@
 // Software Rendering Pipeline (SRP) library
 // Licensed under GNU GPLv3
 
+/** @file
+ *  @ingroup Framebuffer_internal
+ *  Framebuffer implementation */
+
 #include <stdio.h>
 #include <string.h>
 #include "core/framebuffer_p.h"
 #include "utils/message_callback_p.h"
 #include "math/utils.h"
 
-/** @file
- *  Framebuffer implementation */
+/** @ingroup Framebuffer_internal
+ *  @{ */
 
 SRPFramebuffer* srpNewFramebuffer(size_t width, size_t height)
 {
@@ -55,3 +59,5 @@ void srpFramebufferClear(const SRPFramebuffer* this)
     for (size_t i = 0; i < this->size; i++)
         this->depth[i] = -1.;
 }
+
+/** @} */  // ingroup Framebuffer_internal

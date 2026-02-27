@@ -2,6 +2,7 @@
 // Licensed under GNU GPLv3
 
 /** @file
+ *  @ingroup Buffer
  *  Buffer objects (SRPVertexBuffer and SRPIndexBuffer) */
 
 #pragma once
@@ -91,4 +92,3 @@ void srpDrawIndexBuffer(
 );
 
 /** @} */  // ingroup Buffer
-

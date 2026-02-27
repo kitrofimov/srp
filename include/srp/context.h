@@ -2,6 +2,7 @@
 // Licensed under GNU GPLv3
 
 /** @file
+ *  @ingroup Context
  *  SRPContext and related functions */
 
 #pragma once
@@ -13,35 +14,37 @@
 /** @ingroup Context
  *  @{ */
 
-/** Available attribute interpolation types */
+/** Attribute interpolation mode */
 typedef enum SRPInterpolationMode
 {
-	SRP_INTERPOLATION_MODE_PERSPECTIVE,
-	SRP_INTERPOLATION_MODE_AFFINE
+	SRP_INTERPOLATION_MODE_PERSPECTIVE,  /**< Perspective-correct interplolation; default */
+	SRP_INTERPOLATION_MODE_AFFINE        /**< Affine screen-space interpolation */
 } SRPInterpolationMode;
 
-/** Available front face modes */
+/** Front face mode */
 typedef enum SRPFrontFace
 {
-	SRP_FRONT_FACE_CCW,
-	SRP_FRONT_FACE_CW
+	SRP_FRONT_FACE_CCW,  /**< Counterclockwise; default */
+	SRP_FRONT_FACE_CW    /**< Clockwise */
 } SRPFrontFace;
 
-/** Available cull face modes */
+/** Cull face mode */
 typedef enum SRPCullFace
 {
-	SRP_CULL_FACE_NONE,
-	SRP_CULL_FACE_FRONT,
-	SRP_CULL_FACE_BACK,
+	SRP_CULL_FACE_NONE,   /**< Do not cull any face; default */
+	SRP_CULL_FACE_FRONT,  /**< Cull the front face */
+	SRP_CULL_FACE_BACK,   /**< Cull the back face */
+	/**< Cull both front and back faces. Primitives that don't have a face
+	 *   (lines, points) are left as-is. */
 	SRP_CULL_FACE_FRONT_AND_BACK
 } SRPCullFace;
 
-/** Available polygon modes */
+/** Polygon rendering mode */
 typedef enum SRPPolygonMode
 {
-	SRP_POLYGON_MODE_FILL,
-	SRP_POLYGON_MODE_LINE,
-	SRP_POLYGON_MODE_POINT
+	SRP_POLYGON_MODE_FILL,  /**< Filled triangles; default */
+	SRP_POLYGON_MODE_LINE,  /**< Lines only (wireframe) */
+	SRP_POLYGON_MODE_POINT  /**< Points only */
 } SRPPolygonMode;
 
 /** Holds runtime settings. This always needs to be declared as `SRPContext
@@ -53,18 +56,16 @@ typedef struct SRPContext
 	/** User pointer to pass to message callback function
 	 *  @see SRPContext.messageCallback */
 	void* messageCallbackUserParameter;
-	/** How to interpolate vertex attributes inside the primitive */
-	SRPInterpolationMode interpolationMode;
+	SRPInterpolationMode interpolationMode;  /**< Vertex attribute interpolation mode */
 	SRPFrontFace frontFace;      /**< Which face is considered front-facing */
-	SRPCullFace cullFace;        /**< Which face(s) are culled */
-	SRPPolygonMode polygonMode;  /**< Triangle rendering mode */
-	float pointSize;            /**< Size of rasterized SRP_PRIM_POINTS, in pixels */
+	SRPCullFace cullFace;        /**< Which face(s) should be culled */
+	SRPPolygonMode polygonMode;  /**< Polygon rendering mode */
+	float pointSize;             /**< Size of rasterized point, in pixels */
 
-	/** Arena for internal allocations. Is not exposed to the user */
-	SRPArena* arena;
+	SRPArena* arena;  /**< Arena for internal allocations. Is not exposed to the user */
 } SRPContext;
 
-/** Possible arguments to `srpContextSet...` */
+/** Possible arguments to srpContextSetP(), srpContextSetI(), srpContextSetF() */
 typedef enum SRPContextParameter
 {
 	SRP_CONTEXT_MESSAGE_CALLBACK_USER_PARAMETER,
@@ -117,7 +118,7 @@ int srpContextGetI(SRPContextParameter contextParameter);
  *  @return Requested parameter or 0 on error */
 float srpContextGetF(SRPContextParameter contextParameter);
 
-/** @} */  // defgroup Context
-
+/** Global context declaration */
 extern SRPContext srpContext;
 
+/** @} */  // ingroup Context

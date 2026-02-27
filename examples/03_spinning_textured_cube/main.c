@@ -100,11 +100,7 @@ int main()
 			1, 1, 1
 		),
 		.projection = mat4ConstructPerspectiveProjection(-1, 1, -1, 1, 1, 50),
-		.texture = srpNewTexture(
-			"./res/textures/stoneWall.png",
-			TW_REPEAT, TW_REPEAT,
-			TF_NEAREST, TF_NEAREST
-		),
+		.texture = srpNewTexture("./res/textures/stoneWall.png", TW_REPEAT, TW_REPEAT),
 		.frameCount = 0
 	};
 

@@ -2,6 +2,7 @@
 // Licensed under GNU GPLv3
 
 /** @file
+ *  @ingroup Framebuffer
  *  SRPColor */
 
 #pragma once
@@ -28,4 +29,3 @@ typedef struct SRPColor
 #define SRP_COLOR_TO_UINT32_T(color) (htonl(*(uint32_t*) &color))
 
 /** @} */  // ingroup Framebuffer
-

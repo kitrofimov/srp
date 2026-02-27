@@ -11,6 +11,8 @@ A **s**oftware **r**endering **p**ipeline that features:
 
 The only dependency is [`stb_image`](https://github.com/nothings/stb/blob/master/stb_image.h).
 
+If you want to use this library in your own project, you only need headers from `include/srp` directory.
+
 Read the documentation for `master` branch [here](https://kitrofimov.github.io/srp/), or build the documentation yourself (see [Building](#building))
 
 ## Building
@@ -59,7 +61,7 @@ You can also build the examples with `-D BUILD_EXAMPLES=1` and the documentation
 - [x] Add wireframe rendering of triangles (polygon rendering mode)
 - [x] Use `float`s everywhere (instead of `double`s)
 - [x] Check for bottlenecks & optimize
-- [ ] Update the documentation
+- [x] Update the documentation
 - [ ] Image-based testing framework
 - [ ] Implement single-threaded binning and tile system
 - [ ] Scale to multiple threads

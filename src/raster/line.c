@@ -2,6 +2,7 @@
 // Licensed under GNU GPLv3
 
 /** @file
+ *  @ingroup Rasterization
  *  Line rasterization implementation */
 
 #include <math.h>
@@ -13,6 +14,9 @@
 #include "srp/context.h"
 #include "utils/voidptr.h"
 #include "utils/message_callback_p.h"
+
+/** @ingroup Rasterization
+ *  @{ */
 
 /** Interpolate the fragment position and vertex variables inside the line.
  *  @param[in] line Line to interpolate data for
@@ -91,3 +95,5 @@ static void lineInterpolateData(
 	interpolateDepthAndWLine(line->v, weights, line->invW, perspective, sp, depth, recIntInvW);
 	interpolateAttributes(line->v, 2, weights, line->invW, *recIntInvW, perspective, sp, pInterpolatedBuffer);
 }
+
+/** @} */  // ingroup Rasterization

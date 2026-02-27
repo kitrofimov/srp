@@ -1,11 +1,18 @@
 // Software Rendering Pipeline (SRP) library
 // Licensed under GNU GPLv3
 
+/** @file
+ *  @ingroup Clipping
+ *  Clipping functions */
+
 #pragma once
 
 #include "raster/triangle.h"
 #include "raster/line.h"
 #include "raster/point.h"
+
+/** @ingroup Clipping
+ *  @{ */
 
 /** Clip the triangle using Sutherland-Hodgman algorithm
  *  @param[in] in The triangle to clip
@@ -24,3 +31,5 @@ bool clipLine(SRPLine* line, const SRPShaderProgram* sp);
  *  @param[in] p Point to test
  *  @return `true` if point is clipped, `false` otherwise */
 bool clipPoint(SRPPoint* p);
+
+/** @} */  // ingroup Clipping
