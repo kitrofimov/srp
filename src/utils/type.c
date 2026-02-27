@@ -1,9 +1,16 @@
 // Software Rendering Pipeline (SRP) library
 // Licensed under GNU GPLv3
 
+/** @file
+ *  @ingroup Various_internal
+ *  Type related functions */
+
 #include <stdio.h>
 #include "utils/message_callback_p.h"
 #include "type_p.h"
+
+/** @ingroup Various_internal
+ *  @{ */
 
 size_t srpSizeofType(SRPType type)
 {
@@ -32,3 +39,4 @@ size_t srpSizeofType(SRPType type)
 	}
 }
 
+/** @} */  // ingroup Various_internal

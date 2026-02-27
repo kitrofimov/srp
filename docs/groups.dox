@@ -25,13 +25,9 @@
  *  @ingroup API_reference
  *  @brief Texture mapping */
 
-/** @defgroup Vector Vector
+/** @defgroup Math Math
  *  @ingroup API_reference
- *  @brief Vector API, only included if you define `SRP_INCLUDE_VECTOR` */
-
-/** @defgroup Matrix Matrix
- *  @ingroup API_reference
- *  @brief Matrix API, only included if you define `SRP_INCLUDE_MAT` */
+ *  @brief Vector & Matrix API, only included if you define `SRP_INCLUDE_VECTOR` or `SRP_INCLUDE_MAT` */
 
 /** @defgroup Various Various
  *  @ingroup API_reference
@@ -49,6 +45,15 @@
 /** @defgroup Various_internal Various
  *  @ingroup Internal
  *  @brief Internal stuff that cannot be easily grouped into other modules */
+ 
+/** @defgroup Math_internal Math
+ *  @ingroup Internal
+ *  @brief Internals of the Vector & Matrix API */
+
+/** @defgroup Context_internal Context
+ *  @ingroup Internal
+ *  @see Context
+ *  @brief Internals of the Context module */
 
 /** @defgroup Buffer_internal Buffer
  *  @ingroup Internal
@@ -65,6 +70,26 @@
  *  @see Texture
  *  @brief Internals of the Texture module */
 
+/** @defgroup Draw_dispatch Draw dispatch
+ *  @ingroup Internal
+ *  @brief Draw dispatch functions */
+
+/** @defgroup Primitive_assembly Primitive assembly
+ *  @ingroup Internal
+ *  @brief Functions related to primitive assembly */
+
+/** @defgroup Vertex_processing Vertex processing
+ *  @ingroup Internal
+ *  @brief Functions related to vertex processing and post-VS cache */
+
+/** @defgroup Clipping Clipping
+ *  @ingroup Internal
+ *  @brief Functions related to primitive clipping */
+
 /** @defgroup Rasterization Rasterization
  *  @ingroup Internal
  *  @brief Primitive rasterization functions */
+
+/** @defgroup Interpolation Interpolation
+ *  @ingroup Internal
+ *  @brief Functions related to in-primitive data interpolation */

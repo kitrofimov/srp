@@ -4,6 +4,7 @@
 #pragma once
 
 /** @file
+ *  @ingroup Various
  *  Functions and types to help dealing with opaque types */
 
 #include <stdint.h>

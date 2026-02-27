@@ -2,9 +2,13 @@
 // Licensed under GNU GPLv3
 
 /** @file
- *  Draw dispatch */
+ *  @ingroup Draw_dispatch
+ *  Draw dispatch functions */
 
 #include "core/buffer_p.h"
+
+/** @ingroup Draw_dispatch
+ *  @{ */
 
 /** Draw either SRPIndexBuffer or SRPVertexBuffer.
  *  If `ib == NULL`, draws the vertex buffer, else draws index buffer.
@@ -15,3 +19,5 @@ void drawBuffer(
 	const SRPIndexBuffer* ib, const SRPVertexBuffer* vb, const SRPFramebuffer* fb,
 	const SRPShaderProgram* sp, SRPPrimitive primitive, size_t startIndex, size_t count
 );
+
+/** @} */  // ingroup Draw_dispatch

@@ -1,9 +1,16 @@
 // Software Rendering Pipeline (SRP) library
 // Licensed under GNU GPLv3
 
+/** @file
+ *  @ingroup Interpolation
+ *  Interpolation implementation */
+
 #include "pipeline/interpolation.h"
 #include "utils/message_callback_p.h"
 #include "utils/voidptr.h"
+
+/** @ingroup Interpolation
+ *  @{ */
 
 /** Let @f$ v_0, v_1, v_2 @f$ be points in space that form a triangle and
  *  @f$ a, b, c @f$ be barycentric coordinates for a point @f$ P @f$
@@ -133,3 +140,5 @@ void interpolateAttributes(
         attrOffsetBytes += attrSize;
     }
 }
+
+/** @} */  // ingroup Interpolation

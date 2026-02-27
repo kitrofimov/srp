@@ -76,10 +76,10 @@ typedef struct SRPfsOutput
  *  @see SRPShaderProgram */
 typedef struct SRPFragmentShader
 {
-	/**< Shader function */
+	/** Shader function */
 	void (*shader)(SRPfsInput* in, SRPfsOutput* out);
-	/**< Whether or not this shader may overwrite depth via SRPfsOutput.fragDepth
-	 *   If `false`, early depth test is activated (less fragment shader invocations) */
+	/** Whether or not this shader may overwrite depth via SRPfsOutput.fragDepth
+	 *  If `false`, early depth test is activated (less fragment shader invocations) */
 	bool doesOverwriteDepth;
 } SRPFragmentShader;
 
@@ -94,4 +94,4 @@ typedef struct SRPShaderProgram
 	SRPFragmentShader* fs;  /** Pointer to the fragment shader to use */
 } SRPShaderProgram;
 
-/** @} */  // defgroup Shaders
+/** @} */  // ingroup Shaders

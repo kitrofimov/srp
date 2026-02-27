@@ -1,9 +1,16 @@
 // Software Rendering Pipeline (SRP) library
 // Licensed under GNU GPLv3
 
+/** @file
+ *  @ingroup Math_internal
+ *  `vec2`, `vec3`, `vec4` implementation */
+
 #include "utils/message_callback_p.h"
 #include "utils/defines.h"
 #include "srp/vec.h"
+
+/** @ingroup Math_internal
+ *  @{ */
 
 SRP_FORCEINLINE vec2 vec2Add(vec2 a, vec2 b)
 {
@@ -100,3 +107,5 @@ SRP_FORCEINLINE vec4 vec4MultiplyScalar(vec4 a, float b)
 		a.w * b
 	};
 }
+
+/** @} */  // ingroup Math_internal

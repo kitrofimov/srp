@@ -1,6 +1,10 @@
 // Software Rendering Pipeline (SRP) library
 // Licensed under GNU GPLv3
 
+/** @file
+ *  @ingroup Clipping
+ *  Clipping implementation */
+
 #include <string.h>
 #include <assert.h>
 #include <stdlib.h>
@@ -10,6 +14,9 @@
 #include "math/utils.h"
 #include "utils/message_callback_p.h"
 #include "utils/voidptr.h"
+
+/** @ingroup Clipping
+ *  @{ */
 
 /** Represents all possible clip planes */
 typedef enum {
@@ -22,6 +29,10 @@ typedef enum {
     PLANE_COUNT
 } ClipPlane;
 
+/** Compute the clip code for a vertex. 0 if inside all 6 clip planes,
+ *  else 1 in a specific bit.
+ *  @param[in] v Vertex
+ *  @return Clip code */
 static inline uint8_t computeClipCode(const SRPvsOutput* v);
 
 /** Clip a polygon against specified plane (Sutherland-Hodgman)
@@ -47,7 +58,10 @@ static void interpolateVertex(
     const SRPShaderProgram* sp, SRPvsOutput* out
 );
 
-/** Calculate the distance from the vertex to specific plane */
+/** Calculate the distance from the vertex to the specified clip plane
+ *  @param[in] v Vertex
+ *  @param[in] p Clip plane
+ *  @return The distance from the vertex to the specified clip plane */
 static inline float planeDistance(const SRPvsOutput* v, ClipPlane p);
 
 
@@ -261,3 +275,5 @@ static inline float planeDistance(const SRPvsOutput* v, ClipPlane p)
         default:           abort();
     }
 }
+
+/** @} */  // ingroup Clipping

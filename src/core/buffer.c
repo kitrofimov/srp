@@ -2,6 +2,7 @@
 // Licensed under GNU GPLv3
 
 /** @file
+ *  @ingroup Buffer_internal
  *  Buffer implementation */
 
 #include <stdio.h>
@@ -12,6 +13,9 @@
 #include "utils/voidptr.h"
 #include "utils/defines.h"
 #include "utils/type_p.h"
+
+/** @ingroup Buffer_internal
+ *  @{ */
 
 SRPVertexBuffer* srpNewVertexBuffer()
 {
@@ -123,7 +127,6 @@ uint64_t indexIndexBuffer(const SRPIndexBuffer* this, size_t index)
 	return ret;
 }
 
-// @brief Draw an index buffer with specified primitive mode
 void srpDrawIndexBuffer(
 	const SRPIndexBuffer* this, const SRPVertexBuffer* vb, const SRPFramebuffer* fb,
 	const SRPShaderProgram* sp, SRPPrimitive primitive, size_t startIndex, size_t count
@@ -132,3 +135,4 @@ void srpDrawIndexBuffer(
 	drawBuffer(this, vb, fb, sp, primitive, startIndex, count);
 }
 
+/** @} */  // ingroup Buffer_internal

@@ -1,10 +1,17 @@
 // Software Rendering Pipeline (SRP) library
 // Licensed under GNU GPLv3
 
+/** @file
+ *  @ingroup Math_internal
+ *  `mat4` implementation */
+
 #include <math.h>
 #include "utils/message_callback_p.h"
 #include "utils/defines.h"
 #include "srp/mat.h"
+
+/** @ingroup Math_internal
+ *  @{ */
 
 SRP_FORCEINLINE vec4 mat4MultiplyVec4(const mat4* restrict m, vec4 v)
 {
@@ -206,3 +213,5 @@ SRP_FORCEINLINE mat4 mat4ConstructPerspectiveProjection(
 
 	return mat4MultiplyMat4(&orthogonal, &perspective);
 }
+
+/** @} */  // ingroup Math_internal

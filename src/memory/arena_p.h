@@ -2,6 +2,7 @@
 // Licensed under GNU GPLv3
 
 /** @file
+ *  @ingroup Memory_allocation
  *  SRPArena and related functions */
 
 #pragma once
@@ -9,22 +10,25 @@
 #include <stddef.h>
 #include "srp/context.h"
 
-/** @ingroup Arena
+/** @ingroup Memory_allocation
  *  @{ */
 
+/** Default capacity of SRPArena */
 #define SRP_DEFAULT_ARENA_CAPACITY (1024 * 1024)  // 1 MiB
 
+/** Represents a memory block in the SRPArena */
 typedef struct SRPArenaBlock {
-    struct SRPArenaBlock* next;
-    size_t capacity;
-    size_t used;
-    unsigned char data[];
+    struct SRPArenaBlock* next;  /**< Pointer to the next block */
+    size_t capacity;             /**< Total allocated size of this block */
+    size_t used;                 /**< How many bytes are used */
+    unsigned char data[];        /**< Pointer to the data */
 } SRPArenaBlock;
 
+/** Blockchain-based arena allocator */
 typedef struct SRPArena {
-    SRPArenaBlock* head; 
-    SRPArenaBlock* current;
-    size_t pageSize;
+    SRPArenaBlock* head;     /**< Pointer to the first block */
+    SRPArenaBlock* current;  /**< Pointer to the currently-being-filled block */
+    size_t pageSize;         /**< Default capacity for newly created blocks */
 } SRPArena;
 
 /** Create a new arena with given capacity. Should be freed with freeArena()
@@ -52,8 +56,9 @@ void* arenaCalloc(SRPArena* this, size_t size);
  *  @param[in] this Pointer to the arena */
 void arenaReset(SRPArena* this);
 
+// Macros to manipulate context-stored arena
 #define ARENA_ALLOC(size) (arenaAlloc(srpContext.arena, (size)))
 #define ARENA_CALLOC(size) (arenaCalloc(srpContext.arena, (size)))
 #define ARENA_RESET() (arenaReset(srpContext.arena))
 
-/** @} */  // defgroup Arena
+/** @} */  // ingroup Memory_allocation

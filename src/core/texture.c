@@ -1,6 +1,10 @@
 // Software Rendering Pipeline (SRP) library
 // Licensed under GNU GPLv3
 
+/** @file
+ *  @ingroup Texture_internal
+ *  Texture implementation */
+
 #include "srp/texture.h"
 #include <math.h>
 #include <stdbool.h>
@@ -14,22 +18,16 @@
 #include "srp/vec.h"
 #include "core/texture_p.h"
 
-/** @file
- *  Texture implementation */
-
 /** @ingroup Texture_internal
  *  @{ */
 
 /** Number of channels requested from the `stbi_load()` call. */
 #define N_CHANNELS_REQUESTED 3
 
-/** @} */  // ingroup Texture_internal
-
 SRPTexture* srpNewTexture(
 	const char* image,
-	SRPTextureWrappingMode wrappingModeX, SRPTextureWrappingMode wrappingModeY,
-	SRPTextureFilteringMode filteringModeMagnifying,
-	SRPTextureFilteringMode filteringModeMinifying
+	SRPTextureWrappingMode wrappingModeX,
+	SRPTextureWrappingMode wrappingModeY
 )
 {
 	SRPTexture* this = SRP_MALLOC(sizeof(SRPTexture));
@@ -42,12 +40,10 @@ SRPTexture* srpNewTexture(
 		);
 		return NULL;
 	}
-	this->wdthMinusOne = this->width - 1;
+	this->widthMinusOne = this->width - 1;
 	this->heightMinusOne = this->height - 1;
 	this->wrappingModeX = wrappingModeX;
 	this->wrappingModeY = wrappingModeY;
-	this->filteringModeMagnifying = filteringModeMagnifying;
-	this->filteringModeMinifying = filteringModeMinifying;
 	return this;
 }
 
@@ -68,7 +64,7 @@ void srpTextureGetFilteredColor(
 		v = (this->wrappingModeY == TW_REPEAT) ? v - floor(v) : fmax(0.0, fmin(1.0, v));
 
 	// V axis is pointed down-up, but images are stored up-down, so (1-v) here
-	float x = this->wdthMinusOne * u;
+	float x = this->widthMinusOne * u;
 	float y = this->heightMinusOne * (1-v);
 	size_t xi = (size_t) (x + 0.5);
 	size_t yi = (size_t) (y + 0.5);
@@ -92,10 +88,6 @@ int srpTextureGet(SRPTexture* this, SRPTextureParameter parameter)
 		return this->wrappingModeX;
 	case SRP_TEXTURE_WRAPPING_MODE_Y:
 		return this->wrappingModeY;
-	case SRP_TEXTURE_FILTERING_MODE_MAGNIFYING:
-		return this->filteringModeMagnifying;
-	case SRP_TEXTURE_FILTERING_MODE_MINIFYING:
-		return this->filteringModeMinifying;
 	default:
 		srpMessageCallbackHelper(
 			SRP_MESSAGE_ERROR, SRP_MESSAGE_SEVERITY_HIGH, __func__,
@@ -135,12 +127,6 @@ void srpTextureSet(SRPTexture* this, SRPTextureParameter parameter, int data)
 				);
 		}
 		return;
-	case SRP_TEXTURE_FILTERING_MODE_MAGNIFYING:
-		this->filteringModeMagnifying = data;
-		return;
-	case SRP_TEXTURE_FILTERING_MODE_MINIFYING:
-		this->filteringModeMinifying = data;
-		return;
 	default:
 		srpMessageCallbackHelper(
 			SRP_MESSAGE_ERROR, SRP_MESSAGE_SEVERITY_HIGH, __func__,
@@ -150,3 +136,4 @@ void srpTextureSet(SRPTexture* this, SRPTextureParameter parameter, int data)
 	}
 }
 
+/** @} */  // ingroup Texture_internal

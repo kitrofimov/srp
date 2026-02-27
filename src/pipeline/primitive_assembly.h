@@ -2,6 +2,7 @@
 // Licensed under GNU GPLv3
 
 /** @file
+ *  @ingroup Primitive_assembly
  *  Primitive assembly */
 
 #include "raster/triangle.h"
@@ -9,6 +10,9 @@
 #include "raster/point.h"
 #include "srp/shaders.h"
 #include "core/buffer_p.h"
+
+/** @ingroup Primitive_assembly
+ *  @{ */
 
 /** Call the vertex shader and assemble triangles from vertex or index buffer,
  *  possibly converting them to lines or points according to the set polygon mode.
@@ -77,3 +81,5 @@ bool assemblePoints(
 	const SRPShaderProgram* sp, size_t startIndex, size_t count,
 	size_t* outPointCount, SRPPoint** outPoints
 );
+
+/** @} */  // ingroup Primitive_assembly

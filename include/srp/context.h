@@ -118,6 +118,7 @@ int srpContextGetI(SRPContextParameter contextParameter);
  *  @return Requested parameter or 0 on error */
 float srpContextGetF(SRPContextParameter contextParameter);
 
-/** @} */  // defgroup Context
-
+/** Global context declaration */
 extern SRPContext srpContext;
+
+/** @} */  // ingroup Context

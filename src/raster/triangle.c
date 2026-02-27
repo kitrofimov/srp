@@ -1,6 +1,10 @@
 // Software Rendering Pipeline (SRP) library
 // Licensed under GNU GPLv3
 
+/** @file
+ *  @ingroup Rasterization
+ *  Triangle rasterization implementation */
+
 #include <math.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -18,15 +22,11 @@
 #include "utils/message_callback_p.h"
 #include "utils/voidptr.h"
 
-/** @file
- *  Triangle rasteization & data interpolation */
-
 /** @ingroup Rasterization
  *  @{ */
 
 /** Get a parallelogram's signed area. The two vectors define a parallelogram.
- *  Used for barycentric coordinates' initialization in
- *  calculateBarycentrics() */
+ *  Used for barycentric coordinates' initialization in calculateBarycentrics() */
 static float signedAreaParallelogram(
 	const vec3* restrict a, const vec3* restrict b
 );
@@ -54,7 +54,7 @@ static void calculateBarycentrics(SRPTriangle* tri, float areaX2, vec2 point);
 /** Check if a triangle's edge is flat top or left. Assumes counter-clockwise
  *  vertex order!
  *  @param[in] edge A pointer to an edge vector (pointing from one vertex
- *  to the other)
+ *  				to the other)
  *  @return Whether or not this edge is flat top or left */
 static bool isEdgeFlatTopOrLeft(const vec3* restrict edge);
 
@@ -69,8 +69,6 @@ static void triangleInterpolateData(
 	SRPTriangle* tri, const SRPShaderProgram* restrict sp,
 	SRPInterpolated* pInterpolatedBuffer, float* depth, float* recIntInvW
 );
-
-/** @} */  // ingroup Rasterization
 
 void rasterizeTriangle(
 	SRPTriangle* tri, const SRPFramebuffer* fb,
@@ -140,7 +138,7 @@ bool setupTriangle(SRPTriangle* tri, const SRPFramebuffer* fb)
 		return false;
 
 	// FP errors may lead to one of these being -1 => triangle not drawn
-	// Hence assuring it's at least 0
+	// Hence assuring it's at least 0 OR at most width/height of the framebuffer
 	tri->minBP = (vec2) {
 		MAX(floor(MIN(tri->ss[0].x, MIN(tri->ss[1].x, tri->ss[2].x))), 0),
 		MAX(floor(MIN(tri->ss[0].y, MIN(tri->ss[1].y, tri->ss[2].y))), 0)
@@ -186,7 +184,7 @@ static bool shouldCullTriangle(const SRPTriangle* tri, bool* isCCW, bool* isFron
 static void triangleChangeWinding(SRPTriangle* tri)
 {
 	// Not swapping `p_ndc`, because those are pointers to `v.position`
-	// If swapped both at the same time, it's almost the same as not swapping anything
+	// If swapped both at the same time, it's the same as not swapping anything
 	SRPvsOutput temp1 = tri->v[1];
 	tri->v[1] = tri->v[2];
 	tri->v[2] = temp1;
@@ -248,3 +246,5 @@ static void triangleInterpolateData(
 	interpolateDepthAndWTriangle(tri->v, tri->lambda, tri->invW, perspective, sp, depth, recIntInvW);
 	interpolateAttributes(tri->v, 3, tri->lambda, tri->invW, *recIntInvW, perspective, sp, pInterpolatedBuffer);
 }
+
+/** @} */  // ingroup Rasterization

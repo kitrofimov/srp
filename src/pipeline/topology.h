@@ -2,11 +2,15 @@
 // Licensed under GNU GPLv3
 
 /** @file
+ *  @ingroup Primitive_assembly
  *  Topology-related functions */
 
 #pragma once
 
 #include "core/buffer_p.h"
+
+/** @ingroup Primitive_assembly
+ *  @{ */
 
 /** Deduce the number of triangles to assemble based on the number of vertices
  *  and primitive type
@@ -26,7 +30,10 @@ void resolveTriangleTopology(
 );
 
 /** Deduce the number of lines to assemble based on the number of vertices
- *  and primitive type */
+ *  and primitive type
+ *  @param[in] vertexCount Number of vertices
+ *  @param[in] prim Primitive type
+ *  @return Number of lines that should be assembled */
 size_t computeLineCount(size_t vertexCount, SRPPrimitive prim);
 
 /** Determine the stream indices for a line based on its type
@@ -39,3 +46,5 @@ size_t computeLineCount(size_t vertexCount, SRPPrimitive prim);
 void resolveLineTopology(
 	size_t base, size_t rawLineIdx, SRPPrimitive prim, size_t vertexCount, size_t* out
 );
+
+/** @} */  // ingroup Primitive_assembly

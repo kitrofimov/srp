@@ -2,6 +2,7 @@
 // Licensed under GNU GPLv3
 
 /** @file
+ *  @ingroup Rasterization
  *  Line rasterization */
 
 #pragma once
@@ -10,8 +11,12 @@
 #include "srp/shaders.h"
 #include "srp/vec.h"
 
+/** @ingroup Rasterization
+ *  @{ */
+
+/** Line primitive. Stores data needed for its rasterization */
 typedef struct SRPLine {
-	SRPvsOutput v[2];  /**< Output of the vertex shader */
+	SRPvsOutput v[2];  /**< Outputs of the vertex shader */
 	vec3 ss[2];	       /**< Vertices' positions in screen-space */
 	float invW[2];     /**< 1 / clip-space W. Needed for perspective-correct interpolation */
 	size_t id;         /**< ID of the primitive, starting from 0 */
@@ -34,3 +39,5 @@ void rasterizeLine(
  *  @param[in] line The line to set up. Its `v` field is required to be filled
  *  @param[in] fb The framebuffer to use for NDC to screen-space conversion */
 void setupLine(SRPLine* line, const SRPFramebuffer* fb);
+
+/** @} */  // ingroup Rasterization

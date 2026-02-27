@@ -1,10 +1,17 @@
 // Software Rendering Pipeline (SRP) library
 // Licensed under GNU GPLv3
 
+/** @file
+ *  @ingroup Context_internal
+ *  Message callback implementation */
+
 #include <stdio.h>
 #include <stdarg.h>
 #include "srp/context.h"
 #include "srp/message_callback.h"
+
+/** @ingroup Context_internal
+ *  @{ */
 
 #define MAX_CHARS_IN_MESSAGE 1024
 
@@ -27,3 +34,4 @@ void srpMessageCallbackHelper(
 	}
 }
 
+/** @} */  // ingroup Context_internal

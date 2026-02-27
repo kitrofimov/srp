@@ -2,7 +2,8 @@
 // Licensed under GNU GPLv3
 
 /** @file
- *  Draw dispatch implementation */
+ *  @ingroup Draw_dispatch
+ *  Draw dispatch functions implementation */
 
 #include "pipeline/draw.h"
 #include "raster/triangle.h"
@@ -11,22 +12,25 @@
 #include "pipeline/primitive_assembly.h"
 #include "memory/arena_p.h"
 
+/** @ingroup Draw_dispatch
+ *  @{ */
+
 /** Draw triangle-based primitives from either SRPIndexBuffer or SRPVertexBuffer
- *  @see drawBuffer() for extensive documentation */
+ *  @see drawBuffer() for parameter documentation */
 static void drawTriangles(
 	const SRPIndexBuffer* ib, const SRPVertexBuffer* vb, const SRPFramebuffer* fb,
 	const SRPShaderProgram* sp, SRPPrimitive primitive, size_t startIndex, size_t count
 );
 
 /** Draw line-based primitives from either SRPIndexBuffer or SRPVertexBuffer
- *  @see drawBuffer() for extensive documentation */
+ *  @see drawBuffer() for parameter documentation */
 static void drawLines(
 	const SRPIndexBuffer* ib, const SRPVertexBuffer* vb, const SRPFramebuffer* fb,
 	const SRPShaderProgram* sp, SRPPrimitive primitive, size_t startIndex, size_t count
 );
 
 /** Draw points from either SRPIndexBuffer or SRPVertexBuffer
- *  @see drawBuffer() for extensive documentation */
+ *  @see drawBuffer() for parameter documentation */
 static void drawPoints(
 	const SRPIndexBuffer* ib, const SRPVertexBuffer* vb, const SRPFramebuffer* fb,
 	const SRPShaderProgram* sp, SRPPrimitive primitive, size_t startIndex, size_t count
@@ -34,7 +38,7 @@ static void drawPoints(
 
 /** Check if the draw call tries to access out-of-bounds memory and
  * 	if so, send an error message
- *  @see drawBuffer() for extensive documentation */
+ *  @see drawBuffer() for parameter documentation */
 static bool checkOOB(
 	const SRPIndexBuffer* ib, const SRPVertexBuffer* vb,
 	size_t startIndex, size_t count
@@ -199,3 +203,5 @@ static bool isPrimitivePoint(SRPPrimitive primitive)
 {
 	return primitive == SRP_PRIM_POINTS;
 }
+
+/** @} */  // ingroup Draw_dispatch

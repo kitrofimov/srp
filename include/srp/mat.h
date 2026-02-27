@@ -2,14 +2,14 @@
 // Licensed under GNU GPLv3
 
 /** @file
- * 	@ingroup Matrix
+ * 	@ingroup Math
  *  `mat4` definition */
 
 #pragma once
 
 #include "srp/vec.h"
 
-/** @ingroup Matrix
+/** @ingroup Math
  *  @{ */
 
 /** Represents a 4x4 matrix of `float`s, stores data in row-major order */
@@ -19,12 +19,12 @@ typedef struct mat4 { float data[4][4]; } mat4;
  *  @param a Pointer to a matrix A
  *  @param b Vector B
  *  @return The product A*B */
-vec4 mat4MultiplyVec4(const mat4* a, vec4 b);
+vec4 mat4MultiplyVec4(const mat4* restrict a, vec4 b);
 /** Multiply two 4x4 matrices
  *  @param a Pointer to a matrix A
  *  @param b Pointer to a matrix B 
  *  @return The product A*B */
-mat4 mat4MultiplyMat4(const mat4* a, const mat4* b);
+mat4 mat4MultiplyMat4(const mat4* restrict a, const mat4* restrict b);
 
 /** Construct a 4x4 identity matrix
  *  @return 4x4 identity matrix */
@@ -92,4 +92,4 @@ mat4 mat4ConstructPerspectiveProjection(
 	float z_near, float z_far
 );
 
-/** @} */  // defgroup Matrix
+/** @} */  // ingroup Math

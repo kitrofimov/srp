@@ -2,6 +2,7 @@
 // Licensed under GNU GPLv3
 
 /** @file
+ *  @ingroup Rasterization
  *  Fragment emission implementation */
 
 #include <math.h>
@@ -9,6 +10,9 @@
 #include "raster/fragment.h"
 #include "srp/color.h"
 #include "math/utils.h"
+
+/** @ingroup Rasterization
+ *  @{ */
 
 void emitFragment(
     const SRPFramebuffer* fb, const SRPShaderProgram* sp,
@@ -63,3 +67,5 @@ void emitFragment(
 	*pColor = SRP_COLOR_TO_UINT32_T(color);
 	*pDepth = depth;
 }
+
+/** @} */  // ingroup Rasterization

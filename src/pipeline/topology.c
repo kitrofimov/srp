@@ -2,10 +2,14 @@
 // Licensed under GNU GPLv3
 
 /** @file
+ *  @ingroup Primitive_assembly
  *  Topology-related functions implementation */
 
 #include <stdlib.h>
 #include "pipeline/topology.h"
+
+/** @ingroup Primitive_assembly
+ *  @{ */
 
 size_t computeTriangleCount(size_t vertexCount, SRPPrimitive prim)
 {
@@ -77,3 +81,5 @@ void resolveLineTopology(
 	else
 		abort();
 }
+
+/** @} */  // ingroup Primitive_assembly

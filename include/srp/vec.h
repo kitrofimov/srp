@@ -4,11 +4,12 @@
 #pragma once
 
 /** @file
+ *  @ingroup Math
  *  `vec2`, `vec3`, `vec4` definition */
 
 #include <stdint.h>
 
-/** @ingroup Vector
+/** @ingroup Math
  *  @{ */
 
 #pragma pack(push, 1)
@@ -27,19 +28,31 @@ typedef struct vec4 { float x, y, z, w; } vec4;
 
 #pragma pack(pop)
 
+/** Add two vectors */
 vec2 vec2Add(vec2 a, vec2 b);
+/** Subtract two vectors */
 vec2 vec2Subtract(vec2 a, vec2 b);
+/** Calculate the dot product of two vectors */
 float vec2DotProduct(vec2 a, vec2 b);
+/** Multiply a vector with a scalar value */
 vec2 vec2MultiplyScalar(vec2 a, float b);
 
+/** Add two vectors */
 vec3 vec3Add(vec3 a, vec3 b);
+/** Subtract two vectors */
 vec3 vec3Subtract(vec3 a, vec3 b);
+/** Calculate the dot product of two vectors */
 float vec3DotProduct(vec3 a, vec3 b);
+/** Multiply a vector with a scalar value */
 vec3 vec3MultiplyScalar(vec3 a, float b);
 
+/** Add two vectors */
 vec4 vec4Add(vec4 a, vec4 b);
+/** Subtract two vectors */
 vec4 vec4Subtract(vec4 a, vec4 b);
+/** Calculate the dot product of two vectors */
 float vec4DotProduct(vec4 a, vec4 b);
+/** Multiply a vector with a scalar value */
 vec4 vec4MultiplyScalar(vec4 a, float b);
 
-/** @} */  // defgroup Vector
+/** @} */  // ingroup Math

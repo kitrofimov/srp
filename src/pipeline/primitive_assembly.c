@@ -2,6 +2,7 @@
 // Licensed under GNU GPLv3
 
 /** @file
+ *  @ingroup Primitive_assembly
  *  Primitive assembly implementation */
 
 #include <string.h>
@@ -15,15 +16,20 @@
 #include "memory/arena_p.h"
 #include "utils/voidptr.h"
 
+/** @ingroup Primitive_assembly
+ *  @{ */
+
 /** Check if there are excess vertices when drawing some kind of primitive,
  * 	send a warning if so
- *  @see assembleTriangles() for full parameter documentation */
+ *  @see assembleTriangles() for parameter documentation */
 static void warnOnExcessVertexCount(
 	const SRPIndexBuffer* ib, const SRPVertexBuffer* vb,
 	SRPPrimitive prim, size_t startIndex, size_t vertexCount
 );
 
-/** Calculate constants for triangle assembly */
+/** Calculate constants for triangle assembly
+ *  @param[out] nOutPrimitivesPerClippedTriangle How many primitives end up from a clipped triangle
+ *  @param[out] sizeOutPrimitive The size of an output primitive (in bytes) */
 static void resolvePolygonModeOutput(
 	size_t* nOutPrimitivesPerClippedTriangle, size_t* sizeOutPrimitive
 );
@@ -240,3 +246,5 @@ bool assemblePoints(
 	*outPoints = points;
 	return true;
 }
+
+/** @} */  // ingroup Primitive_assembly

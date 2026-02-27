@@ -4,6 +4,7 @@
 #pragma once
 
 /** @file
+ *  @ingroup Vertex
  *  Typedefs related to vertex handling */
 
 #include <stddef.h>

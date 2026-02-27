@@ -4,7 +4,8 @@
 #pragma once
 
 /** @file
- *  Triangle rasterization functions */
+ *  @ingroup Rasterization
+ *  Triangle rasterization */
 
 #include "srp/framebuffer.h"
 #include "srp/shaders.h"
@@ -13,13 +14,14 @@
 /** @ingroup Rasterization
  *  @{ */
 
-/** Represents a triangle and stores data needed for its rasterization */
+/** Triangle primitive. Stores data needed for its rasterization */
 typedef struct SRPTriangle {
-	SRPvsOutput v[3];     /**< Output of the vertex shader */
-	vec3* p_ndc[3];       /**< Pointer to vertices' positions in NDC */
+	SRPvsOutput v[3];     /**< Outputs of the vertex shader */
+	vec3* p_ndc[3];       /**< Pointers to vertices' positions in NDC */
 	vec3 ss[3];	          /**< Vertices' positions in screen-space */
 	vec3 edge[3];         /**< Screen space edge vectors */
-	bool edgeTL[3];       /**< Whether or not the edge is flat top or left */
+	bool edgeTL[3];       /**< Whether or not the edge is flat top or left
+							   (0th edge: 0th vertex -> 1st vertex, etc.) */
 	vec2 minBP;           /**< Minimum bounding point (screen-space) */
 	vec2 maxBP;           /**< Maximum bounding point (screen-space) */
 	float lambda[3];      /**< Barycentric coordinates at the current pixel */
@@ -51,4 +53,3 @@ void rasterizeTriangle(
 );
 
 /** @} */  // ingroup Rasterization
-

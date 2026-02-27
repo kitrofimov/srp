@@ -2,6 +2,7 @@
 // Licensed under GNU GPLv3
 
 /** @file
+ *  @ingroup Rasterization
  *  Point rasterization implementation */
 
 #include <math.h>
@@ -12,14 +13,19 @@
 #include "srp/color.h"
 #include "math/utils.h"
 
+/** @ingroup Rasterization
+ *  @{ */
+
 /** Given screen-space point position, compute its math and raster boundaries.
  *  @param[in] ss Screen-space point position
  *  @param[in] pointSize Point size, in pixels
  *  @param[in] fb Pointer to the framebuffer, used to clip partially-OOB points
+ *  @param[out] outMinBP,outMaxBP Bounding points representing mathematical boundaries 
+ *  @param[out] outMinX,outMaxX,outMinY,outMaxY Raster boundaries
  *  @return `true` if point is fully OOB, `false` otherwise
  */
 static bool computeMathAndRasterBoundaries(
-    vec3 ss, float halfSize, const SRPFramebuffer* fb, vec2* outMinBP, vec2* outMaxBP,
+    vec3 ss, float pointSize, const SRPFramebuffer* fb, vec2* outMinBP, vec2* outMaxBP,
     int* outMinX, int* outMaxX, int* outMinY, int* outMaxY
 );
 
@@ -110,3 +116,5 @@ static bool computeMathAndRasterBoundaries(
     *outMaxY = maxY;
     return true;
 }
+
+/** @} */  // ingroup Rasterization

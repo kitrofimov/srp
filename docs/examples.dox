@@ -1,4 +1,4 @@
 /** @example 01_colored_triangle/main.c
  *  @example 02_spinning_triangle/main.c
- *  @example 03_spinning_textured_cube/main.c */
-
+ *  @example 03_spinning_textured_cube/main.c
+ *  @example 04_utah_teapot/main.c */
