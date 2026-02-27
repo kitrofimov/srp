@@ -61,7 +61,7 @@ You can also build the examples with `-D BUILD_EXAMPLES=1` and the documentation
 - [x] Add wireframe rendering of triangles (polygon rendering mode)
 - [x] Use `float`s everywhere (instead of `double`s)
 - [x] Check for bottlenecks & optimize
-- [ ] Update the documentation
+- [x] Update the documentation
 - [ ] Image-based testing framework
 - [ ] Implement single-threaded binning and tile system
 - [ ] Scale to multiple threads
