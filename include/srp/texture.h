@@ -28,8 +28,6 @@ typedef struct SRPTexture SRPTexture;
  *  @param[in] image A filesystem path to an image. Most popular image types
  *					 are supported
  *	@param[in] wrappingModeX,wrappingModeY Wrapping modes to use in X and Y axes
- *	@param[in] filteringModeMagnifying,filteringModeMinifying
- *	           Texture filtering mode to use when magnifying or minifying the texture
  *	@return A pointer to the constructed texture */
 SRPTexture* srpNewTexture(
 	const char* image,

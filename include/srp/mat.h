@@ -61,7 +61,7 @@ mat4 mat4ConstructTRS(
  *  @return View matrix */
 mat4 mat4ConstructView(
 	float cameraX, float cameraY, float cameraZ,
-	float rotataionX, float rotataionY, float rotataionZ,
+	float rotationX, float rotationY, float rotationZ,
 	float scaleX, float scaleY, float scaleZ
 );
 
