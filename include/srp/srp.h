@@ -20,4 +20,3 @@
 #ifdef SRP_INCLUDE_MAT
 	#include "srp/mat.h"
 #endif
-

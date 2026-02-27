@@ -43,4 +43,3 @@ float vec4DotProduct(vec4 a, vec4 b);
 vec4 vec4MultiplyScalar(vec4 a, float b);
 
 /** @} */  // defgroup Vector
-

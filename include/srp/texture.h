@@ -16,14 +16,14 @@
 /** Holds texture wrapping modes @see SRPTexture */
 typedef enum
 {
-	TW_REPEAT,
-	TW_CLAMP_TO_EDGE
+	TW_REPEAT,        /**< Repeat the texture when it's wrapped */
+	TW_CLAMP_TO_EDGE  /**< Clamp the texture to the edge when it's wrapped */
 } SRPTextureWrappingMode;
 
 /** Holds texture filtering modes @see SRPTexture */
 typedef enum
 {
-	TF_NEAREST
+	TF_NEAREST  /**< Nearest-pixel filtering */
 } SRPTextureFilteringMode;
 
 /** A structure to represent a texture */
@@ -77,4 +77,3 @@ int srpTextureGet(SRPTexture* this, SRPTextureParameter parameter);
 void srpTextureSet(SRPTexture* this, SRPTextureParameter parameter, int data);
 
 /** @} */  // defgroup Texture
-

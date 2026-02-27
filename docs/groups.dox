@@ -1,29 +1,25 @@
 /** @defgroup API_reference API reference
  *  @brief Things you need to know as a user of the library */
 
-/** @defgroup Implementation Implementation
- *  @brief Implementation details (internal functions, structs, etc.) */
-
 /** @defgroup Context Context
  *  @ingroup API_reference
- *  @brief Runtime state management. */
+ *  @brief Object managing the runtime state */
 
 /** @defgroup Buffer Buffer
  *  @ingroup API_reference
- *  @brief VBO and EBO OpenGL-like objects to store vertex and other data
- *         which is used directly in the drawcalls. */
+ *  @brief Objects storing vertices and their indices */
 
 /** @defgroup Framebuffer Framebuffer
  *  @ingroup API_reference
- *  @brief Color and depth buffer management. */
+ *  @brief Color and depth buffer management */
 
 /** @defgroup Shaders Shaders
  *  @ingroup API_reference
- *  @brief Typedefs representing vertex & fragment shaders, shader program. */
+ *  @brief Typedefs representing vertex & fragment shaders, shader program */
 
 /** @defgroup Vertex Vertex
  *  @ingroup API_reference
- *  @brief Typedefs representing vertex, vertex variables and etc. */
+ *  @brief Typedefs representing vertex, vertex variables and etc */
 
 /** @defgroup Texture Texture
  *  @ingroup API_reference
@@ -39,30 +35,36 @@
 
 /** @defgroup Various Various
  *  @ingroup API_reference
- *  @brief Stuff that cannot be easily grouped into other modules. */
+ *  @brief Stuff that cannot be easily grouped into other modules */
 
+
+
+/** @defgroup Internal Internal
+ *  @brief Internal documentation */
 
 /** @defgroup Memory_allocation Memory allocation
- *  @ingroup Implementation
- *  @brief How memory allocation is done */
+ *  @ingroup Internal
+ *  @brief Memory allocation functions */
 
 /** @defgroup Various_internal Various
- *  @ingroup Implementation
- *  @brief Internal stuff that cannot be easity grouped into other modules. */
+ *  @ingroup Internal
+ *  @brief Internal stuff that cannot be easily grouped into other modules */
 
 /** @defgroup Buffer_internal Buffer
- *  @ingroup Implementation
- *  @brief Internals of the Buffer module. */
+ *  @ingroup Internal
+ *  @see Buffer
+ *  @brief Internals of the Buffer module */
 
 /** @defgroup Framebuffer_internal Framebuffer
- *  @ingroup Implementation
- *  @brief Internals of the Framebuffer module. */
+ *  @ingroup Internal
+ *  @see Framebuffer
+ *  @brief Internals of the Framebuffer module */
 
 /** @defgroup Texture_internal Texture
- *  @ingroup Implementation
- *  @brief Internals of the Texture module. */
+ *  @ingroup Internal
+ *  @see Texture
+ *  @brief Internals of the Texture module */
 
 /** @defgroup Rasterization Rasterization
- *  @ingroup Implementation
- *  @brief Functions that perform primitive rasterization & data interpolation. */
-
+ *  @ingroup Internal
+ *  @brief Primitive rasterization functions */

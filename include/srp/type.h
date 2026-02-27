@@ -12,7 +12,7 @@
 /** @ingroup Various
  *  @{ */
 
-/** Represents data types, this is needed for internal handling of opaque types */
+/** Represents data types. This is needed for internal handling of opaque types */
 typedef enum SRPType
 {
 	TYPE_UINT8 = 0,

@@ -2,6 +2,7 @@
 // Licensed under GNU GPLv3
 
 /** @file
+ *  @ingroup Memory_allocation
  *  Opaque definition of SRPArena structure */
 
 typedef struct SRPArena SRPArena;

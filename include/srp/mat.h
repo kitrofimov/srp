@@ -2,6 +2,7 @@
 // Licensed under GNU GPLv3
 
 /** @file
+ * 	@ingroup Matrix
  *  `mat4` definition */
 
 #pragma once
@@ -92,4 +93,3 @@ mat4 mat4ConstructPerspectiveProjection(
 );
 
 /** @} */  // defgroup Matrix
-

@@ -11,6 +11,8 @@ A **s**oftware **r**endering **p**ipeline that features:
 
 The only dependency is [`stb_image`](https://github.com/nothings/stb/blob/master/stb_image.h).
 
+If you want to use this library in your own project, you only need headers from `include/srp` directory.
+
 Read the documentation for `master` branch [here](https://kitrofimov.github.io/srp/), or build the documentation yourself (see [Building](#building))
 
 ## Building
