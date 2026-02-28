@@ -90,7 +90,7 @@ int main()
 	SRPVertexBuffer* vb = srpNewVertexBuffer();
 	SRPIndexBuffer* ib = srpNewIndexBuffer();
 	srpVertexBufferCopyData(vb, sizeof(Vertex), sizeof(data), data);
-	srpIndexBufferCopyData(ib, TYPE_UINT8, sizeof(indices), indices);
+	srpIndexBufferCopyData(ib, SRP_UINT8, sizeof(indices), indices);
 
 	Uniform uniform = {
 		.model = mat4ConstructIdentity(),
@@ -110,7 +110,7 @@ int main()
 			.shader = vertexShader,
 			.nOutputVariables = 1,
 			.outputVariablesInfo = (SRPVertexVariableInformation[])	{
-				{.nItems = 2, .type = TYPE_FLOAT}
+				{.nItems = 2, .type = SRP_FLOAT}
 			},
 			.nBytesPerOutputVariables = sizeof(VSOutput)
 		},

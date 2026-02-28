@@ -67,7 +67,7 @@ int main()
 			.shader = vertexShader,
 			.nOutputVariables = 1,
 			.outputVariablesInfo = (SRPVertexVariableInformation[]) {
-				{.nItems = 3, .type = TYPE_FLOAT}
+				{.nItems = 3, .type = SRP_FLOAT}
 			},
 			.nBytesPerOutputVariables = sizeof(VSOutput)
 		},

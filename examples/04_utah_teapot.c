@@ -45,7 +45,7 @@ int main()
 	SRPVertexBuffer* vb = srpNewVertexBuffer();
 	SRPIndexBuffer* ib = srpNewIndexBuffer();
 	srpVertexBufferCopyData(vb, sizeof(OBJVertex), mesh.vertexCount * sizeof(OBJVertex), mesh.vertices);
-	srpIndexBufferCopyData(ib, TYPE_UINT32, mesh.indexCount * sizeof(uint32_t), mesh.indices);
+	srpIndexBufferCopyData(ib, SRP_UINT32, mesh.indexCount * sizeof(uint32_t), mesh.indices);
 
 	Uniform uniform = {
 		.model = mat4ConstructIdentity(),

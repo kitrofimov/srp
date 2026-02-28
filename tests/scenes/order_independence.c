@@ -74,7 +74,7 @@ int main(int argc, char** argv)
             .shader = vertexShader,
             .nOutputVariables = 1,
             .outputVariablesInfo = (SRPVertexVariableInformation[]) {
-                { .nItems = 3, .type = TYPE_FLOAT }
+                { .nItems = 3, .type = SRP_FLOAT }
             },
             .nBytesPerOutputVariables = sizeof(VSOutput)
         },
@@ -90,7 +90,7 @@ int main(int argc, char** argv)
     SRPVertexBuffer* vb = srpNewVertexBuffer();
     srpVertexBufferCopyData(vb, sizeof(Vertex), sizeof(data), data);
     SRPIndexBuffer* ib = srpNewIndexBuffer();
-    srpIndexBufferCopyData(ib, TYPE_UINT8, sizeof(indices), indices);
+    srpIndexBufferCopyData(ib, SRP_UINT8, sizeof(indices), indices);
 
     srpFramebufferClear(fb);
     srpDrawIndexBuffer(ib, vb, fb, &shaderProgram, SRP_PRIM_LINES, 0, 24);

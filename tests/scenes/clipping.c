@@ -67,7 +67,7 @@ int main(int argc, char** argv)
 	SRPVertexBuffer* vb = srpNewVertexBuffer();
 	SRPIndexBuffer* ib = srpNewIndexBuffer();
 	srpVertexBufferCopyData(vb, sizeof(OBJVertex), mesh.vertexCount * sizeof(OBJVertex), mesh.vertices);
-	srpIndexBufferCopyData(ib, TYPE_UINT32, mesh.indexCount * sizeof(uint32_t), mesh.indices);
+	srpIndexBufferCopyData(ib, SRP_UINT32, mesh.indexCount * sizeof(uint32_t), mesh.indices);
 
     srpFramebufferClear(fb);
     srpDrawIndexBuffer(ib, vb, fb, &shaderProgram, SRP_PRIM_TRIANGLES, 0, mesh.indexCount);

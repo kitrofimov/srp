@@ -16,17 +16,17 @@ size_t srpSizeofType(SRPType type)
 {
 	switch (type)
 	{
-		case TYPE_UINT8:
+		case SRP_UINT8:
 			return sizeof(uint8_t);
-		case TYPE_UINT16:
+		case SRP_UINT16:
 			return sizeof(uint16_t);
-		case TYPE_UINT32:
+		case SRP_UINT32:
 			return sizeof(uint32_t);
-		case TYPE_UINT64:
+		case SRP_UINT64:
 			return sizeof(uint64_t);
-		case TYPE_FLOAT:
+		case SRP_FLOAT:
 			return sizeof(float);
-		case TYPE_DOUBLE:
+		case SRP_DOUBLE:
 			return sizeof(double);
 		default:
 		{

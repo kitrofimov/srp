@@ -66,7 +66,7 @@ SRPVertex* indexVertexBuffer(const SRPVertexBuffer* this, size_t index)
 SRPIndexBuffer* srpNewIndexBuffer()
 {
 	SRPIndexBuffer* this = SRP_MALLOC(sizeof(SRPIndexBuffer));
-	this->indicesType = TYPE_UINT8;  // Default value, will be overwritten in `srpIndexBufferCopyData`
+	this->indicesType = SRP_UINT8;  // Default value, will be overwritten in `srpIndexBufferCopyData`
 	this->nBytesPerIndex = srpSizeofType(this->indicesType);
 	this->nIndices = 0;
 	this->nBytesAllocated = 0;
@@ -105,16 +105,16 @@ uint64_t indexIndexBuffer(const SRPIndexBuffer* this, size_t index)
 	uint64_t ret;
 	switch (this->indicesType)
 	{
-		case TYPE_UINT8:
+		case SRP_UINT8:
 			ret = (uint64_t) (*(uint8_t*) pIndex);
 			break;
-		case TYPE_UINT16:
+		case SRP_UINT16:
 			ret = (uint64_t) (*(uint16_t*) pIndex);
 			break;
-		case TYPE_UINT32:
+		case SRP_UINT32:
 			ret = (uint64_t) (*(uint32_t*) pIndex);
 			break;
-		case TYPE_UINT64:
+		case SRP_UINT64:
 			ret = (uint64_t) (*(uint64_t*) pIndex);
 			break;
 		default:
