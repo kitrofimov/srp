@@ -4,7 +4,7 @@ add_subdirectory(utility)
 # the file/directory contents change
 add_custom_target(copy_res_folder ALL)
 add_custom_command(
-	TARGET copy_res_folder
+	TARGET copy_res_folder POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
 		${CMAKE_CURRENT_LIST_DIR}/res
 		${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/res
