@@ -17,7 +17,7 @@ def main():
     ref_path = Path(PROJECT_ROOT / "tests/references" / (args.scene_name + ".png"))
     executable = Path(PROJECT_ROOT / args.build_dir / "tests" / args.scene_name)
 
-    subprocess.check_call([executable, str(out_path)])
+    subprocess.check_call([executable, str(out_path)], cwd=executable.parent)
 
     print(f"Regenerating reference: {ref_path}")
     out_path.replace(ref_path)

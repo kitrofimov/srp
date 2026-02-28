@@ -12,7 +12,7 @@ add_custom_command(
 
 function(add_example EXAMPLE_NAME)
     add_executable(${EXAMPLE_NAME} ${EXAMPLE_NAME}.c)
-    target_link_libraries(${EXAMPLE_NAME} srp utils)
+    target_link_libraries(${EXAMPLE_NAME} srp window framelimiter objparser)
     target_include_directories(${EXAMPLE_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/utility)
 endfunction()
 
