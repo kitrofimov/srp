@@ -120,7 +120,7 @@ void interpolateAttributes(
         size_t elemSize = 0;
 
         void* AV[nVertices];  // Pointers to the current attribute of each vertex
-        for (int i = 0; i < 3; i++)
+        for (size_t i = 0; i < nVertices; i++)
             AV[i] = ADD_VOID_PTR(vertices[i].varyings, attrOffsetBytes);
 
         switch (attr->type)
