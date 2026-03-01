@@ -8,6 +8,7 @@ A **s**oftware **r**endering **p**ipeline that features:
 - Texture mapping
 - Post-VS vertex caching
 - A small math library to use in shader programming
+- Image-based testing framework
 
 The only dependency is [`stb_image`](https://github.com/nothings/stb/blob/master/stb_image.h).
 
@@ -26,7 +27,7 @@ make
 cd bin
 ```
 
-`BUILD_EXAMPLES`, `BUILD_DOCS`, and `BUILD_TESTS` options are also available (i.e. `-D BUILD_EXAMPLES=1` passed to `cmake`). Building the documentation requires having [`dot`](https://en.wikipedia.org/wiki/Graphviz) binary in `PATH`. The examples, docs, and tests will appear in `build/examples`, `build/docs`, and `build/tests` after building.
+`BUILD_EXAMPLES`, `BUILD_DOCS`, and `BUILD_TESTS` options are also available (i.e. `-D BUILD_EXAMPLES=1` passed to `cmake`). Building the documentation requires having [`dot`](https://en.wikipedia.org/wiki/Graphviz) binary in `PATH`; building the tests requires `numpy` and `pillow` Python modules. After building, the examples, docs, and tests will appear in `build/examples`, `build/docs`, and `build/tests`.
 
 ## Similar/related projects
 - https://github.com/rswinkle/PortableGL
@@ -62,7 +63,7 @@ cd bin
 - [x] Use `float`s everywhere (instead of `double`s)
 - [x] Check for bottlenecks & optimize
 - [x] Update the documentation
-- [ ] Image-based testing framework
+- [x] Image-based testing framework
 - [ ] Implement single-threaded binning and tile system
 - [ ] Scale to multiple threads
 
