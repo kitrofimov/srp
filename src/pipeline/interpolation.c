@@ -6,6 +6,7 @@
  *  Interpolation implementation */
 
 #include <string.h>
+#include "srp/context.h"
 #include "pipeline/interpolation.h"
 #include "utils/message_callback_p.h"
 #include "utils/voidptr.h"
@@ -103,7 +104,8 @@ void interpolateAttributes(
 
     void* interpolatedVoid = pOutput;
     size_t attrOffsetBytes = 0;
-    const size_t provokingVertex = 0;  // TODO
+    const size_t provokingVertex = \
+        (srpContext.provokingVertexMode == SRP_PROVOKING_VERTEX_FIRST) ? 0 : nVertices-1;
 
     for (size_t attrI = 0; attrI < sp->vs->nVaryings; attrI++)
     {

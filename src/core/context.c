@@ -16,6 +16,7 @@ void srpNewContext(SRPContext* pContext)
 {
 	pContext->messageCallback = NULL;
 	pContext->messageCallbackUserParameter = NULL;
+	pContext->provokingVertexMode = SRP_PROVOKING_VERTEX_LAST;
 	pContext->frontFace = SRP_FRONT_FACE_CCW;
 	pContext->cullFace = SRP_CULL_FACE_NONE;
 	pContext->polygonMode = SRP_POLYGON_MODE_FILL;
@@ -53,6 +54,9 @@ void srpContextSetI(SRPContextParameter contextParameter, int data)
 {
 	switch (contextParameter)
 	{
+	case SRP_CONTEXT_PROVOKING_VERTEX_MODE:
+		srpContext.provokingVertexMode = data;
+		return;
 	case SRP_CONTEXT_FRONT_FACE:
 		srpContext.frontFace = data;
 		return;
@@ -106,6 +110,8 @@ int srpContextGetI(SRPContextParameter contextParameter)
 {
 	switch (contextParameter)
 	{
+	case SRP_CONTEXT_PROVOKING_VERTEX_MODE:
+		return srpContext.provokingVertexMode;
 	case SRP_CONTEXT_FRONT_FACE:
 		return srpContext.frontFace;
 	case SRP_CONTEXT_CULL_FACE:
