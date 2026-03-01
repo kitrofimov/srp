@@ -24,7 +24,7 @@ typedef struct SRPUniform SRPUniform;
 typedef struct SRPVertexShaderIn
 {
 	SRPUniform* uniform;  /**< Pointer to the currently used shader uniform */
-	SRPVertex* vertex;   /**< Pointer to the current vertex */
+	SRPVertex* vertex;    /**< Pointer to the current vertex */
 	size_t vertexID;      /**< ID of a current vertex */
 } SRPVertexShaderIn;
 
@@ -32,8 +32,11 @@ typedef struct SRPVertexShaderIn
  *  @see SRPVertexShader */
 typedef struct SRPVertexShaderOut
 {
-	float position[4];            /**< Position of the processed vertex */
-	SRPVarying* varyings;  /**< Pointer to the buffer of vertex variables */
+	union {
+		float clipPosition[4];  /**< Raw vertex shader output */
+		float ndcPosition[4];   /**< Position after perspective divide */
+	};
+	SRPVarying* varyings;   /**< Pointer to the buffer of vertex variables */
 } SRPVertexShaderOut;
 
 /** Represents the vertex shader

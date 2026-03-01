@@ -86,7 +86,7 @@ void vertexShader(SRPVertexShaderIn* in, SRPVertexShaderOut* out)
     VSOutput* o = (VSOutput*) out->varyings;
 
 	vec3* inPos = &v->position;
-	vec4* outPos = (vec4*) out->position;
+	vec4* outPos = (vec4*) out->clipPosition;
 	*outPos = (vec4) { inPos->x, inPos->y, inPos->z, 1. };
 	*outPos = mat4MultiplyVec4(&u->rotation, *outPos);
     o->color = v->color;

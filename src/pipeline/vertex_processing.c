@@ -66,7 +66,7 @@ void processVertex(
 		.uniform  = sp->uniform
 	};
 	*outV = (SRPVertexShaderOut) {
-		.position = {0},
+		.clipPosition = {0},
 		.varyings = pVarying
 	};
 
@@ -75,16 +75,16 @@ void processVertex(
 
 void applyPerspectiveDivide(SRPVertexShaderOut* output, float* outInvW)
 {
-    float clipW = output->position[3];
+    float clipW = output->clipPosition[3];
     float invW = 1.0 / clipW;
 	assert(!ROUGHLY_ZERO(invW));
 	if (outInvW != NULL)
 		*outInvW = invW;
 
-    output->position[0] *= invW;
-    output->position[1] *= invW;
-    output->position[2] *= invW;
-    output->position[3] = 1.0;
+    output->ndcPosition[0] *= invW;
+    output->ndcPosition[1] *= invW;
+    output->ndcPosition[2] *= invW;
+    output->ndcPosition[3] = 1.0;
 }
 
 static void computeMinMaxVI(

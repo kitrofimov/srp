@@ -63,7 +63,7 @@ void vertexShader(SRPVertexShaderIn* in, SRPVertexShaderOut* out)
 {
     Vertex* v = (Vertex*) in->vertex;
 	vec3* inPos = &v->position;
-	vec4* outPos = (vec4*) out->position;
+	vec4* outPos = (vec4*) out->clipPosition;
 	*outPos = (vec4) { inPos->x, inPos->y, inPos->z, 1. };
 }
 

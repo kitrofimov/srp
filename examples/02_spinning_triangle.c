@@ -132,10 +132,8 @@ void vertexShader(SRPVertexShaderIn* in, SRPVertexShaderOut* out)
 	VSOutput* pOutVars = (VSOutput*) out->varyings;
 
 	vec3* inPosition = &pVertex->position;
-	vec4* outPosition = (vec4*) out->position;
-	*outPosition = (vec4) {
-		inPosition->x, inPosition->y, inPosition->z, 1.0
-	};
+	vec4* outPosition = (vec4*) out->clipPosition;
+	*outPosition = (vec4) { inPosition->x, inPosition->y, inPosition->z, 1. };
 	// Transform the position vector by the rotation matrix from uniform
 	*outPosition = mat4MultiplyVec4(&pUniform->rotation, *outPosition);
 

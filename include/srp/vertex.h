@@ -13,7 +13,7 @@
 /** @ingroup Vertex
  *  @{ */
 
-/** User-defined vertex type, stored in SRPVertexBuffer */
+/** User-defined vertex type, as stored in SRPVertexBuffer */
 typedef struct SRPVertex SRPVertex;
 
 /** Represents a varying as outputted by the vertex shader

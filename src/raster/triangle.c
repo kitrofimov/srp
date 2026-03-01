@@ -117,7 +117,7 @@ bool setupTriangle(SRPTriangle* tri, const SRPFramebuffer* fb)
 
 	// vec3 is tightly packed, so this is safe
 	for (uint8_t i = 0; i < 3; i++)
-		tri->p_ndc[i] = (vec3*) tri->v[i].position;
+		tri->p_ndc[i] = (vec3*) tri->v[i].clipPosition;
 
 	bool isCCW;
 	if (shouldCullTriangle(tri, &isCCW, &tri->isFrontFacing))

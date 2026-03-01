@@ -82,7 +82,7 @@ void setupLine(SRPLine* line, const SRPFramebuffer* fb)
 		applyPerspectiveDivide(&line->v[i], &line->invW[i]);
 
     for (uint8_t i = 0; i < 2; i++)
-        framebufferNDCToScreenSpace(fb, line->v[i].position, (float*) &line->ss[i]);
+        framebufferNDCToScreenSpace(fb, line->v[i].ndcPosition, (float*) &line->ss[i]);
 }
 
 static void lineInterpolateData(

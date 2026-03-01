@@ -120,10 +120,10 @@ size_t clipTriangle(const SRPTriangle* in, const SRPShaderProgram* sp, SRPTriang
 
 static inline uint8_t computeClipCode(const SRPVertexShaderOut* v) {
     uint8_t code = 0;
-    const float x = v->position[0];
-    const float y = v->position[1];
-    const float z = v->position[2];
-    const float w = v->position[3];
+    const float x = v->clipPosition[0];
+    const float y = v->clipPosition[1];
+    const float z = v->clipPosition[2];
+    const float w = v->clipPosition[3];
 
     // 0 = inside; 1 = outside
     code |= (x + w < 0) << 0;  // PLANE_LEFT
@@ -184,10 +184,10 @@ bool clipLine(SRPLine* line, const SRPShaderProgram* sp)
 
 bool clipPoint(SRPPoint* p)
 {
-    float x = p->v.position[0];
-    float y = p->v.position[1];
-    float z = p->v.position[2];
-    float w = p->v.position[3];
+    float x = p->v.clipPosition[0];
+    float y = p->v.clipPosition[1];
+    float z = p->v.clipPosition[2];
+    float w = p->v.clipPosition[3];
 
     if (x < -w || x > w) return true;
     if (y < -w || y > w) return true;
@@ -247,7 +247,7 @@ static void interpolateVertex(
 )
 {
     for (int i = 0; i < 4; i++)
-        out->position[i] = a->position[i] * (1-t) + b->position[i] * t;
+        out->clipPosition[i] = a->clipPosition[i] * (1-t) + b->clipPosition[i] * t;
 
     void* pVarying = ARENA_ALLOC(sp->vs->varyingsSize);
     out->varyings = pVarying;
@@ -259,10 +259,10 @@ static void interpolateVertex(
 
 static inline float planeDistance(const SRPVertexShaderOut* v, ClipPlane p)
 {
-    const float x = v->position[0];
-    const float y = v->position[1];
-    const float z = v->position[2];
-    const float w = v->position[3];
+    const float x = v->clipPosition[0];
+    const float y = v->clipPosition[1];
+    const float z = v->clipPosition[2];
+    const float w = v->clipPosition[3];
 
     switch (p)
     {

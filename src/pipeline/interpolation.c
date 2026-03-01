@@ -42,16 +42,16 @@ void interpolateDepthAndWTriangle(
             invW[1] * weights[1] + \
             invW[2] * weights[2]
         );
-        *depth = vertices[0].position[2] * invW[0] * weights[0] + \
-                 vertices[1].position[2] * invW[1] * weights[1] + \
-                 vertices[2].position[2] * invW[2] * weights[2];
+        *depth = vertices[0].ndcPosition[2] * invW[0] * weights[0] + \
+                 vertices[1].ndcPosition[2] * invW[1] * weights[1] + \
+                 vertices[2].ndcPosition[2] * invW[2] * weights[2];
     }
 	else  // affine
     {
         *reciprocalInterpolatedInvW = 1.;
-        *depth = vertices[0].position[2] * weights[0] + \
-                 vertices[1].position[2] * weights[1] + \
-                 vertices[2].position[2] * weights[2];
+        *depth = vertices[0].ndcPosition[2] * weights[0] + \
+                 vertices[1].ndcPosition[2] * weights[1] + \
+                 vertices[2].ndcPosition[2] * weights[2];
     }
 }
 
@@ -67,14 +67,14 @@ void interpolateDepthAndWLine(
             invW[0] * weights[0] +\
             invW[1] * weights[1]
         );
-        *depth = vertices[0].position[2] * invW[0] * weights[0] + \
-                 vertices[1].position[2] * invW[1] * weights[1];
+        *depth = vertices[0].ndcPosition[2] * invW[0] * weights[0] + \
+                 vertices[1].ndcPosition[2] * invW[1] * weights[1];
     }
 	else  // affine
     {
         *reciprocalInterpolatedInvW = 1.;
-        *depth = vertices[0].position[2] * weights[0] + \
-                 vertices[1].position[2] * weights[1];
+        *depth = vertices[0].ndcPosition[2] * weights[0] + \
+                 vertices[1].ndcPosition[2] * weights[1];
     }
 }
 

@@ -147,10 +147,8 @@ void vertexShader(SRPVertexShaderIn* in, SRPVertexShaderOut* out)
 	// `vec` structures are tightly packed, so it is safe to cast float/float
 	// arrays to vecXf/vecXd and vice versa!
 	vec3* inPosition = &pVertex->position;
-	vec4* outPosition = (vec4*) out->position;
-	*outPosition = (vec4) {
-		inPosition->x, inPosition->y, inPosition->z, 1.0
-	};
+	vec4* outPosition = (vec4*) out->clipPosition;
+	*outPosition = (vec4) { inPosition->x, inPosition->y, inPosition->z, 1. };
 	pOutVars->color = pVertex->color;
 
 	// What we have done is just copied the inputs to the outputs

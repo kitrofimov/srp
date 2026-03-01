@@ -89,7 +89,7 @@ void vertexShader(SRPVertexShaderIn* in, SRPVertexShaderOut* out)
 	Uniform* pUniform = (Uniform*) in->uniform;
 
 	vec3* inPosition = &pVertex->position;
-	vec4* outPosition = (vec4*) out->position;
+	vec4* outPosition = (vec4*) out->clipPosition;
 	*outPosition = (vec4) {
 		inPosition->x, inPosition->y, inPosition->z, 1.0
 	};

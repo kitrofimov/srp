@@ -39,7 +39,7 @@ void rasterizePoint(
     vec2 minBP, maxBP;
     int minX, maxX, minY, maxY;
 
-    framebufferNDCToScreenSpace(fb, point->v.position, (float*) &ss);
+    framebufferNDCToScreenSpace(fb, point->v.ndcPosition, (float*) &ss);
     bool success = computeMathAndRasterBoundaries(
         ss, pointSize, fb, &minBP, &maxBP, &minX, &maxX, &minY, &maxY
     );
@@ -64,7 +64,7 @@ void rasterizePoint(
             SRPFragmentShaderIn fsIn = {
                 .uniform = sp->uniform,
                 .varyings = (SRPInterpolated*) point->v.varyings,
-                .fragCoord = {px, py, point->v.position[2], point->v.position[3]},
+                .fragCoord = {px, py, point->v.ndcPosition[2], point->v.ndcPosition[3]},
                 .frontFacing = true,
                 .primitiveID = point->id,
             };
