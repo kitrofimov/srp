@@ -13,9 +13,11 @@ def main():
     SCRIPT_DIR = Path(__file__).resolve().parent
     PROJECT_ROOT = SCRIPT_DIR.parent
 
-    out_path = Path(PROJECT_ROOT / args.build_dir / "tests/out" / (args.scene_name + ".png"))
-    ref_path = Path(PROJECT_ROOT / "tests/references" / (args.scene_name + ".png"))
-    executable = Path(PROJECT_ROOT / args.build_dir / "tests" / args.scene_name)
+    rel_path = args.scene_name + ".png"
+
+    out_path = PROJECT_ROOT / args.build_dir / "tests/out" / rel_path
+    ref_path = PROJECT_ROOT / "tests/references" / rel_path
+    executable = PROJECT_ROOT / args.build_dir / "tests" / args.scene_name.replace("/", "_")
 
     subprocess.check_call([executable, str(out_path)], cwd=executable.parent)
 
