@@ -35,7 +35,7 @@ void allocateVertexCache(
 	cache->varyingBlock = ARENA_ALLOC(varyingSize * cache->size);
 }
 
-SRPvsOutput* vertexCacheFetch(
+SRPVertexShaderOut* vertexCacheFetch(
 	VertexCache* cache, size_t vertexIndex,	const SRPVertexBuffer* vb,
 	const SRPShaderProgram* sp
 )
@@ -54,18 +54,18 @@ SRPvsOutput* vertexCacheFetch(
 
 void processVertex(
 	size_t vertexIndex, void* varyingBlock, size_t varyingIndex,
-	const SRPVertexBuffer* vb, const SRPShaderProgram* sp, SRPvsOutput* outV
+	const SRPVertexBuffer* vb, const SRPShaderProgram* sp, SRPVertexShaderOut* outV
 )
 {
 	SRPVertex* pVertex = indexVertexBuffer(vb, vertexIndex);
 	void* pVarying = INDEX_VOID_PTR(varyingBlock, varyingIndex, sp->vs->varyingsSize);
 
-	SRPvsInput vsIn = {
+	SRPVertexShaderIn vsIn = {
 		.vertexID = vertexIndex,
 		.vertex  = pVertex,
 		.uniform  = sp->uniform
 	};
-	*outV = (SRPvsOutput) {
+	*outV = (SRPVertexShaderOut) {
 		.position = {0},
 		.varyings = pVarying
 	};
@@ -73,7 +73,7 @@ void processVertex(
 	sp->vs->shader(&vsIn, outV);
 }
 
-void applyPerspectiveDivide(SRPvsOutput* output, float* outInvW)
+void applyPerspectiveDivide(SRPVertexShaderOut* output, float* outInvW)
 {
     float clipW = output->position[3];
     float invW = 1.0 / clipW;

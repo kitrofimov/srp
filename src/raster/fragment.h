@@ -21,7 +21,7 @@
 */
 void emitFragment(
     const SRPFramebuffer* fb, const SRPShaderProgram* sp,
-    int x, int y, SRPfsInput* fsIn
+    int x, int y, SRPFragmentShaderIn* fsIn
 );
 
 /** @} */  // ingroup Rasterization

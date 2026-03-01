@@ -61,7 +61,7 @@ void rasterizeLine(
         float depth, recIntInvW;
         lineInterpolateData(line, t, sp, interpolatedBuffer, &depth, &recIntInvW);
 
-        SRPfsInput fsIn = {
+        SRPFragmentShaderIn fsIn = {
             .uniform = sp->uniform,
             .varyings = interpolatedBuffer,
             .fragCoord = { px + 0.5, py + 0.5, depth, recIntInvW },

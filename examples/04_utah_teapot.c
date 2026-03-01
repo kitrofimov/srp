@@ -22,8 +22,8 @@ void messageCallback(
 	SRPMessageType type, SRPMessageSeverity severity, const char* sourceFunction,
 	const char* message, void* userParameter
 );
-void vertexShader(SRPvsInput* in, SRPvsOutput* out);
-void fragmentShader(SRPfsInput* in, SRPfsOutput* out);
+void vertexShader(SRPVertexShaderIn* in, SRPVertexShaderOut* out);
+void fragmentShader(SRPFragmentShaderIn* in, SRPFragmentShaderOut* out);
 
 int main()
 {
@@ -122,7 +122,7 @@ void messageCallback(
 }
 
 
-void vertexShader(SRPvsInput* in, SRPvsOutput* out)
+void vertexShader(SRPVertexShaderIn* in, SRPVertexShaderOut* out)
 {
 	OBJVertex* pVertex = (OBJVertex*) in->vertex;
 	Uniform* pUniform = (Uniform*) in->uniform;
@@ -137,7 +137,7 @@ void vertexShader(SRPvsInput* in, SRPvsOutput* out)
 	*outPosition = mat4MultiplyVec4(&pUniform->projection, *outPosition);
 }
 
-void fragmentShader(SRPfsInput* in, SRPfsOutput* out)
+void fragmentShader(SRPFragmentShaderIn* in, SRPFragmentShaderOut* out)
 {
     int id = in->primitiveID;
     int r = (id * 97) % 255;

@@ -25,8 +25,8 @@ typedef struct Uniform
 
 SRPContext srpContext;
 
-void vertexShader(SRPvsInput* in, SRPvsOutput* out);
-void fragmentShader(SRPfsInput* in, SRPfsOutput* out);
+void vertexShader(SRPVertexShaderIn* in, SRPVertexShaderOut* out);
+void fragmentShader(SRPFragmentShaderIn* in, SRPFragmentShaderOut* out);
 
 int main(int argc, char** argv)
 {
@@ -95,7 +95,7 @@ int main(int argc, char** argv)
     return ok ? 0 : 1;
 }
 
-void vertexShader(SRPvsInput* in, SRPvsOutput* out)
+void vertexShader(SRPVertexShaderIn* in, SRPVertexShaderOut* out)
 {
 	Vertex* pVertex = (Vertex*) in->vertex;
 	Uniform* pUniform = (Uniform*) in->uniform;
@@ -113,7 +113,7 @@ void vertexShader(SRPvsInput* in, SRPvsOutput* out)
 	pOutVars->color = pVertex->color;
 }
 
-void fragmentShader(SRPfsInput* in, SRPfsOutput* out)
+void fragmentShader(SRPFragmentShaderIn* in, SRPFragmentShaderOut* out)
 {
     VSOutput* i = (VSOutput*) in->varyings;
 

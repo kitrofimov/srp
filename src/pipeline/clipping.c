@@ -33,7 +33,7 @@ typedef enum {
  *  else 1 in a specific bit.
  *  @param[in] v Vertex
  *  @return Clip code */
-static inline uint8_t computeClipCode(const SRPvsOutput* v);
+static inline uint8_t computeClipCode(const SRPVertexShaderOut* v);
 
 /** Clip a polygon against specified plane (Sutherland-Hodgman)
  *  @param[in] in Vertices of an input polygon
@@ -43,8 +43,8 @@ static inline uint8_t computeClipCode(const SRPvsOutput* v);
  *  @param[out] out Vertices of a clipped polygon
  *  @return Amount of vertices the clipped polygon has */
 static size_t clipAgainstPlane(
-    SRPvsOutput* in, size_t inCount, ClipPlane plane,
-    const SRPShaderProgram* sp, SRPvsOutput* out
+    SRPVertexShaderOut* in, size_t inCount, ClipPlane plane,
+    const SRPShaderProgram* sp, SRPVertexShaderOut* out
 );
 
 /** Create new vertex via interpolating between two existing ones
@@ -54,15 +54,15 @@ static size_t clipAgainstPlane(
  *  @param[in] sp The shader program being used
  *  @param[in] out Interpolated vertex */ 
 static void interpolateVertex(
-    const SRPvsOutput* a, const SRPvsOutput* b, float t,
-    const SRPShaderProgram* sp, SRPvsOutput* out
+    const SRPVertexShaderOut* a, const SRPVertexShaderOut* b, float t,
+    const SRPShaderProgram* sp, SRPVertexShaderOut* out
 );
 
 /** Calculate the distance from the vertex to the specified clip plane
  *  @param[in] v Vertex
  *  @param[in] p Clip plane
  *  @return The distance from the vertex to the specified clip plane */
-static inline float planeDistance(const SRPvsOutput* v, ClipPlane p);
+static inline float planeDistance(const SRPVertexShaderOut* v, ClipPlane p);
 
 
 size_t clipTriangle(const SRPTriangle* in, const SRPShaderProgram* sp, SRPTriangle* out)
@@ -80,11 +80,11 @@ size_t clipTriangle(const SRPTriangle* in, const SRPShaderProgram* sp, SRPTriang
     if ((c0 & c1 & c2) != 0)  // Trivial reject
         return 0;
 
-    SRPvsOutput bufferA[6];
-    SRPvsOutput bufferB[6];
+    SRPVertexShaderOut bufferA[6];
+    SRPVertexShaderOut bufferB[6];
     
-    SRPvsOutput* src = bufferA;
-    SRPvsOutput* dst = bufferB;
+    SRPVertexShaderOut* src = bufferA;
+    SRPVertexShaderOut* dst = bufferB;
     size_t polyCount = 3;
 
     // Initialize the buffer from input triangle
@@ -99,7 +99,7 @@ size_t clipTriangle(const SRPTriangle* in, const SRPShaderProgram* sp, SRPTriang
         if (polyCount == 0)  // Fully clipped
             return 0;
 
-        SRPvsOutput* tmp = src;
+        SRPVertexShaderOut* tmp = src;
         src = dst;
         dst = tmp;
     }
@@ -118,7 +118,7 @@ size_t clipTriangle(const SRPTriangle* in, const SRPShaderProgram* sp, SRPTriang
     return id;
 }
 
-static inline uint8_t computeClipCode(const SRPvsOutput* v) {
+static inline uint8_t computeClipCode(const SRPVertexShaderOut* v) {
     uint8_t code = 0;
     const float x = v->position[0];
     const float y = v->position[1];
@@ -172,8 +172,8 @@ bool clipLine(SRPLine* line, const SRPShaderProgram* sp)
         }
     }
 
-    SRPvsOutput A = line->v[0];
-    SRPvsOutput B = line->v[1];
+    SRPVertexShaderOut A = line->v[0];
+    SRPVertexShaderOut B = line->v[1];
     if (t0 > 0.)
         interpolateVertex(&A, &B, t0, sp, &line->v[0]);
     if (t1 < 1.)
@@ -197,8 +197,8 @@ bool clipPoint(SRPPoint* p)
 }
 
 static size_t clipAgainstPlane(
-    SRPvsOutput* in, size_t inCount, ClipPlane plane,
-    const SRPShaderProgram* sp, SRPvsOutput* out
+    SRPVertexShaderOut* in, size_t inCount, ClipPlane plane,
+    const SRPShaderProgram* sp, SRPVertexShaderOut* out
 )
 {
     if (inCount == 0)
@@ -208,8 +208,8 @@ static size_t clipAgainstPlane(
 
     for (size_t i = 0; i < inCount; i++)
     {
-        SRPvsOutput* current = &in[i];
-        SRPvsOutput* next = &in[(i + 1) % inCount];
+        SRPVertexShaderOut* current = &in[i];
+        SRPVertexShaderOut* next = &in[(i + 1) % inCount];
 
         float da = planeDistance(current, plane);
         float db = planeDistance(next, plane);
@@ -242,8 +242,8 @@ static size_t clipAgainstPlane(
 }
 
 static void interpolateVertex(
-    const SRPvsOutput* a, const SRPvsOutput* b, float t,
-    const SRPShaderProgram* sp, SRPvsOutput* out
+    const SRPVertexShaderOut* a, const SRPVertexShaderOut* b, float t,
+    const SRPShaderProgram* sp, SRPVertexShaderOut* out
 )
 {
     for (int i = 0; i < 4; i++)
@@ -252,12 +252,12 @@ static void interpolateVertex(
     void* pVarying = ARENA_ALLOC(sp->vs->varyingsSize);
     out->varyings = pVarying;
 
-    SRPvsOutput vertices[2] = {*a, *b};  /** @todo this is disgusting */
+    SRPVertexShaderOut vertices[2] = {*a, *b};  /** @todo this is disgusting */
 	const float weights[2] = {1-t, t};
     interpolateAttributes(vertices, 2, weights, NULL, 0., false, sp, pVarying);
 }
 
-static inline float planeDistance(const SRPvsOutput* v, ClipPlane p)
+static inline float planeDistance(const SRPVertexShaderOut* v, ClipPlane p)
 {
     const float x = v->position[0];
     const float y = v->position[1];

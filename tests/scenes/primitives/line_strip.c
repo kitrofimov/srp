@@ -13,8 +13,8 @@ typedef struct Vertex
 
 SRPContext srpContext;
 
-void vertexShader(SRPvsInput* in, SRPvsOutput* out);
-void fragmentShader(SRPfsInput* in, SRPfsOutput* out);
+void vertexShader(SRPVertexShaderIn* in, SRPVertexShaderOut* out);
+void fragmentShader(SRPFragmentShaderIn* in, SRPFragmentShaderOut* out);
 
 int main(int argc, char** argv)
 {
@@ -59,7 +59,7 @@ int main(int argc, char** argv)
     return ok ? 0 : 1;
 }
 
-void vertexShader(SRPvsInput* in, SRPvsOutput* out)
+void vertexShader(SRPVertexShaderIn* in, SRPVertexShaderOut* out)
 {
     Vertex* v = (Vertex*) in->vertex;
 	vec3* inPos = &v->position;
@@ -67,7 +67,7 @@ void vertexShader(SRPvsInput* in, SRPvsOutput* out)
 	*outPos = (vec4) { inPos->x, inPos->y, inPos->z, 1. };
 }
 
-void fragmentShader(SRPfsInput* in, SRPfsOutput* out)
+void fragmentShader(SRPFragmentShaderIn* in, SRPFragmentShaderOut* out)
 {
     out->color[0] = 1.;
     out->color[1] = 1.;

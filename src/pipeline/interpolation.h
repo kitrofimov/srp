@@ -24,7 +24,7 @@
  *  @param[out] reciprocalInterpolatedInvW Where the reciprocal of interpolated
  *                                         inverse W_clip will be stored */
 void interpolateDepthAndWTriangle(
-    SRPvsOutput* vertices, const float* weights, const float* invW,
+    SRPVertexShaderOut* vertices, const float* weights, const float* invW,
     bool perspective, const SRPShaderProgram* sp,
     float* depth, float* reciprocalInterpolatedInvW
 );
@@ -40,7 +40,7 @@ void interpolateDepthAndWTriangle(
  *  @param[out] reciprocalInterpolatedInvW Where the reciprocal of interpolated
  *                                         inverse W_clip will be stored */
 void interpolateDepthAndWLine(
-    SRPvsOutput* vertices, const float* weights, const float* invW,
+    SRPVertexShaderOut* vertices, const float* weights, const float* invW,
     bool perspective, const SRPShaderProgram* sp,
     float* depth, float* reciprocalInterpolatedInvW
 );
@@ -56,7 +56,7 @@ void interpolateDepthAndWLine(
  *  @param[in] sp The SRPShaderProgram being used
  *  @param[out] pOutput Interpolated vertex attributes */
 void interpolateAttributes(
-    SRPvsOutput* vertices, size_t nVertices, const float* weights,
+    SRPVertexShaderOut* vertices, size_t nVertices, const float* weights,
     const float* invW, float reciprocalInterpolatedInvW, bool perspective,
     const SRPShaderProgram* sp, SRPInterpolated* pOutput
 );

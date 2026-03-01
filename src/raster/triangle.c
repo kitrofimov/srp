@@ -89,7 +89,7 @@ void rasterizeTriangle(
 			float depth, recIntInvW;
 			triangleInterpolateData(tri, sp, interpolatedBuffer, &depth, &recIntInvW);
 
-			SRPfsInput fsIn = {
+			SRPFragmentShaderIn fsIn = {
 				.uniform = sp->uniform,
 				.varyings = interpolatedBuffer,
 				.fragCoord = { x + 0.5, y + 0.5, depth, recIntInvW },
@@ -185,7 +185,7 @@ static void triangleChangeWinding(SRPTriangle* tri)
 {
 	// Not swapping `p_ndc`, because those are pointers to `v.position`
 	// If swapped both at the same time, it's the same as not swapping anything
-	SRPvsOutput temp1 = tri->v[1];
+	SRPVertexShaderOut temp1 = tri->v[1];
 	tri->v[1] = tri->v[2];
 	tri->v[2] = temp1;
 

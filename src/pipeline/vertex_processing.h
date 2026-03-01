@@ -15,8 +15,8 @@
 
 /** Represents an entry in VertexCache */
 typedef struct VertexCacheEntry {
-	bool valid;        /**< Whether or not this entry is valid */
-	SRPvsOutput data;  /**< The vertex transformed by the vertex shader */
+	bool valid;               /**< Whether or not this entry is valid */
+	SRPVertexShaderOut data;  /**< The vertex transformed by the vertex shader */
 } VertexCacheEntry;
 
 /** Post-VS cache */
@@ -47,7 +47,7 @@ void allocateVertexCache(
  * 	@param[in] vb The SRPVertexBuffer being used
  * 	@param[in] sp The SRPShaderProgram being used
  *  @returns The processed, post-VS vertex */
-SRPvsOutput* vertexCacheFetch(
+SRPVertexShaderOut* vertexCacheFetch(
 	VertexCache* cache, size_t vertexIndex,	const SRPVertexBuffer* vb,
 	const SRPShaderProgram* sp
 );
@@ -61,13 +61,13 @@ SRPvsOutput* vertexCacheFetch(
  *  @param[out] outV Where to store the processed vertex */
 void processVertex(
 	size_t vertexIndex, void* varyingBlock, size_t varyingIndex,
-	const SRPVertexBuffer* vb, const SRPShaderProgram* sp, SRPvsOutput* outV
+	const SRPVertexBuffer* vb, const SRPShaderProgram* sp, SRPVertexShaderOut* outV
 );
 
 /** Apply perspective divide to the output of the vertex shader,
  *  optionally saving the 1 / W_clip value
  *  @param[in] output Output of the vertex shader
  *  @param[out] outInvW Pointer where 1/W value will be stored. May be NULL */
-void applyPerspectiveDivide(SRPvsOutput* output, float* outInvW);
+void applyPerspectiveDivide(SRPVertexShaderOut* output, float* outInvW);
 
 /** @} */  // ingroup Vertex_processing

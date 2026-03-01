@@ -32,8 +32,8 @@ void messageCallback(
 	SRPMessageType type, SRPMessageSeverity severity, const char* sourceFunction,
 	const char* message, void* userParameter
 );
-void vertexShader(SRPvsInput* in, SRPvsOutput* out);
-void fragmentShader(SRPfsInput* in, SRPfsOutput* out);
+void vertexShader(SRPVertexShaderIn* in, SRPVertexShaderOut* out);
+void fragmentShader(SRPFragmentShaderIn* in, SRPFragmentShaderOut* out);
 
 int main()
 {
@@ -125,7 +125,7 @@ void messageCallback(
 }
 
 
-void vertexShader(SRPvsInput* in, SRPvsOutput* out)
+void vertexShader(SRPVertexShaderIn* in, SRPVertexShaderOut* out)
 {
 	Vertex* pVertex = (Vertex*) in->vertex;
 	Uniform* pUniform = (Uniform*) in->uniform;
@@ -145,7 +145,7 @@ void vertexShader(SRPvsInput* in, SRPvsOutput* out)
 	pOutVars->color.z = pVertex->color.z + sin(pUniform->frameCount * 5e-3) * 0.5;
 }
 
-void fragmentShader(SRPfsInput* in, SRPfsOutput* out)
+void fragmentShader(SRPFragmentShaderIn* in, SRPFragmentShaderOut* out)
 {
 	VSOutput* interpolated = (VSOutput*) in->varyings;
 	vec4* outColor = (vec4*) out->color;

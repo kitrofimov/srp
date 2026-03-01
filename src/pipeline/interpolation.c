@@ -30,7 +30,7 @@
  *  @see https://www.youtube.com/watch?v=F5X6S35SW2s */
 
 void interpolateDepthAndWTriangle(
-    SRPvsOutput* vertices, const float* weights, const float* invW,
+    SRPVertexShaderOut* vertices, const float* weights, const float* invW,
     bool perspective, const SRPShaderProgram* sp,
     float* depth, float* reciprocalInterpolatedInvW
 )
@@ -56,7 +56,7 @@ void interpolateDepthAndWTriangle(
 }
 
 void interpolateDepthAndWLine(
-    SRPvsOutput* vertices, const float* weights, const float* invW,
+    SRPVertexShaderOut* vertices, const float* weights, const float* invW,
     bool perspective, const SRPShaderProgram* sp,
     float* depth, float* reciprocalInterpolatedInvW
 )
@@ -79,7 +79,7 @@ void interpolateDepthAndWLine(
 }
 
 void interpolateAttributes(
-    SRPvsOutput* vertices, size_t nVertices, const float* weights,
+    SRPVertexShaderOut* vertices, size_t nVertices, const float* weights,
     const float* invW, float reciprocalInterpolatedInvW, bool perspective,
     const SRPShaderProgram* sp, SRPInterpolated* pOutput
 )

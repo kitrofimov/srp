@@ -35,8 +35,8 @@ void messageCallback(
 );
 
 // Vertex and fragment shaders, these should be always defined
-void vertexShader(SRPvsInput* in, SRPvsOutput* out);
-void fragmentShader(SRPfsInput* in, SRPfsOutput* out);
+void vertexShader(SRPVertexShaderIn* in, SRPVertexShaderOut* out);
+void fragmentShader(SRPFragmentShaderIn* in, SRPFragmentShaderOut* out);
 
 int main()
 {
@@ -137,7 +137,7 @@ void messageCallback(
 }
 
 
-void vertexShader(SRPvsInput* in, SRPvsOutput* out)
+void vertexShader(SRPVertexShaderIn* in, SRPVertexShaderOut* out)
 {
 	// Cast the opaque input pointers to known types to make computations easier
 	Vertex* pVertex = (Vertex*) in->vertex;
@@ -157,7 +157,7 @@ void vertexShader(SRPvsInput* in, SRPvsOutput* out)
 	// The simplest vertex shader possible!
 }
 
-void fragmentShader(SRPfsInput* in, SRPfsOutput* out)
+void fragmentShader(SRPFragmentShaderIn* in, SRPFragmentShaderOut* out)
 {
 	// Because the vertex shader's outputs are interpolated, in->interpolated
 	// is an opaque pointer to VSOutput, so we cast it to this known type

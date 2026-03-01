@@ -18,9 +18,9 @@ typedef struct Uniform
 
 SRPContext srpContext;
 
-void vertexShader(SRPvsInput* in, SRPvsOutput* out);
-void fsPrimitive(SRPfsInput* in, SRPfsOutput* out);
-void fsWhite(SRPfsInput* in, SRPfsOutput* out);
+void vertexShader(SRPVertexShaderIn* in, SRPVertexShaderOut* out);
+void fsPrimitive(SRPFragmentShaderIn* in, SRPFragmentShaderOut* out);
+void fsWhite(SRPFragmentShaderIn* in, SRPFragmentShaderOut* out);
 
 int main(int argc, char** argv)
 {
@@ -90,7 +90,7 @@ int main(int argc, char** argv)
 }
 
 
-void vertexShader(SRPvsInput* in, SRPvsOutput* out)
+void vertexShader(SRPVertexShaderIn* in, SRPVertexShaderOut* out)
 {
 	OBJVertex* pVertex = (OBJVertex*) in->vertex;
 	Uniform* pUniform = (Uniform*) in->uniform;
@@ -105,7 +105,7 @@ void vertexShader(SRPvsInput* in, SRPvsOutput* out)
 	*outPosition = mat4MultiplyVec4(&pUniform->projection, *outPosition);
 }
 
-void fsPrimitive(SRPfsInput* in, SRPfsOutput* out)
+void fsPrimitive(SRPFragmentShaderIn* in, SRPFragmentShaderOut* out)
 {
     int id = in->primitiveID;
     int r = (id * 97) % 255;
@@ -118,7 +118,7 @@ void fsPrimitive(SRPfsInput* in, SRPfsOutput* out)
     out->color[3] = 1.;
 }
 
-void fsWhite(SRPfsInput* in, SRPfsOutput* out)
+void fsWhite(SRPFragmentShaderIn* in, SRPFragmentShaderOut* out)
 {
     out->color[0] = 1.;
     out->color[1] = 1.;

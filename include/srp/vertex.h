@@ -17,7 +17,7 @@
 typedef struct SRPVertex SRPVertex;
 
 /** Represents a varying as outputted by the vertex shader
- *  @see `SRPvsOutput` */
+ *  @see `SRPVertexShaderOut` */
 typedef struct SRPVarying SRPVarying;
 
 /** Holds information needed to interpolate varyings inside the primitive
