@@ -1,11 +1,11 @@
 // Software Rendering Pipeline (SRP) library
 // Licensed under GNU GPLv3
 
-#pragma once
-
 /** @file
  *  @ingroup Math
  *  `vec2`, `vec3`, `vec4` definition */
+
+#pragma once
 
 #include <stdint.h>
 

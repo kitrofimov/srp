@@ -5,6 +5,8 @@
  *  @ingroup Primitive_assembly
  *  Primitive assembly */
 
+#pragma once
+
 #include "raster/triangle.h"
 #include "raster/line.h"
 #include "raster/point.h"

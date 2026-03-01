@@ -5,6 +5,8 @@
  *  @ingroup Interpolation
  *  Interpolation-related functions */
 
+#pragma once
+
 #include "srp/shaders.h"
 #include "srp/vec.h"
 

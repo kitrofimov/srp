@@ -5,6 +5,8 @@
  *  @ingroup Rasterization
  *  Point rasterization */
 
+#pragma once
+
 #include "core/framebuffer_p.h"
 #include "srp/shaders.h"
 #include "srp/vec.h"

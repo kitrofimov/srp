@@ -1,11 +1,11 @@
 // Software Rendering Pipeline (SRP) library
 // Licensed under GNU GPLv3
 
-#pragma once
-
 /** @file
  *  @ingroup Buffer_internal
  *  Private header for `include/srp/buffer.h` */
+
+#pragma once
 
 #include "srp/buffer.h"
 

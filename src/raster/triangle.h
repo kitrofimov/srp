@@ -1,11 +1,11 @@
 // Software Rendering Pipeline (SRP) library
 // Licensed under GNU GPLv3
 
-#pragma once
-
 /** @file
  *  @ingroup Rasterization
  *  Triangle rasterization */
+
+#pragma once
 
 #include "srp/framebuffer.h"
 #include "srp/shaders.h"

@@ -5,6 +5,8 @@
  *  @ingroup Rasterization
  *  Fragment emission */
 
+#pragma once
+
 #include "core/framebuffer_p.h"
 #include "srp/shaders.h"
 

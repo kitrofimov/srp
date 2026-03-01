@@ -1,11 +1,11 @@
 // Software Rendering Pipeline (SRP) library
 // Licensed under GNU GPLv3
 
-#pragma once
-
 /** @file
  *  @ingroup Vertex
  *  Typedefs related to vertex handling */
+
+#pragma once
 
 #include <stddef.h>
 #include "type.h"

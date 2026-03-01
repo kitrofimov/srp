@@ -1,3 +1,4 @@
+#pragma once
 #include <srp/srp.h>
 
 /** Saves the contents of the framebuffer to a PNG image, ignoring the alpha

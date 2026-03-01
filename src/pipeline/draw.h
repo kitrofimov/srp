@@ -5,6 +5,8 @@
  *  @ingroup Draw_dispatch
  *  Draw dispatch functions */
 
+#pragma once
+
 #include "core/buffer_p.h"
 
 /** @ingroup Draw_dispatch

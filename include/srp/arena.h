@@ -5,6 +5,8 @@
  *  @ingroup Memory_allocation
  *  Opaque definition of SRPArena structure */
 
+#pragma once
+
 /** @ingroup Memory_allocation
  *  @{ */
 
