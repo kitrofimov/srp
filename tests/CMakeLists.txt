@@ -1,3 +1,9 @@
+# Assure that needed utilities are built
+if(NOT BUILD_EXAMPLES)
+    add_library(objparser SHARED ${CMAKE_SOURCE_DIR}/examples/utility/objparser.c)
+    target_include_directories(objparser PUBLIC ${CMAKE_SOURCE_DIR}/include)
+endif()
+
 set(REF_DIR "${CMAKE_CURRENT_SOURCE_DIR}/references")
 set(SCENE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/scenes")
 set(OUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/out")
