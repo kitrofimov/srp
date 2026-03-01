@@ -103,7 +103,7 @@ void interpolateAttributes(
 
         switch (attr->type)
         {
-        case TYPE_FLOAT:
+        case SRP_FLOAT:
             elemSize = sizeof(float);
             float* pInterpolatedAttr = (float*) pAttrVoid;
 

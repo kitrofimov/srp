@@ -68,7 +68,7 @@ SRPIndexBuffer* srpNewIndexBuffer();
 /** Copy the vertex data over to vertex buffer
  *  @param[in] this The pointer to index buffer
  *  @param[in] indicesType The type of indices passed by data.
- *             Must be one of TYPE_UINT8, TYPE_UINT16, TYPE_UINT32, TYPE_UIN64
+ *             Must be one of SRP_UINT8, SRP_UINT16, SRP_UINT32, SRP_UINT64
  *  @param[in] nBytesData The size of index data 
  *  @param[in] data The pointer to an array of indices of type indicesType */
 void srpIndexBufferCopyData

@@ -26,7 +26,7 @@ make
 cd bin
 ```
 
-You can also build the examples with `-D BUILD_EXAMPLES=1` and the documentation with `-D BUILD_DOCS=1` arguments passed to `cmake`. Building the documentation requires having [`dot`](https://en.wikipedia.org/wiki/Graphviz) binary in `PATH`.
+`BUILD_EXAMPLES`, `BUILD_DOCS`, and `BUILD_TESTS` options are also available (i.e. `-D BUILD_EXAMPLES=1` passed to `cmake`). Building the documentation requires having [`dot`](https://en.wikipedia.org/wiki/Graphviz) binary in `PATH`. The examples, docs, and tests will appear in `build/examples`, `build/docs`, and `build/tests` after building.
 
 ## Similar/related projects
 - https://github.com/rswinkle/PortableGL

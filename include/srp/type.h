@@ -16,12 +16,12 @@
 /** Represents data types. This is needed for internal handling of opaque types */
 typedef enum SRPType
 {
-	TYPE_UINT8 = 0,
-	TYPE_UINT16,
-	TYPE_UINT32,
-	TYPE_UINT64,
-	TYPE_FLOAT,
-	TYPE_DOUBLE
+	SRP_UINT8 = 0,
+	SRP_UINT16,
+	SRP_UINT32,
+	SRP_UINT64,
+	SRP_FLOAT,
+	SRP_DOUBLE
 } SRPType;
 
 /** @} */  // ingroup Various

@@ -5,15 +5,15 @@
  *  @ingroup Texture_internal
  *  Texture implementation */
 
-#include "srp/texture.h"
 #include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stb_image.h>
+#include "srp/texture.h"
 #include "utils/message_callback_p.h"
 #include "utils/defines.h"
 #include "math/utils.h"
-#include "stb_image.h"
 #include "utils/voidptr.h"
 #include "srp/vec.h"
 #include "core/texture_p.h"
