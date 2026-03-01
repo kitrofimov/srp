@@ -63,7 +63,7 @@ void rasterizePoint(
             // vertex shader to fragment shader
             SRPfsInput fsIn = {
                 .uniform = sp->uniform,
-                .interpolated = (SRPInterpolated*) point->v.pOutputVariables,
+                .varyings = (SRPInterpolated*) point->v.varyings,
                 .fragCoord = {px, py, point->v.position[2], point->v.position[3]},
                 .frontFacing = true,
                 .primitiveID = point->id,

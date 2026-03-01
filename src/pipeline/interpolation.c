@@ -84,7 +84,7 @@ void interpolateAttributes(
     const SRPShaderProgram* sp, SRPInterpolated* pOutput
 )
 {
-	// vertices[i].pOutputVariables =
+	// vertices[i].varyings =
 	// (                        Vi                              )
 	// (          ViA0          )(          ViA1          ) ...
 	// (ViA0E0 ViA0E1 ... ViA0En)(ViA1E0 ViA1E1 ... ViA1En) ...
@@ -93,9 +93,9 @@ void interpolateAttributes(
     void* pAttrVoid = pOutput;
     size_t attrOffsetBytes = 0;
 
-    for (size_t attrI = 0; attrI < sp->vs->nOutputVariables; attrI++)
+    for (size_t attrI = 0; attrI < sp->vs->nVaryings; attrI++)
     {
-        SRPVertexVariableInformation* attr = &sp->vs->outputVariablesInfo[attrI];
+        SRPVaryingInfo* attr = &sp->vs->varyingsInfo[attrI];
         size_t elemSize = 0;
 
         // Pointers to the current attribute of each vertex
@@ -108,7 +108,7 @@ void interpolateAttributes(
             float* pInterpolatedAttr = (float*) pAttrVoid;
 
 			for (int i = 0; i < 3; i++)
-				AV[i] = ADD_VOID_PTR(vertices[i].pOutputVariables, attrOffsetBytes);
+				AV[i] = ADD_VOID_PTR(vertices[i].varyings, attrOffsetBytes);
 
             for (size_t elemI = 0; elemI < attr->nItems; elemI++)
             {

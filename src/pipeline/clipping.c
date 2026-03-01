@@ -249,8 +249,8 @@ static void interpolateVertex(
     for (int i = 0; i < 4; i++)
         out->position[i] = a->position[i] * (1-t) + b->position[i] * t;
 
-    void* pVarying = ARENA_ALLOC(sp->vs->nBytesPerOutputVariables);
-    out->pOutputVariables = pVarying;
+    void* pVarying = ARENA_ALLOC(sp->vs->varyingsSize);
+    out->varyings = pVarying;
 
     SRPvsOutput vertices[2] = {*a, *b};  /** @todo this is disgusting */
 	const float weights[2] = {1-t, t};

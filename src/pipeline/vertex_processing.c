@@ -58,16 +58,16 @@ void processVertex(
 )
 {
 	SRPVertex* pVertex = indexVertexBuffer(vb, vertexIndex);
-	void* pVarying = INDEX_VOID_PTR(varyingBlock, varyingIndex, sp->vs->nBytesPerOutputVariables);
+	void* pVarying = INDEX_VOID_PTR(varyingBlock, varyingIndex, sp->vs->varyingsSize);
 
 	SRPvsInput vsIn = {
 		.vertexID = vertexIndex,
-		.pVertex  = pVertex,
+		.vertex  = pVertex,
 		.uniform  = sp->uniform
 	};
 	*outV = (SRPvsOutput) {
 		.position = {0},
-		.pOutputVariables = pVarying
+		.varyings = pVarying
 	};
 
 	sp->vs->shader(&vsIn, outV);

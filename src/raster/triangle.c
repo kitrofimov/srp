@@ -91,7 +91,7 @@ void rasterizeTriangle(
 
 			SRPfsInput fsIn = {
 				.uniform = sp->uniform,
-				.interpolated = interpolatedBuffer,
+				.varyings = interpolatedBuffer,
 				.fragCoord = { x + 0.5, y + 0.5, depth, recIntInvW },
 				.frontFacing = tri->isFrontFacing,
 				.primitiveID = tri->id,

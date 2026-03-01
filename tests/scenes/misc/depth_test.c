@@ -72,15 +72,15 @@ int main(int argc, char** argv)
         .uniform = (SRPUniform*) &uniform,
         .vs = &(SRPVertexShader) {
             .shader = vertexShader,
-            .nOutputVariables = 1,
-            .outputVariablesInfo = (SRPVertexVariableInformation[]) {
+            .nVaryings = 1,
+            .varyingsInfo = (SRPVaryingInfo[]) {
                 { .nItems = 3, .type = SRP_FLOAT }
             },
-            .nBytesPerOutputVariables = sizeof(VSOutput)
+            .varyingsSize = sizeof(VSOutput)
         },
         .fs = &(SRPFragmentShader) {
             .shader = fragmentShader,
-            .doesOverwriteDepth = false
+            .mayOverwriteDepth = false
         }
     };
 
@@ -106,9 +106,9 @@ int main(int argc, char** argv)
 
 void vertexShader(SRPvsInput* in, SRPvsOutput* out)
 {
-	Vertex* pVertex = (Vertex*) in->pVertex;
+	Vertex* pVertex = (Vertex*) in->vertex;
 	Uniform* pUniform = (Uniform*) in->uniform;
-	VSOutput* pOutVars = (VSOutput*) out->pOutputVariables;
+	VSOutput* pOutVars = (VSOutput*) out->varyings;
 
 	vec3* inPosition = &pVertex->position;
 	vec4* outPosition = (vec4*) out->position;
@@ -124,7 +124,7 @@ void vertexShader(SRPvsInput* in, SRPvsOutput* out)
 
 void fragmentShader(SRPfsInput* in, SRPfsOutput* out)
 {
-    VSOutput* i = (VSOutput*) in->interpolated;
+    VSOutput* i = (VSOutput*) in->varyings;
 
     vec4* color = (vec4*) out->color;
     color->x = i->color.x;

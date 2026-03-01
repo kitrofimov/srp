@@ -32,13 +32,13 @@ int main(int argc, char** argv)
         .uniform = NULL,
         .vs = &(SRPVertexShader) {
             .shader = vertexShader,
-            .nOutputVariables = 0,
-            .outputVariablesInfo = NULL,
-            .nBytesPerOutputVariables = 0
+            .nVaryings = 0,
+            .varyingsInfo = NULL,
+            .varyingsSize = 0
         },
         .fs = &(SRPFragmentShader) {
             .shader = fragmentShader,
-            .doesOverwriteDepth = false
+            .mayOverwriteDepth = false
         }
     };
 
@@ -61,7 +61,7 @@ int main(int argc, char** argv)
 
 void vertexShader(SRPvsInput* in, SRPvsOutput* out)
 {
-    Vertex* v = (Vertex*) in->pVertex;
+    Vertex* v = (Vertex*) in->vertex;
 	vec3* inPos = &v->position;
 	vec4* outPos = (vec4*) out->position;
 	*outPos = (vec4) { inPos->x, inPos->y, inPos->z, 1. };

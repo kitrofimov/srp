@@ -64,10 +64,10 @@ cd bin
 - [x] Check for bottlenecks & optimize
 - [x] Update the documentation
 - [x] Image-based testing framework
+- [ ] Flat interpolation, per-varying perspective / affine / flat setting
 - [ ] Implement single-threaded binning and tile system
 - [ ] Scale to multiple threads
 
-- [ ] Implement interpolation for types other than `double` (shouldn't it just be `double` and `float`?)
 - [ ] Add multisampling
 - [ ] Advanced texture techniques:
     - [ ] (Bi)linear filtering

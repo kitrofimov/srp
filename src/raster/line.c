@@ -63,7 +63,7 @@ void rasterizeLine(
 
         SRPfsInput fsIn = {
             .uniform = sp->uniform,
-            .interpolated = interpolatedBuffer,
+            .varyings = interpolatedBuffer,
             .fragCoord = { px + 0.5, py + 0.5, depth, recIntInvW },
             .frontFacing = true,
             .primitiveID = line->id,

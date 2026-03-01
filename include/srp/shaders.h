@@ -24,7 +24,7 @@ typedef struct SRPUniform SRPUniform;
 typedef struct SRPvsInput
 {
 	SRPUniform* uniform;  /**< Pointer to the currently used shader uniform */
-	SRPVertex* pVertex;   /**< Pointer to the current vertex */
+	SRPVertex* vertex;   /**< Pointer to the current vertex */
 	size_t vertexID;      /**< ID of a current vertex */
 } SRPvsInput;
 
@@ -32,8 +32,8 @@ typedef struct SRPvsInput
  *  @see SRPVertexShader */
 typedef struct SRPvsOutput
 {
-	float position[4];                    /**< Position of the processed vertex */
-	SRPVertexVariable* pOutputVariables;  /**< Pointer to the buffer of vertex variables */
+	float position[4];            /**< Position of the processed vertex */
+	SRPVarying* varyings;  /**< Pointer to the buffer of vertex variables */
 } SRPvsOutput;
 
 /** Represents the vertex shader
@@ -42,13 +42,12 @@ typedef struct SRPVertexShader
 {
 	/** Shader function */
 	void (*shader)(SRPvsInput* in, SRPvsOutput* out);
-	/** Number of output variables */
-	size_t nOutputVariables;
-	/** Pointer to an array of output variables' information.
-	 *   Should be SRPVertexShader.nOutputVariables elements long. */
-	SRPVertexVariableInformation* outputVariablesInfo;
-	/** Size of output variables in bytes */
-	size_t nBytesPerOutputVariables;
+	/** Number of varyings outputted by this shader */
+	size_t nVaryings;
+	/** Array of metadata for each varying, should be `nVaryings` elements long */
+	SRPVaryingInfo* varyingsInfo;
+	/** Total size of all varyings in bytes */
+	size_t varyingsSize;
 } SRPVertexShader;
 
 
@@ -56,11 +55,11 @@ typedef struct SRPVertexShader
  *  @see SRPFragmentShader */
 typedef struct SRPfsInput
 {
-	SRPUniform* uniform;            /**< Pointer to currently used shader uniform */
-	SRPInterpolated* interpolated;  /**< Pointer to interpolated vertex variables */
-	float fragCoord[4];             /**< Window space coordinates of the fragment */
-	bool frontFacing;               /**< Whether or not the current primitive is facing front */
-	size_t primitiveID;             /**< ID of the currently processing primitive */
+	SRPUniform* uniform;        /**< Pointer to currently used shader uniform */
+	SRPInterpolated* varyings;  /**< Pointer to interpolated vertex variables */
+	float fragCoord[4];         /**< Window space coordinates of the fragment */
+	bool frontFacing;           /**< Whether or not the current primitive is facing front */
+	size_t primitiveID;         /**< ID of the currently processing primitive */
 } SRPfsInput;
 
 /** Holds outputs from fragment shader
@@ -69,7 +68,7 @@ typedef struct SRPfsOutput
 {
 	float color[4];   /**< Color to draw at this fragment */
 	float fragDepth;  /**< Set the depth value of the current fragment. May be written
-						   only if SRPFragmentShader.doesOverwriteDepth is `true` */
+						   only if SRPFragmentShader.mayOverwriteDepth is `true` */
 } SRPfsOutput;
 
 /** Represents the fragment shader
@@ -80,7 +79,7 @@ typedef struct SRPFragmentShader
 	void (*shader)(SRPfsInput* in, SRPfsOutput* out);
 	/** Whether or not this shader may overwrite depth via SRPfsOutput.fragDepth
 	 *  If `false`, early depth test is activated (less fragment shader invocations) */
-	bool doesOverwriteDepth;
+	bool mayOverwriteDepth;
 } SRPFragmentShader;
 
 
