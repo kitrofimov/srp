@@ -242,9 +242,8 @@ static void triangleInterpolateData(
 	SRPInterpolated* pInterpolatedBuffer, float* depth, float* recIntInvW
 )
 {
-	const bool perspective = srpContext.interpolationMode == SRP_INTERPOLATION_MODE_PERSPECTIVE;
-	interpolateDepthAndWTriangle(tri->v, tri->lambda, tri->invW, perspective, sp, depth, recIntInvW);
-	interpolateAttributes(tri->v, 3, tri->lambda, tri->invW, *recIntInvW, perspective, sp, pInterpolatedBuffer);
+	interpolateDepthAndWTriangle(tri->v, tri->lambda, tri->invW, sp, depth, recIntInvW);
+	interpolateAttributes(tri->v, 3, tri->lambda, tri->invW, *recIntInvW, sp, pInterpolatedBuffer);
 }
 
 /** @} */  // ingroup Rasterization

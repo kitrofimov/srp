@@ -20,12 +20,25 @@ typedef struct SRPVertex SRPVertex;
  *  @see `SRPVertexShaderOut` */
 typedef struct SRPVarying SRPVarying;
 
+/** Varyings interpolation mode */
+typedef enum SRPInterpolationMode
+{
+	/** Perspective-correct interplolation */
+	SRP_INTERPOLATION_MODE_PERSPECTIVE,
+	/** Affine screen-space interpolation */
+	SRP_INTERPOLATION_MODE_AFFINE,
+	/** No interpolation, value for the primitive is taken from the provoking vertex */
+	SRP_INTERPOLATION_MODE_FLAT
+} SRPInterpolationMode;
+
 /** Holds information needed to interpolate varyings inside the primitive
  *  @see `SRPVarying` */
 typedef struct
 {
-	size_t nItems;  /**< How many items does this attribute have */
-	SRPType type;   /**< The type of each attribute */
+	size_t nItems;  /**< How many items does this varying have */
+	SRPType type;   /**< The type of the varying */
+	/** How the varying should be interpolated inside the primitive */
+	SRPInterpolationMode interpolationMode;
 } SRPVaryingInfo;
 
 /** Represents interpolated varyings

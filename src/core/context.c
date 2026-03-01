@@ -16,7 +16,6 @@ void srpNewContext(SRPContext* pContext)
 {
 	pContext->messageCallback = NULL;
 	pContext->messageCallbackUserParameter = NULL;
-	pContext->interpolationMode = SRP_INTERPOLATION_MODE_PERSPECTIVE;
 	pContext->frontFace = SRP_FRONT_FACE_CCW;
 	pContext->cullFace = SRP_CULL_FACE_NONE;
 	pContext->polygonMode = SRP_POLYGON_MODE_FILL;
@@ -54,9 +53,6 @@ void srpContextSetI(SRPContextParameter contextParameter, int data)
 {
 	switch (contextParameter)
 	{
-	case SRP_CONTEXT_INTERPOLATION_MODE:
-		srpContext.interpolationMode = data;
-		return;
 	case SRP_CONTEXT_FRONT_FACE:
 		srpContext.frontFace = data;
 		return;
@@ -110,8 +106,6 @@ int srpContextGetI(SRPContextParameter contextParameter)
 {
 	switch (contextParameter)
 	{
-	case SRP_CONTEXT_INTERPOLATION_MODE:
-		return srpContext.interpolationMode;
 	case SRP_CONTEXT_FRONT_FACE:
 		return srpContext.frontFace;
 	case SRP_CONTEXT_CULL_FACE:

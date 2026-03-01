@@ -254,7 +254,7 @@ static void interpolateVertex(
 
     SRPVertexShaderOut vertices[2] = {*a, *b};  /** @todo this is disgusting */
 	const float weights[2] = {1-t, t};
-    interpolateAttributes(vertices, 2, weights, NULL, 0., false, sp, pVarying);
+    interpolateAttributes(vertices, 2, weights, NULL, 0., sp, pVarying);
 }
 
 static inline float planeDistance(const SRPVertexShaderOut* v, ClipPlane p)

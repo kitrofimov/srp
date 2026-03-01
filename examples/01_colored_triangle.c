@@ -76,9 +76,11 @@ int main()
 			// This stores the information about vertex shader's output variables
 			// that is necessary to interpolate them inside the primitive
 			.nVaryings = 1,
-			.varyingsInfo = (SRPVaryingInfo[]) {
-				{.nItems = 3, .type = SRP_FLOAT}
-			},
+			.varyingsInfo = (SRPVaryingInfo[]) {{
+				.nItems = 3,
+				.type = SRP_FLOAT,
+				.interpolationMode = SRP_INTERPOLATION_MODE_PERSPECTIVE
+			}},
 			.varyingsSize = sizeof(VSOutput)
 		},
 		.fs = &(SRPFragmentShader) {

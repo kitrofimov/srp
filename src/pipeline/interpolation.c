@@ -31,56 +31,35 @@
 
 void interpolateDepthAndWTriangle(
     SRPVertexShaderOut* vertices, const float* weights, const float* invW,
-    bool perspective, const SRPShaderProgram* sp,
-    float* depth, float* reciprocalInterpolatedInvW
+    const SRPShaderProgram* sp, float* depth, float* reciprocalInterpolatedInvW
 )
 {
-	if (perspective)
-    {
-        *reciprocalInterpolatedInvW = 1 / (
-            invW[0] * weights[0] + \
-            invW[1] * weights[1] + \
-            invW[2] * weights[2]
-        );
-        *depth = vertices[0].ndcPosition[2] * invW[0] * weights[0] + \
-                 vertices[1].ndcPosition[2] * invW[1] * weights[1] + \
-                 vertices[2].ndcPosition[2] * invW[2] * weights[2];
-    }
-	else  // affine
-    {
-        *reciprocalInterpolatedInvW = 1.;
-        *depth = vertices[0].ndcPosition[2] * weights[0] + \
-                 vertices[1].ndcPosition[2] * weights[1] + \
-                 vertices[2].ndcPosition[2] * weights[2];
-    }
+    *reciprocalInterpolatedInvW = 1 / (
+        invW[0] * weights[0] + \
+        invW[1] * weights[1] + \
+        invW[2] * weights[2]
+    );
+    *depth = vertices[0].ndcPosition[2] * invW[0] * weights[0] + \
+             vertices[1].ndcPosition[2] * invW[1] * weights[1] + \
+             vertices[2].ndcPosition[2] * invW[2] * weights[2];
 }
 
 void interpolateDepthAndWLine(
     SRPVertexShaderOut* vertices, const float* weights, const float* invW,
-    bool perspective, const SRPShaderProgram* sp,
-    float* depth, float* reciprocalInterpolatedInvW
+    const SRPShaderProgram* sp, float* depth, float* reciprocalInterpolatedInvW
 )
 {
-	if (perspective)
-    {
-        *reciprocalInterpolatedInvW = 1 / (
-            invW[0] * weights[0] +\
-            invW[1] * weights[1]
-        );
-        *depth = vertices[0].ndcPosition[2] * invW[0] * weights[0] + \
-                 vertices[1].ndcPosition[2] * invW[1] * weights[1];
-    }
-	else  // affine
-    {
-        *reciprocalInterpolatedInvW = 1.;
-        *depth = vertices[0].ndcPosition[2] * weights[0] + \
-                 vertices[1].ndcPosition[2] * weights[1];
-    }
+    *reciprocalInterpolatedInvW = 1 / (
+        invW[0] * weights[0] + \
+        invW[1] * weights[1]
+    );
+    *depth = vertices[0].ndcPosition[2] * invW[0] * weights[0] + \
+             vertices[1].ndcPosition[2] * invW[1] * weights[1];
 }
 
 void interpolateAttributes(
     SRPVertexShaderOut* vertices, size_t nVertices, const float* weights,
-    const float* invW, float reciprocalInterpolatedInvW, bool perspective,
+    const float* invW, float reciprocalInterpolatedInvW, 
     const SRPShaderProgram* sp, SRPInterpolated* pOutput
 )
 {
@@ -96,10 +75,17 @@ void interpolateAttributes(
     for (size_t attrI = 0; attrI < sp->vs->nVaryings; attrI++)
     {
         SRPVaryingInfo* attr = &sp->vs->varyingsInfo[attrI];
-        size_t elemSize = 0;
+        bool perspective = attr->interpolationMode == SRP_INTERPOLATION_MODE_PERSPECTIVE;
+        bool affine      = attr->interpolationMode == SRP_INTERPOLATION_MODE_AFFINE;
+        
+        if (invW == NULL)  // see clipping.c interpolateVertex
+        {
+            perspective = false;
+            affine = true;
+        }
 
-        // Pointers to the current attribute of each vertex
-        void* AV[nVertices];
+        void* AV[nVertices];  // Pointers to the current attribute of each vertex
+        size_t elemSize = 0;
 
         switch (attr->type)
         {
@@ -120,7 +106,7 @@ void interpolateAttributes(
                         sum += ((float*) AV[i])[elemI] * invW[i] * weights[i];
                     sum *= reciprocalInterpolatedInvW;
                 }
-                else
+                else if (affine)
                     for (size_t i = 0; i < nVertices; i++)
                         sum += ((float*) AV[i])[elemI] * weights[i];
 

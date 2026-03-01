@@ -66,9 +66,11 @@ int main()
 		.vs = &(SRPVertexShader) {
 			.shader = vertexShader,
 			.nVaryings = 1,
-			.varyingsInfo = (SRPVaryingInfo[]) {
-				{.nItems = 3, .type = SRP_FLOAT}
-			},
+			.varyingsInfo = (SRPVaryingInfo[]) {{
+				.nItems = 3,
+				.type = SRP_FLOAT,
+				.interpolationMode = SRP_INTERPOLATION_MODE_PERSPECTIVE
+			}},
 			.varyingsSize = sizeof(VSOutput)
 		},
 		.fs = &(SRPFragmentShader) {

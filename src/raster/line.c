@@ -90,10 +90,9 @@ static void lineInterpolateData(
 	SRPInterpolated* pInterpolatedBuffer, float* depth, float* recIntInvW
 )
 {
-	const bool perspective = srpContext.interpolationMode == SRP_INTERPOLATION_MODE_PERSPECTIVE;
 	const float weights[2] = {1-t, t};
-	interpolateDepthAndWLine(line->v, weights, line->invW, perspective, sp, depth, recIntInvW);
-	interpolateAttributes(line->v, 2, weights, line->invW, *recIntInvW, perspective, sp, pInterpolatedBuffer);
+	interpolateDepthAndWLine(line->v, weights, line->invW, sp, depth, recIntInvW);
+	interpolateAttributes(line->v, 2, weights, line->invW, *recIntInvW, sp, pInterpolatedBuffer);
 }
 
 /** @} */  // ingroup Rasterization
