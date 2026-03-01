@@ -22,8 +22,8 @@ void messageCallback(
 	SRPMessageType type, SRPMessageSeverity severity, const char* sourceFunction,
 	const char* message, void* userParameter
 );
-void vertexShader(SRPvsInput* in, SRPvsOutput* out);
-void fragmentShader(SRPfsInput* in, SRPfsOutput* out);
+void vertexShader(SRPVertexShaderIn* in, SRPVertexShaderOut* out);
+void fragmentShader(SRPFragmentShaderIn* in, SRPFragmentShaderOut* out);
 
 int main()
 {
@@ -62,13 +62,13 @@ int main()
 		.uniform = (SRPUniform*) &uniform,
 		.vs = &(SRPVertexShader) {
 			.shader = vertexShader,
-			.nOutputVariables = 0,
-			.outputVariablesInfo = NULL,
-			.nBytesPerOutputVariables = 0
+			.nVaryings = 0,
+			.varyingsInfo = NULL,
+			.varyingsSize = 0
 		},
 		.fs = &(SRPFragmentShader) {
 			.shader = fragmentShader,
-			.doesOverwriteDepth = false
+			.mayOverwriteDepth = false
 		}
 	};
 
@@ -122,22 +122,20 @@ void messageCallback(
 }
 
 
-void vertexShader(SRPvsInput* in, SRPvsOutput* out)
+void vertexShader(SRPVertexShaderIn* in, SRPVertexShaderOut* out)
 {
-	OBJVertex* pVertex = (OBJVertex*) in->pVertex;
+	OBJVertex* pVertex = (OBJVertex*) in->vertex;
 	Uniform* pUniform = (Uniform*) in->uniform;
 
 	vec3* inPosition = &pVertex->position;
-	vec4* outPosition = (vec4*) out->position;
-	*outPosition = (vec4) {
-		inPosition->x, inPosition->y, inPosition->z, 1.0
-	};
+	vec4* outPosition = (vec4*) out->clipPosition;
+	*outPosition = (vec4) { inPosition->x, inPosition->y, inPosition->z, 1. };
 	*outPosition = mat4MultiplyVec4(&pUniform->model, *outPosition);
 	*outPosition = mat4MultiplyVec4(&pUniform->view, *outPosition);
 	*outPosition = mat4MultiplyVec4(&pUniform->projection, *outPosition);
 }
 
-void fragmentShader(SRPfsInput* in, SRPfsOutput* out)
+void fragmentShader(SRPFragmentShaderIn* in, SRPFragmentShaderOut* out)
 {
     int id = in->primitiveID;
     int r = (id * 97) % 255;

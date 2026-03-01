@@ -5,6 +5,8 @@
  *  @ingroup Interpolation
  *  Interpolation implementation */
 
+#include <string.h>
+#include "srp/context.h"
 #include "pipeline/interpolation.h"
 #include "utils/message_callback_p.h"
 #include "utils/voidptr.h"
@@ -30,103 +32,122 @@
  *  @see https://www.youtube.com/watch?v=F5X6S35SW2s */
 
 void interpolateDepthAndWTriangle(
-    SRPvsOutput* vertices, const float* weights, const float* invW,
-    bool perspective, const SRPShaderProgram* sp,
-    float* depth, float* reciprocalInterpolatedInvW
+    SRPVertexShaderOut* vertices, const float* weights, const float* invW,
+    const SRPShaderProgram* sp, float* depth, float* reciprocalInterpolatedInvW
 )
 {
-	if (perspective)
-    {
-        *reciprocalInterpolatedInvW = 1 / (
-            invW[0] * weights[0] + \
-            invW[1] * weights[1] + \
-            invW[2] * weights[2]
-        );
-        *depth = vertices[0].position[2] * invW[0] * weights[0] + \
-                 vertices[1].position[2] * invW[1] * weights[1] + \
-                 vertices[2].position[2] * invW[2] * weights[2];
-    }
-	else  // affine
-    {
-        *reciprocalInterpolatedInvW = 1.;
-        *depth = vertices[0].position[2] * weights[0] + \
-                 vertices[1].position[2] * weights[1] + \
-                 vertices[2].position[2] * weights[2];
-    }
+    *reciprocalInterpolatedInvW = 1 / (
+        invW[0] * weights[0] + \
+        invW[1] * weights[1] + \
+        invW[2] * weights[2]
+    );
+    *depth = vertices[0].ndcPosition[2] * invW[0] * weights[0] + \
+             vertices[1].ndcPosition[2] * invW[1] * weights[1] + \
+             vertices[2].ndcPosition[2] * invW[2] * weights[2];
 }
 
 void interpolateDepthAndWLine(
-    SRPvsOutput* vertices, const float* weights, const float* invW,
-    bool perspective, const SRPShaderProgram* sp,
-    float* depth, float* reciprocalInterpolatedInvW
+    SRPVertexShaderOut* vertices, const float* weights, const float* invW,
+    const SRPShaderProgram* sp, float* depth, float* reciprocalInterpolatedInvW
 )
 {
-	if (perspective)
-    {
-        *reciprocalInterpolatedInvW = 1 / (
-            invW[0] * weights[0] +\
-            invW[1] * weights[1]
-        );
-        *depth = vertices[0].position[2] * invW[0] * weights[0] + \
-                 vertices[1].position[2] * invW[1] * weights[1];
-    }
-	else  // affine
-    {
-        *reciprocalInterpolatedInvW = 1.;
-        *depth = vertices[0].position[2] * weights[0] + \
-                 vertices[1].position[2] * weights[1];
-    }
+    *reciprocalInterpolatedInvW = 1 / (
+        invW[0] * weights[0] + \
+        invW[1] * weights[1]
+    );
+    *depth = vertices[0].ndcPosition[2] * invW[0] * weights[0] + \
+             vertices[1].ndcPosition[2] * invW[1] * weights[1];
 }
 
+/** Interpolate a floating point type attribute @see interpolateAttribute */
+#define INTERPOLATE_FLOATING(Type) \
+do { \
+    elemSize = sizeof(Type); \
+    Type* interpolated = (Type*) interpolatedVoid; \
+    for (size_t elemI = 0; elemI < attr->nItems; elemI++) \
+    { \
+        Type value = 0.; \
+        if (perspective) \
+        { \
+            for (size_t i = 0; i < nVertices; i++) \
+                value += ((Type*) AV[i])[elemI] * invW[i] * weights[i]; \
+            value *= reciprocalInterpolatedInvW; \
+        } \
+        else if (affine) \
+            for (size_t i = 0; i < nVertices; i++) \
+                value += ((Type*) AV[i])[elemI] * weights[i]; \
+        else  /* flat */ \
+            value = ((Type*) AV[provokingVertex])[elemI]; \
+        interpolated[elemI] = value; \
+    } \
+} while(0)
+
+/** Flat-interpolate an integer type attribute @see interpolateAttribute */
+#define INTERPOLATE_INTEGER(Type) \
+do { \
+    elemSize = sizeof(Type); \
+    Type* interpolated = (Type*) interpolatedVoid; \
+    memcpy(interpolated, AV[provokingVertex], elemSize * attr->nItems); \
+} while(0)
+
 void interpolateAttributes(
-    SRPvsOutput* vertices, size_t nVertices, const float* weights,
-    const float* invW, float reciprocalInterpolatedInvW, bool perspective,
+    SRPVertexShaderOut* vertices, size_t nVertices, const float* weights,
+    const float* invW, float reciprocalInterpolatedInvW, 
     const SRPShaderProgram* sp, SRPInterpolated* pOutput
 )
 {
-	// vertices[i].pOutputVariables =
+	// vertices[i].varyings =
 	// (                        Vi                              )
 	// (          ViA0          )(          ViA1          ) ...
 	// (ViA0E0 ViA0E1 ... ViA0En)(ViA1E0 ViA1E1 ... ViA1En) ...
 	// [V]ertex, [A]ttribute, [E]lement
 
-    void* pAttrVoid = pOutput;
+    void* interpolatedVoid = pOutput;
     size_t attrOffsetBytes = 0;
+    const size_t provokingVertex = \
+        (srpContext.provokingVertexMode == SRP_PROVOKING_VERTEX_FIRST) ? 0 : nVertices-1;
 
-    for (size_t attrI = 0; attrI < sp->vs->nOutputVariables; attrI++)
+    for (size_t attrI = 0; attrI < sp->vs->nVaryings; attrI++)
     {
-        SRPVertexVariableInformation* attr = &sp->vs->outputVariablesInfo[attrI];
+        SRPVaryingInfo* attr = &sp->vs->varyingsInfo[attrI];
+        bool perspective = attr->interpolationMode == SRP_INTERPOLATION_MODE_PERSPECTIVE;
+        bool affine      = attr->interpolationMode == SRP_INTERPOLATION_MODE_AFFINE;
+        
+        if (invW == NULL)  // see clipping.c interpolateVertex
+        {
+            perspective = false;
+            affine = true;
+        }
+
         size_t elemSize = 0;
 
-        // Pointers to the current attribute of each vertex
-        void* AV[nVertices];
+        void* AV[nVertices];  // Pointers to the current attribute of each vertex
+        for (size_t i = 0; i < nVertices; i++)
+            AV[i] = ADD_VOID_PTR(vertices[i].varyings, attrOffsetBytes);
 
         switch (attr->type)
         {
         case SRP_FLOAT:
-            elemSize = sizeof(float);
-            float* pInterpolatedAttr = (float*) pAttrVoid;
+            INTERPOLATE_FLOATING(float); break;
+        case SRP_DOUBLE:
+            INTERPOLATE_FLOATING(double); break;
 
-			for (int i = 0; i < 3; i++)
-				AV[i] = ADD_VOID_PTR(vertices[i].pOutputVariables, attrOffsetBytes);
-
-            for (size_t elemI = 0; elemI < attr->nItems; elemI++)
-            {
-                float sum = 0.;
-
-                if (perspective)
-                {
-                    for (size_t i = 0; i < nVertices; i++)
-                        sum += ((float*) AV[i])[elemI] * invW[i] * weights[i];
-                    sum *= reciprocalInterpolatedInvW;
-                }
-                else
-                    for (size_t i = 0; i < nVertices; i++)
-                        sum += ((float*) AV[i])[elemI] * weights[i];
-
-                pInterpolatedAttr[elemI] = sum;
-            }
-            break;
+        case SRP_INT8:
+            INTERPOLATE_INTEGER(int8_t); break;
+        case SRP_INT16:
+            INTERPOLATE_INTEGER(int16_t); break;
+        case SRP_INT32:
+            INTERPOLATE_INTEGER(int32_t); break;
+        case SRP_INT64:
+            INTERPOLATE_INTEGER(int64_t); break;
+        case SRP_UINT8:
+            INTERPOLATE_INTEGER(uint8_t); break;
+        case SRP_UINT16:
+            INTERPOLATE_INTEGER(uint16_t); break;
+        case SRP_UINT32:
+            INTERPOLATE_INTEGER(uint32_t); break;
+        case SRP_UINT64:
+            INTERPOLATE_INTEGER(uint64_t); break;
 
         default:
             srpMessageCallbackHelper(
@@ -136,7 +157,7 @@ void interpolateAttributes(
         }
 
         size_t attrSize = elemSize * attr->nItems;
-        pAttrVoid = ADD_VOID_PTR(pAttrVoid, attrSize);
+        interpolatedVoid = ADD_VOID_PTR(interpolatedVoid, attrSize);
         attrOffsetBytes += attrSize;
     }
 }

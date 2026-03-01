@@ -14,12 +14,14 @@
 /** @ingroup Context
  *  @{ */
 
-/** Attribute interpolation mode */
-typedef enum SRPInterpolationMode
+/** Which vertex is considered to be the provoking vertex */
+typedef enum SRPProvokingVertexMode
 {
-	SRP_INTERPOLATION_MODE_PERSPECTIVE,  /**< Perspective-correct interplolation; default */
-	SRP_INTERPOLATION_MODE_AFFINE        /**< Affine screen-space interpolation */
-} SRPInterpolationMode;
+	/** The first vertex of the primitive is its provoking vertex */
+	SRP_PROVOKING_VERTEX_FIRST,  
+	/** The last vertex of the primitive is its provoking vertex (default) */
+	SRP_PROVOKING_VERTEX_LAST
+} SRPProvokingVertexMode;
 
 /** Front face mode */
 typedef enum SRPFrontFace
@@ -56,7 +58,8 @@ typedef struct SRPContext
 	/** User pointer to pass to message callback function
 	 *  @see SRPContext.messageCallback */
 	void* messageCallbackUserParameter;
-	SRPInterpolationMode interpolationMode;  /**< Vertex attribute interpolation mode */
+	/** Which vertex is considered to be the provoking vertex */
+	SRPProvokingVertexMode provokingVertexMode;
 	SRPFrontFace frontFace;      /**< Which face is considered front-facing */
 	SRPCullFace cullFace;        /**< Which face(s) should be culled */
 	SRPPolygonMode polygonMode;  /**< Polygon rendering mode */
@@ -69,7 +72,7 @@ typedef struct SRPContext
 typedef enum SRPContextParameter
 {
 	SRP_CONTEXT_MESSAGE_CALLBACK_USER_PARAMETER,
-	SRP_CONTEXT_INTERPOLATION_MODE,
+	SRP_CONTEXT_PROVOKING_VERTEX_MODE,
 	SRP_CONTEXT_FRONT_FACE,
 	SRP_CONTEXT_CULL_FACE,
 	SRP_CONTEXT_POLYGON_MODE,

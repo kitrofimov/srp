@@ -16,10 +16,10 @@
 
 /** Line primitive. Stores data needed for its rasterization */
 typedef struct SRPLine {
-	SRPvsOutput v[2];  /**< Outputs of the vertex shader */
-	vec3 ss[2];	       /**< Vertices' positions in screen-space */
-	float invW[2];     /**< 1 / clip-space W. Needed for perspective-correct interpolation */
-	size_t id;         /**< ID of the primitive, starting from 0 */
+	SRPVertexShaderOut v[2];  /**< Outputs of the vertex shader */
+	vec3 ss[2];	              /**< Vertices' positions in screen-space */
+	float invW[2];            /**< 1 / clip-space W. Needed for perspective-correct interpolation */
+	size_t id;                /**< ID of the primitive, starting from 0 */
 } SRPLine;
 
 /** Rasterize a point

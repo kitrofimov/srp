@@ -16,16 +16,16 @@
 
 void emitFragment(
     const SRPFramebuffer* fb, const SRPShaderProgram* sp,
-    int x, int y, SRPfsInput* fsIn
+    int x, int y, SRPFragmentShaderIn* fsIn
 )
 {
     assert(x >= 0 && x < fb->width);
     assert(y >= 0 && y < fb->width);
 
-    const bool overwrite = sp->fs->doesOverwriteDepth;
+    const bool overwrite = sp->fs->mayOverwriteDepth;
     const float interpolatedDepth = fsIn->fragCoord[2];
 
-    SRPfsOutput fsOut = {
+    SRPFragmentShaderOut fsOut = {
         .color = {0},
         .fragDepth = NAN
     };

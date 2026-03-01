@@ -61,9 +61,9 @@ void rasterizeLine(
         float depth, recIntInvW;
         lineInterpolateData(line, t, sp, interpolatedBuffer, &depth, &recIntInvW);
 
-        SRPfsInput fsIn = {
+        SRPFragmentShaderIn fsIn = {
             .uniform = sp->uniform,
-            .interpolated = interpolatedBuffer,
+            .varyings = interpolatedBuffer,
             .fragCoord = { px + 0.5, py + 0.5, depth, recIntInvW },
             .frontFacing = true,
             .primitiveID = line->id,
@@ -82,7 +82,7 @@ void setupLine(SRPLine* line, const SRPFramebuffer* fb)
 		applyPerspectiveDivide(&line->v[i], &line->invW[i]);
 
     for (uint8_t i = 0; i < 2; i++)
-        framebufferNDCToScreenSpace(fb, line->v[i].position, (float*) &line->ss[i]);
+        framebufferNDCToScreenSpace(fb, line->v[i].ndcPosition, (float*) &line->ss[i]);
 }
 
 static void lineInterpolateData(
@@ -90,10 +90,9 @@ static void lineInterpolateData(
 	SRPInterpolated* pInterpolatedBuffer, float* depth, float* recIntInvW
 )
 {
-	const bool perspective = srpContext.interpolationMode == SRP_INTERPOLATION_MODE_PERSPECTIVE;
 	const float weights[2] = {1-t, t};
-	interpolateDepthAndWLine(line->v, weights, line->invW, perspective, sp, depth, recIntInvW);
-	interpolateAttributes(line->v, 2, weights, line->invW, *recIntInvW, perspective, sp, pInterpolatedBuffer);
+	interpolateDepthAndWLine(line->v, weights, line->invW, sp, depth, recIntInvW);
+	interpolateAttributes(line->v, 2, weights, line->invW, *recIntInvW, sp, pInterpolatedBuffer);
 }
 
 /** @} */  // ingroup Rasterization

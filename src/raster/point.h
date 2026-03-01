@@ -16,8 +16,8 @@
 
 /** Point primitive. Stores data needed for its rasterization */
 typedef struct SRPPoint {
-	SRPvsOutput v;  /**< Output of the vertex shader */
-	size_t id;      /**< ID of the primitive, starting from 0 */
+	SRPVertexShaderOut v;  /**< Output of the vertex shader */
+	size_t id;             /**< ID of the primitive, starting from 0 */
 } SRPPoint;
 
 /** Rasterize a point

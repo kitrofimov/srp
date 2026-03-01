@@ -18,9 +18,9 @@ typedef struct Uniform
 
 SRPContext srpContext;
 
-void vertexShader(SRPvsInput* in, SRPvsOutput* out);
-void fsPrimitive(SRPfsInput* in, SRPfsOutput* out);
-void fsWhite(SRPfsInput* in, SRPfsOutput* out);
+void vertexShader(SRPVertexShaderIn* in, SRPVertexShaderOut* out);
+void fsPrimitive(SRPFragmentShaderIn* in, SRPFragmentShaderOut* out);
+void fsWhite(SRPFragmentShaderIn* in, SRPFragmentShaderOut* out);
 
 int main(int argc, char** argv)
 {
@@ -49,20 +49,20 @@ int main(int argc, char** argv)
 		.uniform = (SRPUniform*) &uniform,
 		.vs = &(SRPVertexShader) {
 			.shader = vertexShader,
-			.nOutputVariables = 0,
-			.outputVariablesInfo = NULL,
-			.nBytesPerOutputVariables = 0
+			.nVaryings = 0,
+			.varyingsInfo = NULL,
+			.varyingsSize = 0
 		},
 		.fs = &(SRPFragmentShader) {
 			.shader = fsPrimitive,
-			.doesOverwriteDepth = false
+			.mayOverwriteDepth = false
 		}
 	};
 
 	SRPShaderProgram sp2 = sp1;
 	sp2.fs = &(SRPFragmentShader) {
 		.shader = fsWhite,
-		.doesOverwriteDepth = false
+		.mayOverwriteDepth = false
 	};
 
 	srpNewContext(&srpContext);
@@ -90,13 +90,13 @@ int main(int argc, char** argv)
 }
 
 
-void vertexShader(SRPvsInput* in, SRPvsOutput* out)
+void vertexShader(SRPVertexShaderIn* in, SRPVertexShaderOut* out)
 {
-	OBJVertex* pVertex = (OBJVertex*) in->pVertex;
+	OBJVertex* pVertex = (OBJVertex*) in->vertex;
 	Uniform* pUniform = (Uniform*) in->uniform;
 
 	vec3* inPosition = &pVertex->position;
-	vec4* outPosition = (vec4*) out->position;
+	vec4* outPosition = (vec4*) out->clipPosition;
 	*outPosition = (vec4) {
 		inPosition->x, inPosition->y, inPosition->z, 1.0
 	};
@@ -105,7 +105,7 @@ void vertexShader(SRPvsInput* in, SRPvsOutput* out)
 	*outPosition = mat4MultiplyVec4(&pUniform->projection, *outPosition);
 }
 
-void fsPrimitive(SRPfsInput* in, SRPfsOutput* out)
+void fsPrimitive(SRPFragmentShaderIn* in, SRPFragmentShaderOut* out)
 {
     int id = in->primitiveID;
     int r = (id * 97) % 255;
@@ -118,7 +118,7 @@ void fsPrimitive(SRPfsInput* in, SRPfsOutput* out)
     out->color[3] = 1.;
 }
 
-void fsWhite(SRPfsInput* in, SRPfsOutput* out)
+void fsWhite(SRPFragmentShaderIn* in, SRPFragmentShaderOut* out)
 {
     out->color[0] = 1.;
     out->color[1] = 1.;

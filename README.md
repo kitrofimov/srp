@@ -4,7 +4,7 @@ A **s**oftware **r**endering **p**ipeline that features:
 - Pixel-perfect rasterization of all main primitive types (triangles, lines, points)
 - Fully programmable vertex and fragment shaders (+uniforms)
 - Sutherland-Hodgman triangle clipping & Liang-Barsky line clipping
-- Perspective-correct attribute interpolation
+- Perspective-correct, affine, and flat attribute interpolation
 - Texture mapping
 - Post-VS vertex caching
 - A small math library to use in shader programming
@@ -64,10 +64,10 @@ cd bin
 - [x] Check for bottlenecks & optimize
 - [x] Update the documentation
 - [x] Image-based testing framework
+- [x] Flat interpolation, per-varying perspective / affine / flat setting
 - [ ] Implement single-threaded binning and tile system
 - [ ] Scale to multiple threads
 
-- [ ] Implement interpolation for types other than `double` (shouldn't it just be `double` and `float`?)
 - [ ] Add multisampling
 - [ ] Advanced texture techniques:
     - [ ] (Bi)linear filtering

@@ -50,7 +50,7 @@ bool assembleTrianglesGeneric(
     }
 
     VertexCache cache;
-    allocateVertexCache(&cache, ib, startIndex, vertexCount, sp->vs->nBytesPerOutputVariables);
+    allocateVertexCache(&cache, ib, startIndex, vertexCount, sp->vs->varyingsSize);
 
 	size_t nOutPrimitivesPerClippedTriangle, sizeOutPrimitive;
 	resolvePolygonModeOutput(&nOutPrimitivesPerClippedTriangle, &sizeOutPrimitive);
@@ -141,7 +141,7 @@ bool assembleLines(
 
 	VertexCache cache;
 	SRPLine* lines = ARENA_ALLOC(sizeof(SRPLine) * nLines);
-	allocateVertexCache(&cache, ib, startIndex, vertexCount, sp->vs->nBytesPerOutputVariables);
+	allocateVertexCache(&cache, ib, startIndex, vertexCount, sp->vs->varyingsSize);
 
 	size_t primitiveID = 0;
 	for (size_t k = 0; k < nLines; k += 1)
@@ -223,7 +223,7 @@ bool assemblePoints(
 
 	const size_t nPoints = count;
 	SRPPoint* points = ARENA_ALLOC(sizeof(SRPPoint) * nPoints);
-	void* varyingBlock = ARENA_ALLOC(sp->vs->nBytesPerOutputVariables * nPoints);
+	void* varyingBlock = ARENA_ALLOC(sp->vs->varyingsSize * nPoints);
 
 	size_t primitiveID = 0;
 	for (size_t k = 0; k < nPoints; k++)

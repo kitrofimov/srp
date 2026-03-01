@@ -32,8 +32,8 @@ void messageCallback(
 	SRPMessageType type, SRPMessageSeverity severity, const char* sourceFunction,
 	const char* message, void* userParameter
 );
-void vertexShader(SRPvsInput* in, SRPvsOutput* out);
-void fragmentShader(SRPfsInput* in, SRPfsOutput* out);
+void vertexShader(SRPVertexShaderIn* in, SRPVertexShaderOut* out);
+void fragmentShader(SRPFragmentShaderIn* in, SRPFragmentShaderOut* out);
 
 int main()
 {
@@ -65,15 +65,17 @@ int main()
 		.uniform = (SRPUniform*) &uniform,
 		.vs = &(SRPVertexShader) {
 			.shader = vertexShader,
-			.nOutputVariables = 1,
-			.outputVariablesInfo = (SRPVertexVariableInformation[]) {
-				{.nItems = 3, .type = SRP_FLOAT}
-			},
-			.nBytesPerOutputVariables = sizeof(VSOutput)
+			.nVaryings = 1,
+			.varyingsInfo = (SRPVaryingInfo[]) {{
+				.nItems = 3,
+				.type = SRP_FLOAT,
+				.interpolationMode = SRP_INTERPOLATION_MODE_PERSPECTIVE
+			}},
+			.varyingsSize = sizeof(VSOutput)
 		},
 		.fs = &(SRPFragmentShader) {
 			.shader = fragmentShader,
-			.doesOverwriteDepth = false
+			.mayOverwriteDepth = false
 		}
 	};
 
@@ -125,17 +127,15 @@ void messageCallback(
 }
 
 
-void vertexShader(SRPvsInput* in, SRPvsOutput* out)
+void vertexShader(SRPVertexShaderIn* in, SRPVertexShaderOut* out)
 {
-	Vertex* pVertex = (Vertex*) in->pVertex;
+	Vertex* pVertex = (Vertex*) in->vertex;
 	Uniform* pUniform = (Uniform*) in->uniform;
-	VSOutput* pOutVars = (VSOutput*) out->pOutputVariables;
+	VSOutput* pOutVars = (VSOutput*) out->varyings;
 
 	vec3* inPosition = &pVertex->position;
-	vec4* outPosition = (vec4*) out->position;
-	*outPosition = (vec4) {
-		inPosition->x, inPosition->y, inPosition->z, 1.0
-	};
+	vec4* outPosition = (vec4*) out->clipPosition;
+	*outPosition = (vec4) { inPosition->x, inPosition->y, inPosition->z, 1. };
 	// Transform the position vector by the rotation matrix from uniform
 	*outPosition = mat4MultiplyVec4(&pUniform->rotation, *outPosition);
 
@@ -145,9 +145,9 @@ void vertexShader(SRPvsInput* in, SRPvsOutput* out)
 	pOutVars->color.z = pVertex->color.z + sin(pUniform->frameCount * 5e-3) * 0.5;
 }
 
-void fragmentShader(SRPfsInput* in, SRPfsOutput* out)
+void fragmentShader(SRPFragmentShaderIn* in, SRPFragmentShaderOut* out)
 {
-	VSOutput* interpolated = (VSOutput*) in->interpolated;
+	VSOutput* interpolated = (VSOutput*) in->varyings;
 	vec4* outColor = (vec4*) out->color;
 	outColor->x = interpolated->color.x;
 	outColor->y = interpolated->color.y;

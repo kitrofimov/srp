@@ -89,9 +89,9 @@ void rasterizeTriangle(
 			float depth, recIntInvW;
 			triangleInterpolateData(tri, sp, interpolatedBuffer, &depth, &recIntInvW);
 
-			SRPfsInput fsIn = {
+			SRPFragmentShaderIn fsIn = {
 				.uniform = sp->uniform,
-				.interpolated = interpolatedBuffer,
+				.varyings = interpolatedBuffer,
 				.fragCoord = { x + 0.5, y + 0.5, depth, recIntInvW },
 				.frontFacing = tri->isFrontFacing,
 				.primitiveID = tri->id,
@@ -117,7 +117,7 @@ bool setupTriangle(SRPTriangle* tri, const SRPFramebuffer* fb)
 
 	// vec3 is tightly packed, so this is safe
 	for (uint8_t i = 0; i < 3; i++)
-		tri->p_ndc[i] = (vec3*) tri->v[i].position;
+		tri->p_ndc[i] = (vec3*) tri->v[i].clipPosition;
 
 	bool isCCW;
 	if (shouldCullTriangle(tri, &isCCW, &tri->isFrontFacing))
@@ -185,7 +185,7 @@ static void triangleChangeWinding(SRPTriangle* tri)
 {
 	// Not swapping `p_ndc`, because those are pointers to `v.position`
 	// If swapped both at the same time, it's the same as not swapping anything
-	SRPvsOutput temp1 = tri->v[1];
+	SRPVertexShaderOut temp1 = tri->v[1];
 	tri->v[1] = tri->v[2];
 	tri->v[2] = temp1;
 
@@ -242,9 +242,8 @@ static void triangleInterpolateData(
 	SRPInterpolated* pInterpolatedBuffer, float* depth, float* recIntInvW
 )
 {
-	const bool perspective = srpContext.interpolationMode == SRP_INTERPOLATION_MODE_PERSPECTIVE;
-	interpolateDepthAndWTriangle(tri->v, tri->lambda, tri->invW, perspective, sp, depth, recIntInvW);
-	interpolateAttributes(tri->v, 3, tri->lambda, tri->invW, *recIntInvW, perspective, sp, pInterpolatedBuffer);
+	interpolateDepthAndWTriangle(tri->v, tri->lambda, tri->invW, sp, depth, recIntInvW);
+	interpolateAttributes(tri->v, 3, tri->lambda, tri->invW, *recIntInvW, sp, pInterpolatedBuffer);
 }
 
 /** @} */  // ingroup Rasterization

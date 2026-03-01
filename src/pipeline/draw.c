@@ -101,13 +101,13 @@ static void drawTriangles(
 	{
 		if (srpContext.polygonMode == SRP_POLYGON_MODE_FILL)
 		{
-			void* interpolatedBuffer = ARENA_ALLOC(sp->vs->nBytesPerOutputVariables);
+			void* interpolatedBuffer = ARENA_ALLOC(sp->vs->varyingsSize);
 			SRPTriangle* triangle = &((SRPTriangle*) primitives)[i];
 			rasterizeTriangle(triangle, fb, sp, interpolatedBuffer);
 		}
 		else if (srpContext.polygonMode == SRP_POLYGON_MODE_LINE)
 		{
-			void* interpolatedBuffer = ARENA_ALLOC(sp->vs->nBytesPerOutputVariables);
+			void* interpolatedBuffer = ARENA_ALLOC(sp->vs->varyingsSize);
 			SRPLine* line = &((SRPLine*) primitives)[i];
 			rasterizeLine(line, fb, sp, interpolatedBuffer);
 		}
@@ -135,7 +135,7 @@ static void drawLines(
 	if (!success)
 		return;
 
-	void* interpolatedBuffer = ARENA_ALLOC(sp->vs->nBytesPerOutputVariables);
+	void* interpolatedBuffer = ARENA_ALLOC(sp->vs->varyingsSize);
 	for (size_t i = 0; i < lineCount; i++)
 		rasterizeLine(&lines[i], fb, sp, interpolatedBuffer);
 

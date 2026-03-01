@@ -35,8 +35,8 @@ void messageCallback(
 );
 
 // Vertex and fragment shaders, these should be always defined
-void vertexShader(SRPvsInput* in, SRPvsOutput* out);
-void fragmentShader(SRPfsInput* in, SRPfsOutput* out);
+void vertexShader(SRPVertexShaderIn* in, SRPVertexShaderOut* out);
+void fragmentShader(SRPFragmentShaderIn* in, SRPFragmentShaderOut* out);
 
 int main()
 {
@@ -75,15 +75,17 @@ int main()
 			.shader = vertexShader,
 			// This stores the information about vertex shader's output variables
 			// that is necessary to interpolate them inside the primitive
-			.nOutputVariables = 1,
-			.outputVariablesInfo = (SRPVertexVariableInformation[]) {
-				{.nItems = 3, .type = SRP_FLOAT}
-			},
-			.nBytesPerOutputVariables = sizeof(VSOutput)
+			.nVaryings = 1,
+			.varyingsInfo = (SRPVaryingInfo[]) {{
+				.nItems = 3,
+				.type = SRP_FLOAT,
+				.interpolationMode = SRP_INTERPOLATION_MODE_PERSPECTIVE
+			}},
+			.varyingsSize = sizeof(VSOutput)
 		},
 		.fs = &(SRPFragmentShader) {
 			.shader = fragmentShader,
-			.doesOverwriteDepth = false
+			.mayOverwriteDepth = false
 		}
 	};
 
@@ -137,31 +139,29 @@ void messageCallback(
 }
 
 
-void vertexShader(SRPvsInput* in, SRPvsOutput* out)
+void vertexShader(SRPVertexShaderIn* in, SRPVertexShaderOut* out)
 {
 	// Cast the opaque input pointers to known types to make computations easier
-	Vertex* pVertex = (Vertex*) in->pVertex;
-	VSOutput* pOutVars = (VSOutput*) out->pOutputVariables;
+	Vertex* pVertex = (Vertex*) in->vertex;
+	VSOutput* pOutVars = (VSOutput*) out->varyings;
 
 	// `out->position` is defined as `float[4]`, but we cast it to `vec4*`
 	// `vec` structures are tightly packed, so it is safe to cast float/float
 	// arrays to vecXf/vecXd and vice versa!
 	vec3* inPosition = &pVertex->position;
-	vec4* outPosition = (vec4*) out->position;
-	*outPosition = (vec4) {
-		inPosition->x, inPosition->y, inPosition->z, 1.0
-	};
+	vec4* outPosition = (vec4*) out->clipPosition;
+	*outPosition = (vec4) { inPosition->x, inPosition->y, inPosition->z, 1. };
 	pOutVars->color = pVertex->color;
 
 	// What we have done is just copied the inputs to the outputs
 	// The simplest vertex shader possible!
 }
 
-void fragmentShader(SRPfsInput* in, SRPfsOutput* out)
+void fragmentShader(SRPFragmentShaderIn* in, SRPFragmentShaderOut* out)
 {
 	// Because the vertex shader's outputs are interpolated, in->interpolated
 	// is an opaque pointer to VSOutput, so we cast it to this known type
-	VSOutput* interpolated = (VSOutput*) in->interpolated;
+	VSOutput* interpolated = (VSOutput*) in->varyings;
 
 	// See `vertexShader` comments
 	vec4* outColor = (vec4*) out->color;

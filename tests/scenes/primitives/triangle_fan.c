@@ -18,8 +18,8 @@ typedef struct VSOutput
 
 SRPContext srpContext;
 
-void vertexShader(SRPvsInput* in, SRPvsOutput* out);
-void fragmentShader(SRPfsInput* in, SRPfsOutput* out);
+void vertexShader(SRPVertexShaderIn* in, SRPVertexShaderOut* out);
+void fragmentShader(SRPFragmentShaderIn* in, SRPFragmentShaderOut* out);
 
 int main(int argc, char** argv)
 {
@@ -37,15 +37,17 @@ int main(int argc, char** argv)
         .uniform = NULL,
         .vs = &(SRPVertexShader) {
             .shader = vertexShader,
-            .nOutputVariables = 1,
-            .outputVariablesInfo = (SRPVertexVariableInformation[]) {
-                { .nItems = 3, .type = SRP_FLOAT }
-            },
-            .nBytesPerOutputVariables = sizeof(VSOutput)
+            .nVaryings = 1,
+			.varyingsInfo = (SRPVaryingInfo[]) {{
+				.nItems = 3,
+				.type = SRP_FLOAT,
+				.interpolationMode = SRP_INTERPOLATION_MODE_PERSPECTIVE
+			}},
+            .varyingsSize = sizeof(VSOutput)
         },
         .fs = &(SRPFragmentShader) {
             .shader = fragmentShader,
-            .doesOverwriteDepth = false
+            .mayOverwriteDepth = false
         }
     };
 
@@ -66,20 +68,20 @@ int main(int argc, char** argv)
     return ok ? 0 : 1;
 }
 
-void vertexShader(SRPvsInput* in, SRPvsOutput* out)
+void vertexShader(SRPVertexShaderIn* in, SRPVertexShaderOut* out)
 {
-    Vertex* v = (Vertex*) in->pVertex;
-    VSOutput* o = (VSOutput*) out->pOutputVariables;
+    Vertex* v = (Vertex*) in->vertex;
+    VSOutput* o = (VSOutput*) out->varyings;
 
 	vec3* inPos = &v->position;
-	vec4* outPos = (vec4*) out->position;
+	vec4* outPos = (vec4*) out->clipPosition;
 	*outPos = (vec4) { inPos->x, inPos->y, inPos->z, 1. };
     o->color = v->color;
 }
 
-void fragmentShader(SRPfsInput* in, SRPfsOutput* out)
+void fragmentShader(SRPFragmentShaderIn* in, SRPFragmentShaderOut* out)
 {
-    VSOutput* i = (VSOutput*) in->interpolated;
+    VSOutput* i = (VSOutput*) in->varyings;
 
     vec4* color = (vec4*) out->color;
     color->x = i->color.x;

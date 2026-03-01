@@ -15,72 +15,74 @@
 
 /** Represents user-defined shader uniform. Can be accessed by both vertex and
  *  fragment shader via pointer.
- *  @see SRPvsInput.uniform SRPfsInput.uniform SRPShaderProgram */
+ *  @see SRPVertexShaderIn.uniform SRPFragmentShaderIn.uniform SRPShaderProgram */
 typedef struct SRPUniform SRPUniform;
 
 
 /** Holds inputs to vertex shader
  *  @see SRPVertexShader */
-typedef struct SRPvsInput
+typedef struct SRPVertexShaderIn
 {
 	SRPUniform* uniform;  /**< Pointer to the currently used shader uniform */
-	SRPVertex* pVertex;   /**< Pointer to the current vertex */
+	SRPVertex* vertex;    /**< Pointer to the current vertex */
 	size_t vertexID;      /**< ID of a current vertex */
-} SRPvsInput;
+} SRPVertexShaderIn;
 
 /** Holds outputs from vertex shader
  *  @see SRPVertexShader */
-typedef struct SRPvsOutput
+typedef struct SRPVertexShaderOut
 {
-	float position[4];                    /**< Position of the processed vertex */
-	SRPVertexVariable* pOutputVariables;  /**< Pointer to the buffer of vertex variables */
-} SRPvsOutput;
+	union {
+		float clipPosition[4];  /**< Raw vertex shader output */
+		float ndcPosition[4];   /**< Position after perspective divide */
+	};
+	SRPVarying* varyings;   /**< Pointer to the buffer of vertex variables */
+} SRPVertexShaderOut;
 
 /** Represents the vertex shader
  *  @see SRPShaderProgram */
 typedef struct SRPVertexShader
 {
 	/** Shader function */
-	void (*shader)(SRPvsInput* in, SRPvsOutput* out);
-	/** Number of output variables */
-	size_t nOutputVariables;
-	/** Pointer to an array of output variables' information.
-	 *   Should be SRPVertexShader.nOutputVariables elements long. */
-	SRPVertexVariableInformation* outputVariablesInfo;
-	/** Size of output variables in bytes */
-	size_t nBytesPerOutputVariables;
+	void (*shader)(SRPVertexShaderIn* in, SRPVertexShaderOut* out);
+	/** Number of varyings outputted by this shader */
+	size_t nVaryings;
+	/** Array of metadata for each varying, should be `nVaryings` elements long */
+	SRPVaryingInfo* varyingsInfo;
+	/** Total size of all varyings in bytes */
+	size_t varyingsSize;
 } SRPVertexShader;
 
 
 /** Holds inputs to fragment shader
  *  @see SRPFragmentShader */
-typedef struct SRPfsInput
+typedef struct SRPFragmentShaderIn
 {
-	SRPUniform* uniform;            /**< Pointer to currently used shader uniform */
-	SRPInterpolated* interpolated;  /**< Pointer to interpolated vertex variables */
-	float fragCoord[4];             /**< Window space coordinates of the fragment */
-	bool frontFacing;               /**< Whether or not the current primitive is facing front */
-	size_t primitiveID;             /**< ID of the currently processing primitive */
-} SRPfsInput;
+	SRPUniform* uniform;        /**< Pointer to currently used shader uniform */
+	SRPInterpolated* varyings;  /**< Pointer to interpolated vertex variables */
+	float fragCoord[4];         /**< Window space coordinates of the fragment */
+	bool frontFacing;           /**< Whether or not the current primitive is facing front */
+	size_t primitiveID;         /**< ID of the currently processing primitive */
+} SRPFragmentShaderIn;
 
 /** Holds outputs from fragment shader
  *  @see SRPFragmentShader */
-typedef struct SRPfsOutput
+typedef struct SRPFragmentShaderOut
 {
 	float color[4];   /**< Color to draw at this fragment */
 	float fragDepth;  /**< Set the depth value of the current fragment. May be written
-						   only if SRPFragmentShader.doesOverwriteDepth is `true` */
-} SRPfsOutput;
+						   only if SRPFragmentShader.mayOverwriteDepth is `true` */
+} SRPFragmentShaderOut;
 
 /** Represents the fragment shader
  *  @see SRPShaderProgram */
 typedef struct SRPFragmentShader
 {
 	/** Shader function */
-	void (*shader)(SRPfsInput* in, SRPfsOutput* out);
-	/** Whether or not this shader may overwrite depth via SRPfsOutput.fragDepth
+	void (*shader)(SRPFragmentShaderIn* in, SRPFragmentShaderOut* out);
+	/** Whether or not this shader may overwrite depth via SRPFragmentShaderOut.fragDepth
 	 *  If `false`, early depth test is activated (less fragment shader invocations) */
-	bool doesOverwriteDepth;
+	bool mayOverwriteDepth;
 } SRPFragmentShader;
 
 
