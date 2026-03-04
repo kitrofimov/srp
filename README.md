@@ -65,12 +65,15 @@ cd bin
 - [x] Update the documentation
 - [x] Image-based testing framework
 - [x] Flat interpolation, per-varying perspective / affine / flat setting
-- [ ] Implement single-threaded binning and tile system
+- [ ] Fix #30
+- [ ] Phong shading example
+- [ ] Bilinear filtering
+- [ ] Mipmapping
+- [ ] Depth test options
+- [ ] Scissor test
+- [ ] Stencil test
+- [ ] Blending
+- [ ] sRGB
+- [ ] MSAA (multisampling)
+- [ ] Single-threaded binning and tile system
 - [ ] Scale to multiple threads
-
-- [ ] Add multisampling
-- [ ] Advanced texture techniques:
-    - [ ] (Bi)linear filtering
-    - [ ] Mipmapping
-    - [ ] Anisotropic filtering
-    - [ ] Transparent textures?
