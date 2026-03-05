@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include "srp/message_callback.h"
@@ -160,6 +161,15 @@ void srpRasterPointSize(float size);
 void srpScissorTest(bool enable);
 /** Set the options for the scissor test */
 void srpScissorOptions(size_t x, size_t y, size_t width, size_t height);
+
+/** Enable or disable the stencil test */
+void srpStencilTest(bool enable);
+/** Set the stencil comparison function options */
+void srpStencilFunc(SRPCompareOp func, uint8_t ref, uint8_t mask);
+/** Set the stencil update operation options */
+void srpStencilOp(SRPStencilOp sfail, SRPStencilOp dfail, SRPStencilOp pass);
+/** Set the write mask on stencil operations */
+void srpStencilWriteMask(uint8_t mask);
 
 /** Enable or disable the depth test */
 void srpDepthTest(bool enable);

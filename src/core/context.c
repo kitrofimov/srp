@@ -81,6 +81,30 @@ void srpScissorOptions(size_t x, size_t y, size_t width, size_t height)
 	srpContext.scissor.height = height;
 }
 
+void srpStencilTest(bool enable)
+{
+	srpContext.stencil.enabled = true;
+}
+
+void srpStencilFunc(SRPCompareOp func, uint8_t ref, uint8_t mask)
+{
+	srpContext.stencil.func = func;
+	srpContext.stencil.ref = ref;
+	srpContext.stencil.mask = mask;
+}
+
+void srpStencilOp(SRPStencilOp sfail, SRPStencilOp dfail, SRPStencilOp pass)
+{
+	srpContext.stencil.sfailOp = sfail;
+	srpContext.stencil.dfailOp = dfail;
+	srpContext.stencil.passOp = pass;
+}
+
+void srpStencilWriteMask(uint8_t mask)
+{
+	srpContext.stencil.writeMask = mask;
+}
+
 void srpDepthTest(bool enable)
 {
 	srpContext.depth.testEnable = enable;
