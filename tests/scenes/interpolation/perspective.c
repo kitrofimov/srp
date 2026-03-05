@@ -104,8 +104,8 @@ int main(int argc, char** argv)
 	};
 
 	srpNewContext(&srpContext);
-	srpContextSetI(SRP_CONTEXT_FRONT_FACE, SRP_FRONT_FACE_CCW);
-	srpContextSetI(SRP_CONTEXT_CULL_FACE, SRP_CULL_FACE_BACK);
+	srpRasterFrontFace(SRP_FRONT_FACE_CCW);
+	srpRasterCullFace(SRP_CULL_FACE_BACK);
 
 	SRPFramebuffer* fb = srpNewFramebuffer(512, 512);
 	SRPVertexBuffer* vb = srpNewVertexBuffer();

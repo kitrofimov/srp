@@ -14,132 +14,66 @@
 
 void srpNewContext(SRPContext* pContext)
 {
-	pContext->messageCallback = NULL;
-	pContext->messageCallbackUserParameter = NULL;
+	pContext->messageCallback = (SRPMessageCallback) {
+		.func = NULL,
+		.userParameter = NULL
+	};
+
 	pContext->provokingVertexMode = SRP_PROVOKING_VERTEX_LAST;
-	pContext->frontFace = SRP_FRONT_FACE_CCW;
-	pContext->cullFace = SRP_CULL_FACE_NONE;
-	pContext->polygonMode = SRP_POLYGON_MODE_FILL;
-	pContext->pointSize = 1.;
+
+	pContext->raster = (SRPRasterState) {
+		.frontFace = SRP_FRONT_FACE_CCW,
+		.cullFace = SRP_CULL_FACE_NONE,
+		.polygonMode = SRP_POLYGON_MODE_FILL,
+		.pointSize = 1.
+	};
+
 	pContext->arena = newArena(SRP_DEFAULT_ARENA_CAPACITY);
 }
 
-void srpContextSetMessageCallback(SRPMessageCallbackType callback)
+void srpSetMessageCallback(SRPMessageCallback callback)
 {
 	srpContext.messageCallback = callback;
 }
 
-SRPMessageCallbackType srpContextGetMessageCallback()
+void srpProvokingVertexMode(SRPProvokingVertexMode mode)
 {
-	return srpContext.messageCallback;
+	srpContext.provokingVertexMode = mode;
 }
 
-void srpContextSetP(SRPContextParameter contextParameter, void* data)
+void srpRasterCullFace(SRPCullFace face)
 {
-	switch (contextParameter)
-	{
-	case SRP_CONTEXT_MESSAGE_CALLBACK_USER_PARAMETER:
-		srpContext.messageCallbackUserParameter = data;
-		return;
-	default:
-		srpMessageCallbackHelper(
-			SRP_MESSAGE_ERROR, SRP_MESSAGE_SEVERITY_HIGH, __func__,
-			"Unsupported context parameter %i", contextParameter
-		);
-		return;
-	}
+	srpContext.raster.cullFace = face;
 }
 
-void srpContextSetI(SRPContextParameter contextParameter, int data)
+void srpRasterFrontFace(SRPFrontFace face)
 {
-	switch (contextParameter)
-	{
-	case SRP_CONTEXT_PROVOKING_VERTEX_MODE:
-		srpContext.provokingVertexMode = data;
-		return;
-	case SRP_CONTEXT_FRONT_FACE:
-		srpContext.frontFace = data;
-		return;
-	case SRP_CONTEXT_CULL_FACE:
-		srpContext.cullFace = data;
-		return;
-	case SRP_CONTEXT_POLYGON_MODE:
-		srpContext.polygonMode = data;
-		return;
-	default:
-		srpMessageCallbackHelper(
-			SRP_MESSAGE_ERROR, SRP_MESSAGE_SEVERITY_HIGH, __func__,
-			"Unsupported context parameter %i", contextParameter
-		);
-		return;
-	}
+	srpContext.raster.frontFace = face;
 }
 
-void srpContextSetF(SRPContextParameter contextParameter, float data)
+void srpRasterPolygonMode(SRPPolygonMode mode)
 {
-	switch (contextParameter)
-	{
-	case SRP_CONTEXT_POINT_SIZE:
-		srpContext.pointSize = data;
-		return;
-	default:
-		srpMessageCallbackHelper(
-			SRP_MESSAGE_ERROR, SRP_MESSAGE_SEVERITY_HIGH, __func__,
-			"Unsupported context parameter %i", contextParameter
-		);
-		return;
-	}
+	srpContext.raster.polygonMode = mode;
 }
 
-void* srpContextGetP(SRPContextParameter contextParameter)
+void srpRasterPointSize(float size)
 {
-	switch (contextParameter)
-	{
-	case SRP_CONTEXT_MESSAGE_CALLBACK_USER_PARAMETER:
-		return srpContext.messageCallbackUserParameter;
-	default:
-		srpMessageCallbackHelper(
-			SRP_MESSAGE_ERROR, SRP_MESSAGE_SEVERITY_HIGH, __func__,
-			"Unsupported context parameter %i", contextParameter
-		);
-		return NULL;
-	}
+	srpContext.raster.pointSize = size;
 }
 
-int srpContextGetI(SRPContextParameter contextParameter)
+void srpDepthTest(bool enable)
 {
-	switch (contextParameter)
-	{
-	case SRP_CONTEXT_PROVOKING_VERTEX_MODE:
-		return srpContext.provokingVertexMode;
-	case SRP_CONTEXT_FRONT_FACE:
-		return srpContext.frontFace;
-	case SRP_CONTEXT_CULL_FACE:
-		return srpContext.cullFace;
-	case SRP_CONTEXT_POLYGON_MODE:
-		return srpContext.polygonMode;
-	default:
-		srpMessageCallbackHelper(
-			SRP_MESSAGE_ERROR, SRP_MESSAGE_SEVERITY_HIGH, __func__,
-			"Unsupported context parameter %i", contextParameter
-		);
-		return 0;
-	}
+	srpContext.depth.testEnable = enable;
 }
 
-float srpContextGetF(SRPContextParameter contextParameter)
+void srpDepthWrite(bool enable)
 {
-	switch (contextParameter)
-	{
-	case SRP_CONTEXT_POINT_SIZE:
-		return srpContext.pointSize;
-	default:
-		srpMessageCallbackHelper(
-			SRP_MESSAGE_ERROR, SRP_MESSAGE_SEVERITY_HIGH, __func__,
-			"Unsupported context parameter %i", contextParameter
-		);
-		return 0.;
-	}
+	srpContext.depth.writeEnable = enable;
+}
+
+void srpDepthCompareOp(SRPCompareOp op)
+{
+	srpContext.depth.compareOp = op;
 }
 
 /** @} */  // ingroup Context_internal

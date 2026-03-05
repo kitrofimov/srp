@@ -59,7 +59,7 @@ int main(int argc, char** argv)
 	};
 
 	srpNewContext(&srpContext);
-	srpContextSetI(SRP_CONTEXT_POLYGON_MODE, SRP_POLYGON_MODE_LINE);
+	srpRasterPolygonMode(SRP_POLYGON_MODE_LINE);
 
 	SRPFramebuffer* fb = srpNewFramebuffer(512, 512);
 	SRPVertexBuffer* vb = srpNewVertexBuffer();

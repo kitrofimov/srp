@@ -64,12 +64,12 @@ int main(int argc, char** argv)
     srpVertexBufferCopyData(vb, sizeof(Vertex), sizeof(data), data);
 
     // Expected: left, red
-    srpContextSetI(SRP_CONTEXT_PROVOKING_VERTEX_MODE, SRP_PROVOKING_VERTEX_FIRST);
+    srpProvokingVertexMode(SRP_PROVOKING_VERTEX_FIRST);
     uniform.model = mat4ConstructTRS(-0.5, 0, 0,   0, 0, 0,   0.5, 0.5, 0.5);
     srpDrawVertexBuffer(vb, fb, &shaderProgram, SRP_PRIM_TRIANGLES, 0, 3);
 
     // Expected: right, blue
-    srpContextSetI(SRP_CONTEXT_PROVOKING_VERTEX_MODE, SRP_PROVOKING_VERTEX_LAST);
+    srpProvokingVertexMode(SRP_PROVOKING_VERTEX_LAST);
     uniform.model = mat4ConstructTRS( 0.5, 0, 0,   0, 0, 0,   0.5, 0.5, 0.5);
     srpDrawVertexBuffer(vb, fb, &shaderProgram, SRP_PRIM_TRIANGLES, 0, 3);
 

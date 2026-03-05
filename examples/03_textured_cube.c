@@ -38,11 +38,14 @@ void fragmentShader(SRPFragmentShaderIn* in, SRPFragmentShaderOut* out);
 int main()
 {
 	srpNewContext(&srpContext);
-	srpContextSetMessageCallback(messageCallback);
+	srpSetMessageCallback((SRPMessageCallback) {
+		.func = messageCallback,
+		.userParameter = NULL
+	});
 
 	// Enable back-face culling and set counter-clockwise faces as front-facing
-	srpContextSetI(SRP_CONTEXT_FRONT_FACE, SRP_FRONT_FACE_CCW);
-	srpContextSetI(SRP_CONTEXT_CULL_FACE, SRP_CULL_FACE_BACK);
+	srpRasterFrontFace(SRP_FRONT_FACE_CCW);
+	srpRasterCullFace(SRP_CULL_FACE_BACK);
 
 	SRPFramebuffer* fb = srpNewFramebuffer(512, 512);
 

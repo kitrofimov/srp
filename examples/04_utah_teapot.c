@@ -28,12 +28,14 @@ void fragmentShader(SRPFragmentShaderIn* in, SRPFragmentShaderOut* out);
 int main()
 {
 	srpNewContext(&srpContext);
-	srpContextSetMessageCallback(messageCallback);
+	srpSetMessageCallback((SRPMessageCallback) {
+		.func = messageCallback,
+		.userParameter = NULL
+	});
 
-	srpContextSetI(SRP_CONTEXT_FRONT_FACE, SRP_FRONT_FACE_CW);
-	srpContextSetI(SRP_CONTEXT_CULL_FACE, SRP_CULL_FACE_BACK);
-
-	srpContextSetI(SRP_CONTEXT_POLYGON_MODE, SRP_POLYGON_MODE_FILL);
+	srpRasterFrontFace(SRP_FRONT_FACE_CW);
+	srpRasterCullFace(SRP_CULL_FACE_BACK);
+	srpRasterPolygonMode(SRP_POLYGON_MODE_FILL);
 
 	OBJMesh mesh;
 	if (!loadOBJMesh("res/objects/utah_teapot.obj", &mesh))

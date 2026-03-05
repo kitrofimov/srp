@@ -34,7 +34,7 @@ void rasterizePoint(
     const SRPShaderProgram* restrict sp
 )
 {
-    const float pointSize = srpContext.pointSize;
+    const float pointSize = srpContext.raster.pointSize;
     vec3 ss;
     vec2 minBP, maxBP;
     int minX, maxX, minY, maxY;
