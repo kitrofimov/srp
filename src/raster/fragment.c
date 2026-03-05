@@ -174,20 +174,26 @@ static inline bool stencilCompare(uint8_t ref, uint8_t stored, uint8_t mask, SRP
 
 static inline void stencilFailOp(uint8_t* stencil)
 {
+    const uint8_t mask = srpContext.stencil.writeMask;
+    const uint8_t current = *stencil;
     uint8_t val = applyStencilOp(srpContext.stencil.sfailOp, *stencil, srpContext.stencil.ref);
-    *stencil = val & srpContext.stencil.writeMask;
+    *stencil = (current & ~mask) | (val & mask);  // Only modify masked bits
 }
 
 static inline void stencilDepthFailOp(uint8_t* stencil)
 {
+    const uint8_t mask = srpContext.stencil.writeMask;
+    const uint8_t current = *stencil;
     uint8_t val = applyStencilOp(srpContext.stencil.dfailOp, *stencil, srpContext.stencil.ref);
-    *stencil = val & srpContext.stencil.writeMask;
+    *stencil = (current & ~mask) | (val & mask);
 }
 
 static inline void stencilPassOp(uint8_t* stencil)
 {
+    const uint8_t mask = srpContext.stencil.writeMask;
+    const uint8_t current = *stencil;
     uint8_t val = applyStencilOp(srpContext.stencil.passOp, *stencil, srpContext.stencil.ref);
-    *stencil = val & srpContext.stencil.writeMask;
+    *stencil = (current & ~mask) | (val & mask);
 }
 
 static inline uint8_t applyStencilOp(SRPStencilOp op, uint8_t stored, uint8_t ref)
