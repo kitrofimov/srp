@@ -78,11 +78,9 @@ void emitFragment(
     if (!stencilTest(pStencil))
         return;
 
-    bool depthPassed = true;
     if (earlyDepthTest)
     {
-        depthPassed = depthTest(depth, storedDepth);
-        if (!depthPassed)
+        if (!depthTest(depth, storedDepth))
         {
             if (stencilTestEnabled)
                 stencilDepthFailOp(pStencil);
@@ -98,8 +96,7 @@ void emitFragment(
         if (!isnan(fsOut.fragDepth))
             depth = fsOut.fragDepth;
         
-        depthPassed = depthTest(depth, storedDepth);
-        if (!depthPassed)
+        if (!depthTest(depth, storedDepth))
         {
             if (stencilTestEnabled)
                 stencilDepthFailOp(pStencil);
