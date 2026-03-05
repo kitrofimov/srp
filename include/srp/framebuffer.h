@@ -16,11 +16,12 @@
 /** Holds RBGA8888 color buffer and depth buffer */
 typedef struct SRPFramebuffer
 {
-	size_t width;     /**< Width */
-	size_t height;    /**< Height */
-	size_t size;      /**< Total amount of pixels (width * height) */
-	uint32_t* color;  /**< Pointer to the color buffer */
-	float* depth;     /**< Pointer to the depth buffer */
+	size_t width;      /**< Width */
+	size_t height;     /**< Height */
+	size_t size;       /**< Total amount of pixels (width * height) */
+	uint32_t* color;   /**< Pointer to the color buffer */
+	float* depth;      /**< Pointer to the depth buffer */
+	uint8_t* stencil;  /**< Pointer to the stencil buffer */
 } SRPFramebuffer;
 
 /** Create a framebuffer

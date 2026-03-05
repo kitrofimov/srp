@@ -27,6 +27,8 @@ void srpNewContext(SRPContext* pContext)
 		.polygonMode = SRP_POLYGON_MODE_FILL,
 		.pointSize = 1.
 	};
+	pContext->scissor = (SRPScissorState) { 0 };
+	pContext->stencil = (SRPStencilState) { 0 };
 	pContext->depth = (SRPDepthState) {
 		.testEnable = false,
 		.writeEnable = true,
@@ -69,11 +71,6 @@ void srpRasterPointSize(float size)
 void srpScissorTest(bool enable)
 {
 	srpContext.scissor.enabled = enable;
-	// Dummy data to avoid touching uninitialized fields
-	srpContext.scissor.x = 0;
-	srpContext.scissor.y = 0;
-	srpContext.scissor.width = 0;
-	srpContext.scissor.height = 0;
 }
 
 void srpScissorOptions(size_t x, size_t y, size_t width, size_t height)

@@ -7,8 +7,8 @@
 
 #pragma once
 
-#include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 #include "srp/message_callback.h"
 #include "srp/arena.h"
 
@@ -27,14 +27,14 @@ typedef enum SRPProvokingVertexMode
 /** Front face mode */
 typedef enum SRPFrontFace
 {
-	SRP_FRONT_FACE_CCW,  /**< Counterclockwise; default */
+	SRP_FRONT_FACE_CCW,  /**< Counterclockwise (default) */
 	SRP_FRONT_FACE_CW    /**< Clockwise */
 } SRPFrontFace;
 
 /** Cull face mode */
 typedef enum SRPCullFace
 {
-	SRP_CULL_FACE_NONE,   /**< Do not cull any face; default */
+	SRP_CULL_FACE_NONE,   /**< Do not cull any face (default) */
 	SRP_CULL_FACE_FRONT,  /**< Cull the front face */
 	SRP_CULL_FACE_BACK,   /**< Cull the back face */
 	/**< Cull both front and back faces. Primitives that don't have a face
@@ -45,7 +45,7 @@ typedef enum SRPCullFace
 /** Polygon rendering mode */
 typedef enum SRPPolygonMode
 {
-	SRP_POLYGON_MODE_FILL,  /**< Filled triangles; default */
+	SRP_POLYGON_MODE_FILL,  /**< Filled triangles (default) */
 	SRP_POLYGON_MODE_LINE,  /**< Lines only (wireframe) */
 	SRP_POLYGON_MODE_POINT  /**< Points only */
 } SRPPolygonMode;
@@ -62,6 +62,19 @@ typedef enum SRPCompareOp
     SRP_COMPARE_EQUAL,
     SRP_COMPARE_NOTEQUAL
 } SRPCompareOp;
+
+/** Lists possible stencil buffer operations */
+typedef enum {
+    SRP_STENCIL_KEEP,       /**< Keep the current value */
+    SRP_STENCIL_ZERO,       /**< Set to 0 */
+    SRP_STENCIL_REPLACE,    /**< Set to the reference value */
+    SRP_STENCIL_INCR,       /**< Increment (clamp to 255) */
+    SRP_STENCIL_INCR_WRAP,  /**< Increment (wraparound to 0) */
+    SRP_STENCIL_DECR,       /**< Decrement (clamp to 0) */
+    SRP_STENCIL_DECR_WRAP,  /**< Decrement (wraparound to 255) */
+    SRP_STENCIL_INVERT      /**< Bitwise invert */
+} SRPStencilOp;
+
 
 
 /** Rasterizer state */
@@ -82,11 +95,24 @@ typedef struct {
     size_t height;  /**< The height of the scissor box */
 } SRPScissorState;
 
+/** Stencil test state */
+typedef struct {
+    bool enabled;          /**< Whether or not the stencil test is enabled */
+    SRPCompareOp func;     /**< The comparison function to use */
+    uint8_t ref;           /**< The value to compare against */
+    uint8_t mask;          /**< Mask for the comparison: (ref & mask) OP (stored & mask) */
+    uint8_t writeMask;     /**< Mask for writing to the buffer */
+    SRPStencilOp sfailOp;  /**< Action if stencil test fails */
+    SRPStencilOp dfailOp;  /**< Action if stencil test passes but depth test fails */
+    SRPStencilOp passOp;   /**< Action if both stencial and depth tests pass */
+} SRPStencilState;
+
 /** Depth test state */
 typedef struct SRPDepthState
 {
-    bool testEnable;         /**< Whether or not to enable the depth testing */
-    bool writeEnable;        /**< Whether or not to enable depth writing */
+    bool testEnable;         /**< Whether or not the depth test is enabled */
+    bool writeEnable;        /**< Whether or not the depth write is enabled.
+								  Does not have any effect if the test is disabled */
     SRPCompareOp compareOp;  /**< Compare operation to use in depth test */
 } SRPDepthState;
 
@@ -103,6 +129,7 @@ typedef struct SRPContext
 
 	SRPRasterState raster;    /**< Rasterizer state */
 	SRPScissorState scissor;  /**< Scissor test state */
+    SRPStencilState stencil;  /**< Stencil test state */
 	SRPDepthState depth;      /**< Depth test state */
 
 	/** Arena for internal allocations. Is not exposed to the user */

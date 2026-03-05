@@ -17,11 +17,12 @@
 /** Get pointers inside color and depth buffers for pixel at (x, y)
  *  @param[in] this Pointer to the SRPFramebuffer
  *  @param[in] x,y Coordinates of the needed pixel
- *  @param[out] pColor Pointer to the color buffer
- *  @param[out] pDepth Pointer to the depth buffer */
-void framebufferGetColorAndDepthPointers(
+ *  @param[out] pColor Pointer to the color value
+ *  @param[out] pDepth Pointer to the depth value
+ *  @param[out] pStencil Pointer to the stencil value */
+void framebufferGetPointers(
 	const SRPFramebuffer* this, size_t x, size_t y,
-	uint32_t** pColor, float** pDepth
+	uint32_t** pColor, float** pDepth, uint8_t** pStencil
 );
 
 /** Convert Normalized Device Coordinates to screen-space coordiantes
