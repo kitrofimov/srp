@@ -23,8 +23,9 @@ static inline bool scissorTest(size_t x, size_t y);
 
 /** Perform an initial stage of the stencil test and potentially apply fail
  *  operation to the stencil value. Checks if the stencil test is enabled.
- *  @param[in] stencil Pointer to the current stencil value */
-static inline bool stencilTest(uint8_t* stencil);
+ *  @param[in] stencil Pointer to the current stencil value
+ *  @param[in] s Pointer to the stencil state to use */ 
+static inline bool stencilTest(uint8_t* stencil, const SRPStencilFaceState* s);
 
 /** Compare two masked stencil values with a certain operation
  *  @param[in] ref The reference stencil value
@@ -34,16 +35,19 @@ static inline bool stencilTest(uint8_t* stencil);
 static inline bool stencilCompare(uint8_t ref, uint8_t stored, uint8_t mask, SRPCompareOp op);
 
 /** Apply a "stencil test failed" operation to a stencil value
- *  @param[in] stencil Pointer to the current stencil value */
-static inline void stencilFailOp(uint8_t* stencil);
+ *  @param[in] stencil Pointer to the current stencil value
+ *  @param[in] s Pointer to the stencil state to use */ 
+static inline void stencilFailOp(uint8_t* stencil, const SRPStencilFaceState* s);
 
 /** Apply a "stencil test passed, depth test failed" operation to a stencil value
- *  @param[in] stencil Pointer to the current stencil value */
-static inline void stencilDepthFailOp(uint8_t* stencil);
+ *  @param[in] stencil Pointer to the current stencil value
+ *  @param[in] s Pointer to the stencil state to use */ 
+static inline void stencilDepthFailOp(uint8_t* stencil, const SRPStencilFaceState* s);
 
 /** Apply a "stencil and depth tests passed" operation to a stencil value
- *  @param[in] stencil Pointer to the current stencil value */
-static inline void stencilPassOp(uint8_t* stencil);
+ *  @param[in] stencil Pointer to the current stencil value
+ *  @param[in] s Pointer to the stencil state to use */ 
+static inline void stencilPassOp(uint8_t* stencil, const SRPStencilFaceState* s);
 
 /** Apply an operation to a stencil value */
 static inline uint8_t applyStencilOp(SRPStencilOp op, uint8_t stored, uint8_t ref);
@@ -72,10 +76,12 @@ void emitFragment(
     
     const bool earlyDepthTest = !sp->fs->mayOverwriteDepth;
     const bool stencilTestEnabled = srpContext.stencil.enabled;
+    const SRPStencilFaceState* stencilState = \
+        (fsIn->frontFacing) ? &srpContext.stencil.front : &srpContext.stencil.back;
     const float storedDepth = *pDepth;
     float depth = fsIn->fragCoord[2];
 
-    if (!stencilTest(pStencil))
+    if (!stencilTest(pStencil, stencilState))
         return;
 
     if (earlyDepthTest)
@@ -83,7 +89,7 @@ void emitFragment(
         if (!depthTest(depth, storedDepth))
         {
             if (stencilTestEnabled)
-                stencilDepthFailOp(pStencil);
+                stencilDepthFailOp(pStencil, stencilState);
             return;
         }
     }
@@ -99,13 +105,13 @@ void emitFragment(
         if (!depthTest(depth, storedDepth))
         {
             if (stencilTestEnabled)
-                stencilDepthFailOp(pStencil);
+                stencilDepthFailOp(pStencil, stencilState);
             return;
         }
     }
 
     if (stencilTestEnabled)
-        stencilPassOp(pStencil);
+        stencilPassOp(pStencil, stencilState);
 
     // If this is failed, this is the problem of library code
     // Not a direct check because of floating point imprecisions
@@ -133,16 +139,15 @@ static inline bool scissorTest(size_t x, size_t y)
     return true;
 }
 
-static inline bool stencilTest(uint8_t* stencil)
+static inline bool stencilTest(uint8_t* stencil, const SRPStencilFaceState* s)
 {
     if (!srpContext.stencil.enabled)
         return true;
 
-    const SRPStencilState* s = &srpContext.stencil;
     bool passed = stencilCompare(s->ref, *stencil, s->mask, s->func);
     if (!passed)
     {
-        stencilFailOp(stencil);
+        stencilFailOp(stencil, s);
         return false;
     }
     return true;
@@ -172,27 +177,27 @@ static inline bool stencilCompare(uint8_t ref, uint8_t stored, uint8_t mask, SRP
     }
 }
 
-static inline void stencilFailOp(uint8_t* stencil)
+static inline void stencilFailOp(uint8_t* stencil, const SRPStencilFaceState* s)
 {
-    const uint8_t mask = srpContext.stencil.writeMask;
+    const uint8_t mask = s->writeMask;
     const uint8_t current = *stencil;
-    uint8_t val = applyStencilOp(srpContext.stencil.sfailOp, *stencil, srpContext.stencil.ref);
+    uint8_t val = applyStencilOp(s->sfailOp, *stencil, s->ref);
     *stencil = (current & ~mask) | (val & mask);  // Only modify masked bits
 }
 
-static inline void stencilDepthFailOp(uint8_t* stencil)
+static inline void stencilDepthFailOp(uint8_t* stencil, const SRPStencilFaceState* s)
 {
-    const uint8_t mask = srpContext.stencil.writeMask;
+    const uint8_t mask = s->writeMask;
     const uint8_t current = *stencil;
-    uint8_t val = applyStencilOp(srpContext.stencil.dfailOp, *stencil, srpContext.stencil.ref);
+    uint8_t val = applyStencilOp(s->dfailOp, *stencil, s->ref);
     *stencil = (current & ~mask) | (val & mask);
 }
 
-static inline void stencilPassOp(uint8_t* stencil)
+static inline void stencilPassOp(uint8_t* stencil, const SRPStencilFaceState* s)
 {
-    const uint8_t mask = srpContext.stencil.writeMask;
+    const uint8_t mask = s->writeMask;
     const uint8_t current = *stencil;
-    uint8_t val = applyStencilOp(srpContext.stencil.passOp, *stencil, srpContext.stencil.ref);
+    uint8_t val = applyStencilOp(s->passOp, *stencil, s->ref);
     *stencil = (current & ~mask) | (val & mask);
 }
 

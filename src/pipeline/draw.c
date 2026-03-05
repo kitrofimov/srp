@@ -86,7 +86,7 @@ static void drawTriangles(
 	const SRPShaderProgram* sp, SRPPrimitive primitive, size_t startIndex, size_t count
 )
 {
-	if (srpContext.raster.cullFace == SRP_CULL_FACE_FRONT_AND_BACK)
+	if (srpContext.raster.cullFace == SRP_FACE_FRONT_AND_BACK)
 		return;
 
 	size_t outPrimitiveCount;

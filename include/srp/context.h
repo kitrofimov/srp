@@ -26,22 +26,21 @@ typedef enum SRPProvokingVertexMode
 } SRPProvokingVertexMode;
 
 /** Front face mode */
-typedef enum SRPFrontFace
+typedef enum SRPWinding
 {
-	SRP_FRONT_FACE_CCW,  /**< Counterclockwise (default) */
-	SRP_FRONT_FACE_CW    /**< Clockwise */
-} SRPFrontFace;
+	SRP_WINDING_CCW,  /**< Counterclockwise (default) */
+	SRP_WINDING_CW    /**< Clockwise */
+} SRPWinding;
 
-/** Cull face mode */
-typedef enum SRPCullFace
+/** Face types */
+typedef enum SRPFace
 {
-	SRP_CULL_FACE_NONE,   /**< Do not cull any face (default) */
-	SRP_CULL_FACE_FRONT,  /**< Cull the front face */
-	SRP_CULL_FACE_BACK,   /**< Cull the back face */
-	/**< Cull both front and back faces. Primitives that don't have a face
-	 *   (lines, points) are left as-is. */
-	SRP_CULL_FACE_FRONT_AND_BACK
-} SRPCullFace;
+	SRP_FACE_NONE,           /**< Neither front face nor back face */
+	SRP_FACE_FRONT,          /**< The front face. Primitives that don't have a face
+                                  (lines, points) are said to always be front facing */
+	SRP_FACE_BACK,           /**< The back face */
+	SRP_FACE_FRONT_AND_BACK  /**< Both front and back faces */
+} SRPFace;
 
 /** Polygon rendering mode */
 typedef enum SRPPolygonMode
@@ -81,14 +80,14 @@ typedef enum {
 /** Rasterizer state */
 typedef struct SRPRasterState
 {
-	SRPFrontFace frontFace;      /**< Which face is considered front-facing */
-	SRPCullFace cullFace;        /**< Which face(s) should be culled */
+	SRPWinding frontFace;        /**< Which face is considered front-facing */
+	SRPFace cullFace;            /**< Which face(s) should be culled */
 	SRPPolygonMode polygonMode;  /**< Polygon rendering mode */
 	float pointSize;             /**< Size of rasterized point, in pixels */
 } SRPRasterState;
 
 /** Scissor test state */
-typedef struct {
+typedef struct SRPScissorState {
     bool enabled;   /**< Whether or not the scissor test is enabled */
     size_t x;       /**< The x position of the scissor box's upper left corner */
     size_t y;       /**< The y position of the scissor box's upper left corner */
@@ -96,9 +95,8 @@ typedef struct {
     size_t height;  /**< The height of the scissor box */
 } SRPScissorState;
 
-/** Stencil test state */
-typedef struct {
-    bool enabled;          /**< Whether or not the stencil test is enabled */
+/** Stencil test state for front or back face */
+typedef struct SRPStencilFaceState {
     SRPCompareOp func;     /**< The comparison function to use */
     uint8_t ref;           /**< The value to compare against */
     uint8_t mask;          /**< Mask for the comparison: (ref & mask) OP (stored & mask) */
@@ -106,6 +104,13 @@ typedef struct {
     SRPStencilOp sfailOp;  /**< Action if stencil test fails */
     SRPStencilOp dfailOp;  /**< Action if stencil test passes but depth test fails */
     SRPStencilOp passOp;   /**< Action if both stencial and depth tests pass */
+} SRPStencilFaceState;
+
+/** Stencil test state */
+typedef struct SRPStencilState {
+    bool enabled;               /**< Whether or not the stencil test is enabled */
+    SRPStencilFaceState front;  /**< The stencil state for the front faces */
+    SRPStencilFaceState back;   /**< The stencil state for the back faces */
 } SRPStencilState;
 
 /** Depth test state */
@@ -149,9 +154,9 @@ void srpSetMessageCallback(SRPMessageCallback callback);
 void srpProvokingVertexMode(SRPProvokingVertexMode mode);
 
 /** Set the face(s) to cull */
-void srpRasterCullFace(SRPCullFace face);
+void srpRasterCullFace(SRPFace face);
 /** Set the winding order considered the front face */
-void srpRasterFrontFace(SRPFrontFace face);
+void srpRasterFrontFace(SRPWinding face);
 /** Set polygon rasterization mode */
 void srpRasterPolygonMode(SRPPolygonMode mode);
 /** Set point size */
@@ -166,10 +171,16 @@ void srpScissorOptions(size_t x, size_t y, size_t width, size_t height);
 void srpStencilTest(bool enable);
 /** Set the stencil comparison function options */
 void srpStencilFunc(SRPCompareOp func, uint8_t ref, uint8_t mask);
+/** Set the stencil comparison function options for a specific face type */
+void srpStencilFuncSeparate(SRPFace face, SRPCompareOp func, uint8_t ref, uint8_t mask);
 /** Set the stencil update operation options */
 void srpStencilOp(SRPStencilOp sfail, SRPStencilOp dfail, SRPStencilOp pass);
+/** Set the stencil update operation options for a specific face type */
+void srpStencilOpSeparate(SRPFace face, SRPStencilOp sfail, SRPStencilOp dfail, SRPStencilOp pass);
 /** Set the write mask on stencil operations */
 void srpStencilWriteMask(uint8_t mask);
+/** Set the write mask on stencil operations for a specific face type */
+void srpStencilWriteMaskSeparate(SRPFace face, uint8_t mask);
 
 /** Enable or disable the depth test */
 void srpDepthTest(bool enable);

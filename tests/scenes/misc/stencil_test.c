@@ -105,8 +105,8 @@ int main(int argc, char** argv)
 	};
 
 	srpNewContext(&srpContext);
-	srpRasterFrontFace(SRP_FRONT_FACE_CCW);
-	srpRasterCullFace(SRP_CULL_FACE_BACK);
+	srpRasterFrontFace(SRP_WINDING_CCW);
+	srpRasterCullFace(SRP_FACE_BACK);
     srpDepthTest(true);
     srpStencilTest(true);
 
