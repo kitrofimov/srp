@@ -64,6 +64,7 @@ typedef enum SRPCompareOp
 } SRPCompareOp;
 
 
+/** Rasterizer state */
 typedef struct SRPRasterState
 {
 	SRPFrontFace frontFace;      /**< Which face is considered front-facing */
@@ -72,11 +73,12 @@ typedef struct SRPRasterState
 	float pointSize;             /**< Size of rasterized point, in pixels */
 } SRPRasterState;
 
+/** Depth test state */
 typedef struct SRPDepthState
 {
-    bool testEnable;
-    bool writeEnable;
-    SRPCompareOp compareOp;
+    bool testEnable;         /** Whether or not to enable the depth testing */
+    bool writeEnable;        /** Whether or not to enable depth writing */
+    SRPCompareOp compareOp;  /** Compare operation to use in depth test */
 } SRPDepthState;
 
 

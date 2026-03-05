@@ -46,6 +46,7 @@ int main()
 	// Enable back-face culling and set counter-clockwise faces as front-facing
 	srpRasterFrontFace(SRP_FRONT_FACE_CCW);
 	srpRasterCullFace(SRP_CULL_FACE_BACK);
+	srpDepthTest(true);
 
 	SRPFramebuffer* fb = srpNewFramebuffer(512, 512);
 

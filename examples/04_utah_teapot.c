@@ -36,6 +36,7 @@ int main()
 	srpRasterFrontFace(SRP_FRONT_FACE_CW);
 	srpRasterCullFace(SRP_CULL_FACE_BACK);
 	srpRasterPolygonMode(SRP_POLYGON_MODE_FILL);
+	srpDepthTest(true);
 
 	OBJMesh mesh;
 	if (!loadOBJMesh("res/objects/utah_teapot.obj", &mesh))

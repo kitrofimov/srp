@@ -68,6 +68,7 @@ int main(int argc, char** argv)
 	srpNewContext(&srpContext);
 	srpRasterPolygonMode(SRP_POLYGON_MODE_LINE);
 	srpRasterPointSize(3.);
+	srpDepthTest(true);
 
 	SRPFramebuffer* fb = srpNewFramebuffer(512, 512);
 	SRPVertexBuffer* vb = srpNewVertexBuffer();

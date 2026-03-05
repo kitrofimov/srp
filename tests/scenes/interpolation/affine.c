@@ -106,6 +106,7 @@ int main(int argc, char** argv)
 	srpNewContext(&srpContext);
 	srpRasterFrontFace(SRP_FRONT_FACE_CCW);
 	srpRasterCullFace(SRP_CULL_FACE_BACK);
+    srpDepthTest(true);
 
 	SRPFramebuffer* fb = srpNewFramebuffer(512, 512);
 	SRPVertexBuffer* vb = srpNewVertexBuffer();

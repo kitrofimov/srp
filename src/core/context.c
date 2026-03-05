@@ -27,6 +27,11 @@ void srpNewContext(SRPContext* pContext)
 		.polygonMode = SRP_POLYGON_MODE_FILL,
 		.pointSize = 1.
 	};
+	pContext->depth = (SRPDepthState) {
+		.testEnable = false,
+		.writeEnable = true,
+		.compareOp = SRP_COMPARE_GREATER,  /** @todo use LESS here? like OpenGL */
+	};
 
 	pContext->arena = newArena(SRP_DEFAULT_ARENA_CAPACITY);
 }

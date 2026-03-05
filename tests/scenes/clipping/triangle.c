@@ -62,6 +62,7 @@ int main(int argc, char** argv)
 	srpRasterFrontFace(SRP_FRONT_FACE_CW);
 	srpRasterCullFace(SRP_CULL_FACE_BACK);
 	srpRasterPolygonMode(SRP_POLYGON_MODE_FILL);
+	srpDepthTest(true);
 
 	SRPFramebuffer* fb = srpNewFramebuffer(512, 512);
 	SRPVertexBuffer* vb = srpNewVertexBuffer();
