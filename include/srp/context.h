@@ -7,7 +7,9 @@
 
 #pragma once
 
+#include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 #include "srp/message_callback.h"
 #include "srp/arena.h"
 
@@ -24,102 +26,169 @@ typedef enum SRPProvokingVertexMode
 } SRPProvokingVertexMode;
 
 /** Front face mode */
-typedef enum SRPFrontFace
+typedef enum SRPWinding
 {
-	SRP_FRONT_FACE_CCW,  /**< Counterclockwise; default */
-	SRP_FRONT_FACE_CW    /**< Clockwise */
-} SRPFrontFace;
+	SRP_WINDING_CCW,  /**< Counterclockwise (default) */
+	SRP_WINDING_CW    /**< Clockwise */
+} SRPWinding;
 
-/** Cull face mode */
-typedef enum SRPCullFace
+/** Face types */
+typedef enum SRPFace
 {
-	SRP_CULL_FACE_NONE,   /**< Do not cull any face; default */
-	SRP_CULL_FACE_FRONT,  /**< Cull the front face */
-	SRP_CULL_FACE_BACK,   /**< Cull the back face */
-	/**< Cull both front and back faces. Primitives that don't have a face
-	 *   (lines, points) are left as-is. */
-	SRP_CULL_FACE_FRONT_AND_BACK
-} SRPCullFace;
+	SRP_FACE_NONE,           /**< Neither front face nor back face */
+	SRP_FACE_FRONT,          /**< The front face. Primitives that don't have a face
+                                  (lines, points) are said to always be front facing */
+	SRP_FACE_BACK,           /**< The back face */
+	SRP_FACE_FRONT_AND_BACK  /**< Both front and back faces */
+} SRPFace;
 
 /** Polygon rendering mode */
 typedef enum SRPPolygonMode
 {
-	SRP_POLYGON_MODE_FILL,  /**< Filled triangles; default */
+	SRP_POLYGON_MODE_FILL,  /**< Filled triangles (default) */
 	SRP_POLYGON_MODE_LINE,  /**< Lines only (wireframe) */
 	SRP_POLYGON_MODE_POINT  /**< Points only */
 } SRPPolygonMode;
+
+/** Lists possible compare operations */
+typedef enum SRPCompareOp
+{
+    SRP_COMPARE_NEVER,
+    SRP_COMPARE_ALWAYS,
+    SRP_COMPARE_LESS,
+    SRP_COMPARE_LEQUAL,
+    SRP_COMPARE_GREATER,
+    SRP_COMPARE_GEQUAL,
+    SRP_COMPARE_EQUAL,
+    SRP_COMPARE_NOTEQUAL
+} SRPCompareOp;
+
+/** Lists possible stencil buffer operations */
+typedef enum {
+    SRP_STENCIL_KEEP,       /**< Keep the current value */
+    SRP_STENCIL_ZERO,       /**< Set to 0 */
+    SRP_STENCIL_REPLACE,    /**< Set to the reference value */
+    SRP_STENCIL_INCR,       /**< Increment (clamp to 255) */
+    SRP_STENCIL_INCR_WRAP,  /**< Increment (wraparound to 0) */
+    SRP_STENCIL_DECR,       /**< Decrement (clamp to 0) */
+    SRP_STENCIL_DECR_WRAP,  /**< Decrement (wraparound to 255) */
+    SRP_STENCIL_INVERT      /**< Bitwise invert */
+} SRPStencilOp;
+
+
+
+/** Rasterizer state */
+typedef struct SRPRasterState
+{
+	SRPWinding frontFace;        /**< Which face is considered front-facing */
+	SRPFace cullFace;            /**< Which face(s) should be culled */
+	SRPPolygonMode polygonMode;  /**< Polygon rendering mode */
+	float pointSize;             /**< Size of rasterized point, in pixels */
+} SRPRasterState;
+
+/** Scissor test state */
+typedef struct SRPScissorState {
+    bool enabled;   /**< Whether or not the scissor test is enabled */
+    size_t x;       /**< The x position of the scissor box's upper left corner */
+    size_t y;       /**< The y position of the scissor box's upper left corner */
+    size_t width;   /**< The width of the scissor box */
+    size_t height;  /**< The height of the scissor box */
+} SRPScissorState;
+
+/** Stencil test state for front or back face */
+typedef struct SRPStencilFaceState {
+    SRPCompareOp func;     /**< The comparison function to use */
+    uint8_t ref;           /**< The value to compare against */
+    uint8_t mask;          /**< Mask for the comparison: (ref & mask) OP (stored & mask) */
+    uint8_t writeMask;     /**< Mask for writing to the buffer */
+    SRPStencilOp sfailOp;  /**< Action if stencil test fails */
+    SRPStencilOp dfailOp;  /**< Action if stencil test passes but depth test fails */
+    SRPStencilOp passOp;   /**< Action if both stencial and depth tests pass */
+} SRPStencilFaceState;
+
+/** Stencil test state */
+typedef struct SRPStencilState {
+    bool enabled;               /**< Whether or not the stencil test is enabled */
+    SRPStencilFaceState front;  /**< The stencil state for the front faces */
+    SRPStencilFaceState back;   /**< The stencil state for the back faces */
+} SRPStencilState;
+
+/** Depth test state */
+typedef struct SRPDepthState
+{
+    bool testEnable;         /**< Whether or not the depth test is enabled */
+    bool writeEnable;        /**< Whether or not the depth write is enabled.
+								  Does not have any effect if the test is disabled */
+    SRPCompareOp compareOp;  /**< Compare operation to use in depth test */
+} SRPDepthState;
+
 
 /** Holds runtime settings. This always needs to be declared as `SRPContext
  *  srpContext` in user programs and initialized with srpNewContext() */
 typedef struct SRPContext
 {
-	/** Message callback function that is called whenever an error/warning/etc. occurs */
-	SRPMessageCallbackType messageCallback;
-	/** User pointer to pass to message callback function
-	 *  @see SRPContext.messageCallback */
-	void* messageCallbackUserParameter;
+	/** Message callback that is called whenever an error/warning/etc. occurs */
+	SRPMessageCallback messageCallback;
+
 	/** Which vertex is considered to be the provoking vertex */
 	SRPProvokingVertexMode provokingVertexMode;
-	SRPFrontFace frontFace;      /**< Which face is considered front-facing */
-	SRPCullFace cullFace;        /**< Which face(s) should be culled */
-	SRPPolygonMode polygonMode;  /**< Polygon rendering mode */
-	float pointSize;             /**< Size of rasterized point, in pixels */
 
-	SRPArena* arena;  /**< Arena for internal allocations. Is not exposed to the user */
+	SRPRasterState raster;    /**< Rasterizer state */
+	SRPScissorState scissor;  /**< Scissor test state */
+    SRPStencilState stencil;  /**< Stencil test state */
+	SRPDepthState depth;      /**< Depth test state */
+
+	/** Arena for internal allocations. Is not exposed to the user */
+	SRPArena* arena;  
 } SRPContext;
 
-/** Possible arguments to srpContextSetP(), srpContextSetI(), srpContextSetF() */
-typedef enum SRPContextParameter
-{
-	SRP_CONTEXT_MESSAGE_CALLBACK_USER_PARAMETER,
-	SRP_CONTEXT_PROVOKING_VERTEX_MODE,
-	SRP_CONTEXT_FRONT_FACE,
-	SRP_CONTEXT_CULL_FACE,
-	SRP_CONTEXT_POLYGON_MODE,
-	SRP_CONTEXT_POINT_SIZE,
-} SRPContextParameter;
 
 /** Initialize the context
- *  @param[in] pContext The pointer to context */
+ *  @param[in] pContext The pointer to the context */
 void srpNewContext(SRPContext* pContext);
 
-/** Set message callback function
- *  @param[in] callback The pointer to the message callback function */
-void srpContextSetMessageCallback(SRPMessageCallbackType callback);
+/** Set message callback function */
+void srpSetMessageCallback(SRPMessageCallback callback);
 
-/** Get the current message callback function
- *  @return The pointer to the current message callback function */
-SRPMessageCallbackType srpContextGetMessageCallback();
+/** Set the provoking vertex convention */
+void srpProvokingVertexMode(SRPProvokingVertexMode mode);
 
-/** Set a pointer parameter in the context
- *  @param[in] contextParameter The context parameter you want to modify
- *  @param[in] data The pointer you want to assign to specified context parameter */
-void srpContextSetP(SRPContextParameter contextParameter, void* data);
+/** Set the face(s) to cull */
+void srpRasterCullFace(SRPFace face);
+/** Set the winding order considered the front face */
+void srpRasterFrontFace(SRPWinding face);
+/** Set polygon rasterization mode */
+void srpRasterPolygonMode(SRPPolygonMode mode);
+/** Set point size */
+void srpRasterPointSize(float size);
 
-/** Set an integer/enum parameter in the context
- *  @param[in] contextParameter The context parameter you want to modify
- *  @param[in] data The value you want to assign to specified context parameter */
-void srpContextSetI(SRPContextParameter contextParameter, int data);
+/** Enable or disable the scissor test */
+void srpScissorTest(bool enable);
+/** Set the options for the scissor test */
+void srpScissorOptions(size_t x, size_t y, size_t width, size_t height);
 
-/** Set a float parameter in the context
- *  @param[in] contextParameter The context parameter you want to modify
- *  @param[in] data The value you want to assign to specified context parameter */
-void srpContextSetF(SRPContextParameter contextParameter, float data);
+/** Enable or disable the stencil test */
+void srpStencilTest(bool enable);
+/** Set the stencil comparison function options */
+void srpStencilFunc(SRPCompareOp func, uint8_t ref, uint8_t mask);
+/** Set the stencil comparison function options for a specific face type */
+void srpStencilFuncSeparate(SRPFace face, SRPCompareOp func, uint8_t ref, uint8_t mask);
+/** Set the stencil update operation options */
+void srpStencilOp(SRPStencilOp sfail, SRPStencilOp dfail, SRPStencilOp pass);
+/** Set the stencil update operation options for a specific face type */
+void srpStencilOpSeparate(SRPFace face, SRPStencilOp sfail, SRPStencilOp dfail, SRPStencilOp pass);
+/** Set the write mask on stencil operations */
+void srpStencilWriteMask(uint8_t mask);
+/** Set the write mask on stencil operations for a specific face type */
+void srpStencilWriteMaskSeparate(SRPFace face, uint8_t mask);
 
-/** Get a pointer parameter in the context
- *  @param[in] contextParameter The context parameter you want to get
- *  @return Requested parameter or NULL on error */
-void* srpContextGetP(SRPContextParameter contextParameter);
+/** Enable or disable the depth test */
+void srpDepthTest(bool enable);
+/** Enable or disable the depth writing */
+void srpDepthWrite(bool enable);
+/** Set the compare operation used in the depth test */
+void srpDepthCompareOp(SRPCompareOp op);
 
-/** Get an integer/enum parameter in the context
- *  @param[in] contextParameter The context parameter you want to get
- *  @return Requested parameter or 0 on error */
-int srpContextGetI(SRPContextParameter contextParameter);
-
-/** Get a float parameter in the context
- *  @param[in] contextParameter The context parameter you want to get
- *  @return Requested parameter or 0 on error */
-float srpContextGetF(SRPContextParameter contextParameter);
 
 /** Global context declaration */
 extern SRPContext srpContext;

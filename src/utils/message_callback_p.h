@@ -18,7 +18,7 @@
  *  @param[in] sourceFunction Function that is the source of this message
  *  @param[in] format `printf`-like format string
  *  @param[in] ... Values passed to the format string
- *  @see `SRPMessageCallbackType` */
+ *  @see `SRPMessageCallbackFunc` */
 void srpMessageCallbackHelper(
 	SRPMessageType type, SRPMessageSeverity severity,
 	const char* sourceFunction, const char* format, ...

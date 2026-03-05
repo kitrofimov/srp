@@ -20,16 +20,16 @@ void srpMessageCallbackHelper(
 	const char* sourceFunction, const char* format, ...
 )
 {
-	if (srpContext.messageCallback != NULL)
+	if (srpContext.messageCallback.func != NULL)
 	{
 		char string[MAX_CHARS_IN_MESSAGE];
 		va_list variadic;
 		va_start(variadic, format);
 		vsnprintf(string, MAX_CHARS_IN_MESSAGE, format, variadic);
 
-		srpContext.messageCallback(
+		srpContext.messageCallback.func(
 			type, severity, sourceFunction, string,
-			srpContext.messageCallbackUserParameter
+			srpContext.messageCallback.userParameter
 		);
 	}
 }

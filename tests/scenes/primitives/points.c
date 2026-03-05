@@ -59,7 +59,8 @@ int main(int argc, char** argv)
 	};
 
 	srpNewContext(&srpContext);
-    srpContextSetF(SRP_CONTEXT_POINT_SIZE, 2.);
+	srpRasterPointSize(2.);
+    srpDepthTest(true);
 
 	SRPFramebuffer* fb = srpNewFramebuffer(512, 512);
 	SRPVertexBuffer* vb = srpNewVertexBuffer();

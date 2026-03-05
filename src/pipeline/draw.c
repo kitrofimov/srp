@@ -5,6 +5,7 @@
  *  @ingroup Draw_dispatch
  *  Draw dispatch functions implementation */
 
+#include <assert.h>
 #include "pipeline/draw.h"
 #include "raster/triangle.h"
 #include "utils/message_callback_p.h"
@@ -85,7 +86,7 @@ static void drawTriangles(
 	const SRPShaderProgram* sp, SRPPrimitive primitive, size_t startIndex, size_t count
 )
 {
-	if (srpContext.cullFace == SRP_CULL_FACE_FRONT_AND_BACK)
+	if (srpContext.raster.cullFace == SRP_FACE_FRONT_AND_BACK)
 		return;
 
 	size_t outPrimitiveCount;
@@ -99,23 +100,25 @@ static void drawTriangles(
 
 	for (size_t i = 0; i < outPrimitiveCount; i++)
 	{
-		if (srpContext.polygonMode == SRP_POLYGON_MODE_FILL)
+		if (srpContext.raster.polygonMode == SRP_POLYGON_MODE_FILL)
 		{
 			void* interpolatedBuffer = ARENA_ALLOC(sp->vs->varyingsSize);
 			SRPTriangle* triangle = &((SRPTriangle*) primitives)[i];
 			rasterizeTriangle(triangle, fb, sp, interpolatedBuffer);
 		}
-		else if (srpContext.polygonMode == SRP_POLYGON_MODE_LINE)
+		else if (srpContext.raster.polygonMode == SRP_POLYGON_MODE_LINE)
 		{
 			void* interpolatedBuffer = ARENA_ALLOC(sp->vs->varyingsSize);
 			SRPLine* line = &((SRPLine*) primitives)[i];
 			rasterizeLine(line, fb, sp, interpolatedBuffer);
 		}
-		else if (srpContext.polygonMode == SRP_POLYGON_MODE_POINT)
+		else if (srpContext.raster.polygonMode == SRP_POLYGON_MODE_POINT)
 		{
 			SRPPoint* point = &((SRPPoint*) primitives)[i];
 			rasterizePoint(point, fb, sp);
 		}
+		else  // Should be handled at this point
+			assert(false);
 	}
 
 	ARENA_RESET();

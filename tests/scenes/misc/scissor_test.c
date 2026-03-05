@@ -8,18 +8,13 @@
 typedef struct Vertex
 {
     vec3 position;
-    uint8_t color;
+    vec3 color;
 } Vertex;
 
 typedef struct VSOutput
 {
-    uint8_t color;
+    vec3 color;
 } VSOutput;
-
-typedef struct Uniform
-{
-	mat4 model;
-} Uniform;
 
 SRPContext srpContext;
 
@@ -32,21 +27,20 @@ int main(int argc, char** argv)
     const char* outputPath = argv[1];
 
     Vertex data[] = {
-        { .position = { -0.5, -0.5, 0. }, .color = 0 },
-        { .position = {  0.5, -0.5, 0. }, .color = 1 },
-        { .position = {  0. ,  0.5, 0. }, .color = 2 },
+        { .position = { -0.5, -0.5, 0. }, .color = { 1., 0., 0. } },
+        { .position = {  0.5, -0.5, 0. }, .color = { 0., 1., 0. } },
+        { .position = {  0  ,  0.5, 0. }, .color = { 0., 0., 1. } },
     };
 
-    Uniform uniform = {0};
     SRPShaderProgram shaderProgram = {
-        .uniform = (SRPUniform*) &uniform,
+        .uniform = NULL,
         .vs = &(SRPVertexShader) {
             .shader = vertexShader,
             .nVaryings = 1,
 			.varyingsInfo = (SRPVaryingInfo[]) {{
 				.nItems = 3,
 				.type = SRP_FLOAT,
-				.interpolationMode = SRP_INTERPOLATION_MODE_FLAT
+				.interpolationMode = SRP_INTERPOLATION_MODE_PERSPECTIVE
 			}},
             .varyingsSize = sizeof(VSOutput)
         },
@@ -58,19 +52,14 @@ int main(int argc, char** argv)
 
     srpNewContext(&srpContext);
     SRPFramebuffer* fb = srpNewFramebuffer(512, 512);
-    srpFramebufferClear(fb);
+
+    srpScissorTest(true);
+    srpScissorOptions(140, 220, 200, 150);
 
     SRPVertexBuffer* vb = srpNewVertexBuffer();
     srpVertexBufferCopyData(vb, sizeof(Vertex), sizeof(data), data);
 
-    // Expected: left, red
-    srpProvokingVertexMode(SRP_PROVOKING_VERTEX_FIRST);
-    uniform.model = mat4ConstructTRS(-0.5, 0, 0,   0, 0, 0,   0.5, 0.5, 0.5);
-    srpDrawVertexBuffer(vb, fb, &shaderProgram, SRP_PRIM_TRIANGLES, 0, 3);
-
-    // Expected: right, blue
-    srpProvokingVertexMode(SRP_PROVOKING_VERTEX_LAST);
-    uniform.model = mat4ConstructTRS( 0.5, 0, 0,   0, 0, 0,   0.5, 0.5, 0.5);
+    srpFramebufferClear(fb);
     srpDrawVertexBuffer(vb, fb, &shaderProgram, SRP_PRIM_TRIANGLES, 0, 3);
 
     int ok = saveFramebufferToImage(fb, outputPath);
@@ -84,13 +73,11 @@ int main(int argc, char** argv)
 void vertexShader(SRPVertexShaderIn* in, SRPVertexShaderOut* out)
 {
     Vertex* v = (Vertex*) in->vertex;
-    Uniform* u = (Uniform*) in->uniform;
     VSOutput* o = (VSOutput*) out->varyings;
 
 	vec3* inPos = &v->position;
 	vec4* outPos = (vec4*) out->clipPosition;
 	*outPos = (vec4) { inPos->x, inPos->y, inPos->z, 1. };
-	*outPos = mat4MultiplyVec4(&u->model, *outPos);
     o->color = v->color;
 }
 
@@ -98,11 +85,9 @@ void fragmentShader(SRPFragmentShaderIn* in, SRPFragmentShaderOut* out)
 {
     VSOutput* v = (VSOutput*) in->varyings;
     vec4* color = (vec4*) out->color;
-
-    if (v->color == 0)
-        *color = (vec4) { 1, 0, 0, 1 };
-    else if (v->color == 1)
-        *color = (vec4) { 0, 1, 0, 1 };
-    else if (v->color == 2)
-        *color = (vec4) { 0, 0, 1, 1 };
+    color->x = v->color.x;
+    color->y = v->color.y;
+    color->z = v->color.z;
+    color->w = 1.;
 }
+

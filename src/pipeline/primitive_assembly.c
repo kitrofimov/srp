@@ -79,7 +79,7 @@ bool assembleTrianglesGeneric(
 
         for (size_t i = 0; i < nClipped; i++)
         {
-			if (srpContext.polygonMode == SRP_POLYGON_MODE_FILL)
+			if (srpContext.raster.polygonMode == SRP_POLYGON_MODE_FILL)
 			{
 				SRPTriangle* dst = (SRPTriangle*) cur;
 				*dst = clipped[i];
@@ -91,7 +91,7 @@ bool assembleTrianglesGeneric(
 				primitiveID++;
 				cur = dst + 1;
 			}
-			else if (srpContext.polygonMode == SRP_POLYGON_MODE_LINE)
+			else if (srpContext.raster.polygonMode == SRP_POLYGON_MODE_LINE)
 			{
 				SRPLine* dst = (SRPLine*) cur;
 				for (uint8_t j = 0; j < 3; j++)
@@ -106,7 +106,7 @@ bool assembleTrianglesGeneric(
 				}
 				cur = dst;
 			}
-			else if (srpContext.polygonMode == SRP_POLYGON_MODE_POINT)
+			else if (srpContext.raster.polygonMode == SRP_POLYGON_MODE_POINT)
 			{
 				SRPPoint* dst = (SRPPoint*) cur;
 				for (uint8_t j = 0; j < 3; j++)
@@ -119,6 +119,12 @@ bool assembleTrianglesGeneric(
 				}
 				cur = dst;
 			}
+			else
+				srpMessageCallbackHelper(
+					SRP_MESSAGE_ERROR, SRP_MESSAGE_SEVERITY_HIGH, __func__,
+					"Unexpected srpContext.raster.polygonMode (%i)",
+					srpContext.raster.polygonMode
+				);
         }
     }
 
@@ -193,17 +199,17 @@ static void resolvePolygonModeOutput(
 	size_t* nOutPrimitivesPerClippedTriangle, size_t* sizeOutPrimitive
 )
 {
-	if (srpContext.polygonMode == SRP_POLYGON_MODE_FILL)
+	if (srpContext.raster.polygonMode == SRP_POLYGON_MODE_FILL)
 	{
 		*nOutPrimitivesPerClippedTriangle = 1;
 		*sizeOutPrimitive = sizeof(SRPTriangle);
 	}
-	else if (srpContext.polygonMode == SRP_POLYGON_MODE_LINE)
+	else if (srpContext.raster.polygonMode == SRP_POLYGON_MODE_LINE)
 	{
 		*nOutPrimitivesPerClippedTriangle = 3;
 		*sizeOutPrimitive = sizeof(SRPLine);
 	}
-	else if (srpContext.polygonMode == SRP_POLYGON_MODE_POINT)
+	else if (srpContext.raster.polygonMode == SRP_POLYGON_MODE_POINT)
 	{
 		*nOutPrimitivesPerClippedTriangle = 3;
 		*sizeOutPrimitive = sizeof(SRPPoint);
@@ -218,7 +224,7 @@ bool assemblePoints(
 	size_t* outPointCount, SRPPoint** outPoints
 )
 {
-	if (srpContext.pointSize <= 0.)
+	if (srpContext.raster.pointSize <= 0.)
 		return false;
 
 	const size_t nPoints = count;

@@ -59,9 +59,10 @@ int main(int argc, char** argv)
 	};
 
 	srpNewContext(&srpContext);
-	srpContextSetI(SRP_CONTEXT_FRONT_FACE, SRP_FRONT_FACE_CW);
-	srpContextSetI(SRP_CONTEXT_CULL_FACE, SRP_CULL_FACE_BACK);
-	srpContextSetI(SRP_CONTEXT_POLYGON_MODE, SRP_POLYGON_MODE_FILL);
+	srpRasterFrontFace(SRP_WINDING_CW);
+	srpRasterCullFace(SRP_FACE_BACK);
+	srpRasterPolygonMode(SRP_POLYGON_MODE_FILL);
+	srpDepthTest(true);
 
 	SRPFramebuffer* fb = srpNewFramebuffer(512, 512);
 	SRPVertexBuffer* vb = srpNewVertexBuffer();

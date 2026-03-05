@@ -17,13 +17,12 @@
 SRPFramebuffer* srpNewFramebuffer(size_t width, size_t height)
 {
 	SRPFramebuffer* this = SRP_MALLOC(sizeof(SRPFramebuffer));
-
 	this->width = width;
 	this->height = height;
 	this->size = width * height;
 	this->color = SRP_MALLOC(sizeof(uint32_t) * this->size);
 	this->depth = SRP_MALLOC(sizeof(float) * this->size);
-
+	this->stencil = SRP_MALLOC(sizeof(uint8_t) * this->size);
 	return this;
 }
 
@@ -31,17 +30,19 @@ void srpFreeFramebuffer(SRPFramebuffer* this)
 {
 	SRP_FREE(this->color);
 	SRP_FREE(this->depth);
+	SRP_FREE(this->stencil);
 	SRP_FREE(this);
 }
 
-SRP_FORCEINLINE void framebufferGetColorAndDepthPointers(
+SRP_FORCEINLINE void framebufferGetPointers(
 	const SRPFramebuffer* this, size_t x, size_t y,
-	uint32_t** pColor, float** pDepth
+	uint32_t** pColor, float** pDepth, uint8_t** pStencil
 )
 {
     size_t idx = y * this->width + x;
     *pColor = &this->color[idx];
     *pDepth = &this->depth[idx];
+	*pStencil = &this->stencil[idx];
 }
 
 void framebufferNDCToScreenSpace(

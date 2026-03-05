@@ -10,14 +10,14 @@
 /** @ingroup Context
  *  @{ */
 
-/** Represents the message type (error, warning, etc.) @see `SRPMessageCallbackType` */
+/** Represents the message type (error, warning, etc.) @see `SRPMessageCallback` */
 typedef enum SRPMessageType
 {
 	SRP_MESSAGE_ERROR,
 	SRP_MESSAGE_WARNING
 } SRPMessageType;
 
-/** Represents the message severity @see `SRPMessageCallbackType` */
+/** Represents the message severity @see `SRPMessageCallback` */
 typedef enum SRPMessageSeverity
 {
 	SRP_MESSAGE_SEVERITY_LOW,       /**< Low severity */
@@ -31,11 +31,17 @@ typedef enum SRPMessageSeverity
  *  @param[in] severity Severity of the message
  *  @param[in] sourceFunction String containing the name of the function which issued this callback
  *  @param[in] message Message sent
- *  @param[in] userParameter User paramter pointer. @see `SRPContext.messageCallbackUserParameter`
+ *  @param[in] userParameter User paramter pointer. @see `SRPMessageCallback.userParameter`
  * */
-typedef void (*SRPMessageCallbackType)(
+typedef void (*SRPMessageCallbackFunc)(
 	SRPMessageType type, SRPMessageSeverity severity, const char* sourceFunction,
 	const char* message, void* userParameter
 );
+
+typedef struct SRPMessageCallback
+{
+	SRPMessageCallbackFunc func;  /**< Function that is called whenever an error/warning/etc. occurs */
+	void* userParameter;          /**< User pointer to pass to message callback function */
+} SRPMessageCallback;
 
 /** @} */  // ingroup Context

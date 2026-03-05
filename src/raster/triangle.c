@@ -167,15 +167,15 @@ static bool shouldCullTriangle(const SRPTriangle* tri, bool* isCCW, bool* isFron
 	*isCCW = signedArea > 0;
 
 	// Should have already been handled, but just in case
-	if (srpContext.cullFace == SRP_CULL_FACE_FRONT_AND_BACK)
+	if (srpContext.raster.cullFace == SRP_FACE_FRONT_AND_BACK)
 		return true;
 
 	bool frontFacing = \
-		(signedArea > 0) & (srpContext.frontFace == SRP_FRONT_FACE_CCW) ||
-		(signedArea < 0) & (srpContext.frontFace == SRP_FRONT_FACE_CW);
+		(signedArea > 0) & (srpContext.raster.frontFace == SRP_WINDING_CCW) ||
+		(signedArea < 0) & (srpContext.raster.frontFace == SRP_WINDING_CW);
 	bool cull = \
-		( frontFacing && srpContext.cullFace == SRP_CULL_FACE_FRONT) ||
-		(!frontFacing && srpContext.cullFace == SRP_CULL_FACE_BACK);
+		( frontFacing && srpContext.raster.cullFace == SRP_FACE_FRONT) ||
+		(!frontFacing && srpContext.raster.cullFace == SRP_FACE_BACK);
 
 	*isFrontFacing = frontFacing;
 	return cull;

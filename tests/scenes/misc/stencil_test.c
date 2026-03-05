@@ -1,10 +1,10 @@
 #define SRP_INCLUDE_VEC
 #define SRP_INCLUDE_MAT
 
+#include <assert.h>
 #include <stdio.h>
 #include <srp/srp.h>
-#include "window.h"
-#include "framelimiter.h"
+#include "save.h"
 
 typedef struct Vertex
 {
@@ -28,27 +28,14 @@ typedef struct Uniform
 
 SRPContext srpContext;
 
-void messageCallback(
-	SRPMessageType type, SRPMessageSeverity severity, const char* sourceFunction,
-	const char* message, void* userParameter
-);
 void vertexShader(SRPVertexShaderIn* in, SRPVertexShaderOut* out);
 void fragmentShader(SRPFragmentShaderIn* in, SRPFragmentShaderOut* out);
+void singleColor(SRPFragmentShaderIn* in, SRPFragmentShaderOut* out);
 
-int main()
+int main(int argc, char** argv)
 {
-	srpNewContext(&srpContext);
-	srpSetMessageCallback((SRPMessageCallback) {
-		.func = messageCallback,
-		.userParameter = NULL
-	});
-
-	// Enable back-face culling and set counter-clockwise faces as front-facing
-	srpRasterFrontFace(SRP_WINDING_CCW);
-	srpRasterCullFace(SRP_FACE_BACK);
-	srpDepthTest(true);
-
-	SRPFramebuffer* fb = srpNewFramebuffer(512, 512);
+    assert(argc >= 2);
+    const char* outputPath = argv[1];
 
 	Vertex data[] = {
 		{.position = {-1, -1, -1}, .uv = {0, 0}},
@@ -81,6 +68,7 @@ int main()
 		{.position = { 1, -1,  1}, .uv = {1, 1}},
 		{.position = {-1, -1,  1}, .uv = {0, 1}}
 	};
+
 	uint8_t indices[] = {
 		 0,  1,  2,   0,  2,  3,
 		 4,  5,  6,   4,  6,  7,
@@ -90,19 +78,9 @@ int main()
 		20, 23, 22,  20, 22, 21
 	};
 
-	// Create vertex and index buffers, these are similar to VBO and EBO
-	SRPVertexBuffer* vb = srpNewVertexBuffer();
-	SRPIndexBuffer* ib = srpNewIndexBuffer();
-	srpVertexBufferCopyData(vb, sizeof(Vertex), sizeof(data), data);
-	srpIndexBufferCopyData(ib, SRP_UINT8, sizeof(indices), indices);
-
 	Uniform uniform = {
-		.model = mat4ConstructIdentity(),
-		.view = mat4ConstructView(
-			0, 0, -3,
-			0, 0, 0,
-			1, 1, 1
-		),
+		.model = mat4ConstructRotate(0.7, 0.7, 0.7),
+		.view = mat4ConstructView(0, 0, -3,   0, 0, 0,   1, 1, 1),
 		.projection = mat4ConstructPerspectiveProjection(-1, 1, -1, 1, 1, 50),
 		.texture = srpNewTexture("./res/textures/stoneWall.png", TW_REPEAT, TW_REPEAT),
 		.frameCount = 0
@@ -126,55 +104,44 @@ int main()
 		}
 	};
 
-	Window* window = newWindow(512, 512, "Rasterizer", false);
-	FrameLimiter limiter;
-	frameLimiterInit(&limiter, 144.);
+	srpNewContext(&srpContext);
+	srpRasterFrontFace(SRP_WINDING_CCW);
+	srpRasterCullFace(SRP_FACE_BACK);
+    srpDepthTest(true);
+    srpStencilTest(true);
 
-	while (window->running)
-	{
-		frameLimiterBegin(&limiter);
+	SRPFramebuffer* fb = srpNewFramebuffer(512, 512);
+	SRPVertexBuffer* vb = srpNewVertexBuffer();
+	SRPIndexBuffer* ib = srpNewIndexBuffer();
+	srpVertexBufferCopyData(vb, sizeof(Vertex), sizeof(data), data);
+	srpIndexBufferCopyData(ib, SRP_UINT8, sizeof(indices), indices);
 
-		float renderTime = 0.;
-		TIME_SECTION(renderTime, {
-			uniform.model = mat4ConstructRotate(
-				uniform.frameCount / 100.,
-				uniform.frameCount / 200.,
-				uniform.frameCount / 500.
-			);
+    srpFramebufferClear(fb);
 
-			srpFramebufferClear(fb);
-			srpDrawIndexBuffer(ib, vb, fb, &shaderProgram, SRP_PRIM_TRIANGLES, 0, 36);
-		});
+    srpStencilOp(SRP_STENCIL_KEEP, SRP_STENCIL_KEEP, SRP_STENCIL_REPLACE);
+    srpStencilFunc(SRP_COMPARE_ALWAYS, 1, 0xFF);
+    srpStencilWriteMask(0xFF);
+    srpDrawIndexBuffer(ib, vb, fb, &shaderProgram, SRP_PRIM_TRIANGLES, 0, 36);
 
-		windowPollEvents(window);
-		windowPresent(window, fb);
+    mat4 scale = mat4ConstructScale(1.05, 1.05, 1.05);
+    uniform.model = mat4MultiplyMat4(&scale, &uniform.model);
+    shaderProgram.fs = &(SRPFragmentShader) {
+        .shader = singleColor,
+        .mayOverwriteDepth = false
+    };
+    srpStencilFunc(SRP_COMPARE_NOTEQUAL, 1, 0xFF);
+    srpStencilWriteMask(0x00);
+    srpDepthTest(false);
+    srpDrawIndexBuffer(ib, vb, fb, &shaderProgram, SRP_PRIM_TRIANGLES, 0, 36);
 
-		float frameTime = frameLimiterEnd(&limiter);
-		uniform.frameCount++;
-
-		if (uniform.frameCount % 100 == 0)
-			printf(
-				"Frametime: %5.3f ms; Rendering: %5.3f ms; FPS: %6.2f; RPS: %6.2f\n",
-				frameTime * 1000., renderTime * 1000., 1. / frameTime, 1. / renderTime
-			);
-	}
+    int ok = saveFramebufferToImage(fb, outputPath);
 
 	srpFreeTexture(uniform.texture);
 	srpFreeVertexBuffer(vb);
 	srpFreeIndexBuffer(ib);
 	srpFreeFramebuffer(fb);
-	freeWindow(window);
 
-	return 0;
-}
-
-
-void messageCallback(
-	SRPMessageType type, SRPMessageSeverity severity, const char* sourceFunction,
-	const char* message, void* userParameter
-)
-{
-	fprintf(stderr, "%s: %s", sourceFunction, message);
+    return ok ? 0 : 1;
 }
 
 
@@ -186,7 +153,9 @@ void vertexShader(SRPVertexShaderIn* in, SRPVertexShaderOut* out)
 
 	vec3* inPosition = &pVertex->position;
 	vec4* outPosition = (vec4*) out->clipPosition;
-	*outPosition = (vec4) { inPosition->x, inPosition->y, inPosition->z, 1. };
+	*outPosition = (vec4) {
+		inPosition->x, inPosition->y, inPosition->z, 1.0
+	};
 	*outPosition = mat4MultiplyVec4(&pUniform->model, *outPosition);
 	*outPosition = mat4MultiplyVec4(&pUniform->view, *outPosition);
 	*outPosition = mat4MultiplyVec4(&pUniform->projection, *outPosition);
@@ -195,13 +164,18 @@ void vertexShader(SRPVertexShaderIn* in, SRPVertexShaderOut* out)
 	pOutVars->uv.y = pVertex->uv.y;
 }
 
+void singleColor(SRPFragmentShaderIn* in, SRPFragmentShaderOut* out)
+{
+	vec4* outColor = (vec4*) out->color;
+    *outColor = (vec4) { 1, 0, 0, 1 };
+}
+
 void fragmentShader(SRPFragmentShaderIn* in, SRPFragmentShaderOut* out)
 {
 	VSOutput* interpolated = (VSOutput*) in->varyings;
 	Uniform* pUniform = (Uniform*) in->uniform;
-	vec3* outColor = (vec3*) out->color;
+	vec4* outColor = (vec4*) out->color;
 
 	vec2 uv = interpolated->uv;
 	srpTextureGetFilteredColor(pUniform->texture, uv.x, uv.y, (float*) outColor);
 }
-

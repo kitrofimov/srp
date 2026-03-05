@@ -79,6 +79,7 @@ int main(int argc, char** argv)
     };
 
     srpNewContext(&srpContext);
+	srpDepthTest(true);
     SRPFramebuffer* fb = srpNewFramebuffer(512, 512);
 
     SRPVertexBuffer* vb = srpNewVertexBuffer();
