@@ -2,7 +2,8 @@
 
 A **s**oftware **r**endering **p**ipeline that features:
 - Pixel-perfect rasterization of all main primitive types (triangles, lines, points)
-- Fully programmable vertex and fragment shaders (+uniforms)
+- Fully programmable vertex and fragment shaders
+- Configurable depth, stencil and scissor tests
 - Sutherland-Hodgman triangle clipping & Liang-Barsky line clipping
 - Perspective-correct, affine, and flat attribute interpolation
 - Texture mapping
@@ -69,9 +70,9 @@ cd bin
 - [ ] Phong shading example
 - [ ] Bilinear filtering
 - [ ] Mipmapping
-- [ ] Depth test options
-- [ ] Scissor test
-- [ ] Stencil test
+- [x] Depth test options
+- [x] Scissor test
+- [x] Stencil test
 - [ ] Blending
 - [ ] sRGB
 - [ ] MSAA (multisampling)
