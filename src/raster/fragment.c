@@ -17,10 +17,16 @@
 
 /** Perform a depth test, respecting the user-set compare operation and
  *  whether or not the test is enabled
- *  @param[in] incoming The depth value of a currently processed fragment
+ *  @param[in] incoming The depth value of the currently processed fragment
  *  @param[in] stored The depth value stored in the depth buffer
  *  @return `true` if depth test passes, `false` otherwise */
 static inline bool depthTest(float incoming, float stored);
+
+/** Perform a scissor test, respecting the user-set runtime options
+ *  @param[in] x,y Window-space position of the currently processed fragment
+ *  @return `true` if scissor test passes, `false` otherwise */
+static inline bool scissorTest(size_t x, size_t y);
+
 
 void emitFragment(
     const SRPFramebuffer* fb, const SRPShaderProgram* sp,
@@ -28,7 +34,10 @@ void emitFragment(
 )
 {
     assert(x >= 0 && x < fb->width);
-    assert(y >= 0 && y < fb->width);
+    assert(y >= 0 && y < fb->height);
+
+    if (!scissorTest(x, y))
+        return;
 
     const bool overwrite = sp->fs->mayOverwriteDepth;
     const float interpolatedDepth = fsIn->fragCoord[2];
@@ -77,6 +86,21 @@ void emitFragment(
 	*pColor = SRP_COLOR_TO_UINT32_T(color);
     if (test && write)  // Cannot write when not testing
         *pDepth = depth;
+}
+
+static inline bool scissorTest(size_t x, size_t y)
+{
+    if (!srpContext.scissor.enabled)  // Always pass when disabled
+        return true;
+
+    const size_t x0 = srpContext.scissor.x;
+    const size_t x1 = srpContext.scissor.x + srpContext.scissor.width;
+    const size_t y0 = srpContext.scissor.y;
+    const size_t y1 = srpContext.scissor.y + srpContext.scissor.height;
+
+    if (x < x0 || x >= x1 || y < y0 || y >= y1)
+        return false;
+    return true;
 }
 
 static inline bool depthTest(float incoming, float stored)

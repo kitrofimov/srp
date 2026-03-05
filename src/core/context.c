@@ -66,6 +66,24 @@ void srpRasterPointSize(float size)
 	srpContext.raster.pointSize = size;
 }
 
+void srpScissorTest(bool enable)
+{
+	srpContext.scissor.enabled = enable;
+	// Dummy data to avoid touching uninitialized fields
+	srpContext.scissor.x = 0;
+	srpContext.scissor.y = 0;
+	srpContext.scissor.width = 0;
+	srpContext.scissor.height = 0;
+}
+
+void srpScissorOptions(size_t x, size_t y, size_t width, size_t height)
+{
+	srpContext.scissor.x = x;
+	srpContext.scissor.y = y;
+	srpContext.scissor.width = width;
+	srpContext.scissor.height = height;
+}
+
 void srpDepthTest(bool enable)
 {
 	srpContext.depth.testEnable = enable;

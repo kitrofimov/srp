@@ -73,12 +73,21 @@ typedef struct SRPRasterState
 	float pointSize;             /**< Size of rasterized point, in pixels */
 } SRPRasterState;
 
+/** Scissor test state */
+typedef struct {
+    bool enabled;   /**< Whether or not the scissor test is enabled */
+    size_t x;       /**< The x position of the scissor box's upper left corner */
+    size_t y;       /**< The y position of the scissor box's upper left corner */
+    size_t width;   /**< The width of the scissor box */
+    size_t height;  /**< The height of the scissor box */
+} SRPScissorState;
+
 /** Depth test state */
 typedef struct SRPDepthState
 {
-    bool testEnable;         /** Whether or not to enable the depth testing */
-    bool writeEnable;        /** Whether or not to enable depth writing */
-    SRPCompareOp compareOp;  /** Compare operation to use in depth test */
+    bool testEnable;         /**< Whether or not to enable the depth testing */
+    bool writeEnable;        /**< Whether or not to enable depth writing */
+    SRPCompareOp compareOp;  /**< Compare operation to use in depth test */
 } SRPDepthState;
 
 
@@ -92,8 +101,9 @@ typedef struct SRPContext
 	/** Which vertex is considered to be the provoking vertex */
 	SRPProvokingVertexMode provokingVertexMode;
 
-	SRPRasterState raster;  /** Rasterizer state */
-	SRPDepthState depth;    /** Depth test state */
+	SRPRasterState raster;    /**< Rasterizer state */
+	SRPScissorState scissor;  /**< Scissor test state */
+	SRPDepthState depth;      /**< Depth test state */
 
 	/** Arena for internal allocations. Is not exposed to the user */
 	SRPArena* arena;  
@@ -118,6 +128,11 @@ void srpRasterFrontFace(SRPFrontFace face);
 void srpRasterPolygonMode(SRPPolygonMode mode);
 /** Set point size */
 void srpRasterPointSize(float size);
+
+/** Enable or disable the scissor test */
+void srpScissorTest(bool enable);
+/** Set the options for the scissor test */
+void srpScissorOptions(size_t x, size_t y, size_t width, size_t height);
 
 /** Enable or disable the depth test */
 void srpDepthTest(bool enable);
