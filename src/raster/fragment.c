@@ -9,7 +9,7 @@
 #include <assert.h>
 #include "raster/fragment.h"
 #include "srp/context.h"
-#include "srp/color.h"
+#include "core/color_p.h"
 #include "math/utils.h"
 #include "utils/message_callback_p.h"
 
@@ -114,13 +114,7 @@ void emitFragment(
     // Not a direct check because of floating point imprecisions
     assert(ROUGHLY_GREATER_OR_EQUAL(depth, -1) && ROUGHLY_LESS_OR_EQUAL(depth, 1));
 
-    SRPColor color = {
-        CLAMP(0, 255, fsOut.color[0] * 255),
-        CLAMP(0, 255, fsOut.color[1] * 255),
-        CLAMP(0, 255, fsOut.color[2] * 255),
-        CLAMP(0, 255, fsOut.color[3] * 255)
-    };
-    *pColor = SRP_COLOR_TO_UINT32_T(color);
+    *pColor = colorPack(fsOut.color);
 
     // Cannot write when not testing (mimicking OpenGL behaviour)
     if (srpContext.depth.testEnable && srpContext.depth.writeEnable)

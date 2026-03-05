@@ -7,6 +7,7 @@ set(
 	core/buffer.c
 	core/framebuffer.c
 	core/texture.c
+	core/color.c
 	math/mat.c
 	math/vec.c
 	memory/alloc.c
