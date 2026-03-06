@@ -36,6 +36,14 @@ vec2 vec2Subtract(vec2 a, vec2 b);
 float vec2DotProduct(vec2 a, vec2 b);
 /** Multiply a vector with a scalar value */
 vec2 vec2MultiplyScalar(vec2 a, float b);
+/** Normalize a vector to have a length of 1 */
+vec2 vec2Normalize(vec2 v);
+/** Reflect an incident vector I against a surface normal N */
+vec2 vec2Reflect(vec2 i, vec2 n);
+/** Component-wise multiplication (Hadamard product) */
+vec2 vec2MultiplyVec2(vec2 a, vec2 b);
+/** Negate all components of a vector */
+vec2 vec2Negate(vec2 v);
 
 /** Add two vectors */
 vec3 vec3Add(vec3 a, vec3 b);
@@ -45,6 +53,14 @@ vec3 vec3Subtract(vec3 a, vec3 b);
 float vec3DotProduct(vec3 a, vec3 b);
 /** Multiply a vector with a scalar value */
 vec3 vec3MultiplyScalar(vec3 a, float b);
+/** Normalize a vector to have a length of 1 */
+vec3 vec3Normalize(vec3 v);
+/** Reflect an incident vector I against a surface normal N */
+vec3 vec3Reflect(vec3 i, vec3 n);
+/** Component-wise multiplication (Hadamard product) */
+vec3 vec3MultiplyVec3(vec3 a, vec3 b);
+/** Negate all components of a vector */
+vec3 vec3Negate(vec3 v);
 
 /** Add two vectors */
 vec4 vec4Add(vec4 a, vec4 b);
@@ -54,5 +70,13 @@ vec4 vec4Subtract(vec4 a, vec4 b);
 float vec4DotProduct(vec4 a, vec4 b);
 /** Multiply a vector with a scalar value */
 vec4 vec4MultiplyScalar(vec4 a, float b);
+/** Normalize a vector to have a length of 1 */
+vec4 vec4Normalize(vec4 v);
+/** Reflect an incident vector I against a surface normal N */
+vec4 vec4Reflect(vec4 i, vec4 n);
+/** Component-wise multiplication (Hadamard product) */
+vec4 vec4MultiplyVec4(vec4 a, vec4 b);
+/** Negate all components of a vector */
+vec4 vec4Negate(vec4 v);
 
 /** @} */  // ingroup Math
