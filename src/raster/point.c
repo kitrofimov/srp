@@ -85,14 +85,14 @@ static bool computeMathAndRasterBoundaries(
 {
     float halfSize = pointSize * 0.5;
 
-    vec2 minBP = {
+    vec2 minBP = VEC2(
         ss.x - halfSize,
-        ss.y - halfSize,
-    };
-    vec2 maxBP = {
+        ss.y - halfSize
+    );
+    vec2 maxBP = VEC2(
         ss.x + halfSize,
-        ss.y + halfSize,
-    };
+        ss.y + halfSize
+    );
 
     // Convert to integer pixel bounds
     int minX = (int) floor(minBP.x);

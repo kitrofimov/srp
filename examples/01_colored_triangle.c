@@ -55,14 +55,14 @@ int main()
 	// are only to build an quilateral triangle
 	const float R = 0.8;
 	Vertex data[3] = {
-		{.position = {0., R, 0.}, .color = {1., 0., 0.}},
+		{.position = VEC3(0., R, 0.), .color = VEC3(1., 0., 0.)},
 		{
-			.position = {-cos(RAD(30)) * R, -sin(RAD(30)) * R, 0.},
-			.color = {0., 0., 1.}
+			.position = VEC3(-cos(RAD(30)) * R, -sin(RAD(30)) * R, 0.),
+			.color = VEC3(0., 0., 1.)
 		},
 		{
-			.position = { cos(RAD(30)) * R, -sin(RAD(30)) * R, 0.},
-			.color = {0., 1., 0.}
+			.position = VEC3( cos(RAD(30)) * R, -sin(RAD(30)) * R, 0.),
+			.color = VEC3(0., 1., 0.)
 		}
 	};
 
@@ -149,11 +149,11 @@ void vertexShader(SRPVertexShaderIn* in, SRPVertexShaderOut* out)
 	VSOutput* pOutVars = (VSOutput*) out->varyings;
 
 	// `out->position` is defined as `float[4]`, but we cast it to `vec4*`
-	// `vec` structures are tightly packed, so it is safe to cast float/float
-	// arrays to vecXf/vecXd and vice versa!
+	// `vec` structures are tightly packed, so it is safe to cast float arrays
+	// to vecX and vice versa!
 	vec3* inPosition = &pVertex->position;
 	vec4* outPosition = (vec4*) out->clipPosition;
-	*outPosition = (vec4) { inPosition->x, inPosition->y, inPosition->z, 1. };
+	*outPosition = VEC4_FROM_VEC3(*inPosition, 1.);
 	pOutVars->color = pVertex->color;
 
 	// What we have done is just copied the inputs to the outputs
@@ -166,12 +166,9 @@ void fragmentShader(SRPFragmentShaderIn* in, SRPFragmentShaderOut* out)
 	// is an opaque pointer to VSOutput, so we cast it to this known type
 	VSOutput* interpolated = (VSOutput*) in->varyings;
 
-	// See `vertexShader` comments
+	// Casting `float[4]` to `vec4*` (see `vertexShader` comments)
 	vec4* outColor = (vec4*) out->color;
-	outColor->x = interpolated->color.x;
-	outColor->y = interpolated->color.y;
-	outColor->z = interpolated->color.z;
-	outColor->w = 1.;
+	*outColor = VEC4_FROM_VEC3(interpolated->color, 1.);
 }
 
 // See the complete API reference by building Doxygen documentation

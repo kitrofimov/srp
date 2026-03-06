@@ -38,35 +38,35 @@ int main(int argc, char** argv)
     const char* outputPath = argv[1];
 
 	Vertex data[] = {
-		{.position = {-1, -1, -1}, .uv = {0, 0}},
-		{.position = { 1, -1, -1}, .uv = {1, 0}},
-		{.position = { 1,  1, -1}, .uv = {1, 1}},
-		{.position = {-1,  1, -1}, .uv = {0, 1}},
+		{.position = VEC3(-1, -1, -1), .uv = VEC2(0, 0)},
+		{.position = VEC3( 1, -1, -1), .uv = VEC2(1, 0)},
+		{.position = VEC3( 1,  1, -1), .uv = VEC2(1, 1)},
+		{.position = VEC3(-1,  1, -1), .uv = VEC2(0, 1)},
 
-		{.position = {-1,  1, -1}, .uv = {0, 0}},
-		{.position = { 1,  1, -1}, .uv = {1, 0}},
-		{.position = { 1,  1,  1}, .uv = {1, 1}},
-		{.position = {-1,  1,  1}, .uv = {0, 1}},
+		{.position = VEC3(-1,  1, -1), .uv = VEC2(0, 0)},
+		{.position = VEC3( 1,  1, -1), .uv = VEC2(1, 0)},
+		{.position = VEC3( 1,  1,  1), .uv = VEC2(1, 1)},
+		{.position = VEC3(-1,  1,  1), .uv = VEC2(0, 1)},
 
-		{.position = { 1, -1,  1}, .uv = {0, 0}},
-		{.position = {-1, -1,  1}, .uv = {1, 0}},
-		{.position = {-1,  1,  1}, .uv = {1, 1}},
-		{.position = { 1,  1,  1}, .uv = {0, 1}},
+		{.position = VEC3( 1, -1,  1), .uv = VEC2(0, 0)},
+		{.position = VEC3(-1, -1,  1), .uv = VEC2(1, 0)},
+		{.position = VEC3(-1,  1,  1), .uv = VEC2(1, 1)},
+		{.position = VEC3( 1,  1,  1), .uv = VEC2(0, 1)},
 
-		{.position = { 1, -1,  1}, .uv = {0, 0}},
-		{.position = { 1, -1, -1}, .uv = {1, 0}},
-		{.position = { 1,  1, -1}, .uv = {1, 1}},
-		{.position = { 1,  1,  1}, .uv = {0, 1}},
+		{.position = VEC3( 1, -1,  1), .uv = VEC2(0, 0)},
+		{.position = VEC3( 1, -1, -1), .uv = VEC2(1, 0)},
+		{.position = VEC3( 1,  1, -1), .uv = VEC2(1, 1)},
+		{.position = VEC3( 1,  1,  1), .uv = VEC2(0, 1)},
 
-		{.position = {-1, -1, -1}, .uv = {0, 0}},
-		{.position = {-1, -1,  1}, .uv = {1, 0}},
-		{.position = {-1,  1,  1}, .uv = {1, 1}},
-		{.position = {-1,  1, -1}, .uv = {0, 1}},
+		{.position = VEC3(-1, -1, -1), .uv = VEC2(0, 0)},
+		{.position = VEC3(-1, -1,  1), .uv = VEC2(1, 0)},
+		{.position = VEC3(-1,  1,  1), .uv = VEC2(1, 1)},
+		{.position = VEC3(-1,  1, -1), .uv = VEC2(0, 1)},
 		
-		{.position = {-1, -1, -1}, .uv = {0, 0}},
-		{.position = { 1, -1, -1}, .uv = {1, 0}},
-		{.position = { 1, -1,  1}, .uv = {1, 1}},
-		{.position = {-1, -1,  1}, .uv = {0, 1}}
+		{.position = VEC3(-1, -1, -1), .uv = VEC2(0, 0)},
+		{.position = VEC3( 1, -1, -1), .uv = VEC2(1, 0)},
+		{.position = VEC3( 1, -1,  1), .uv = VEC2(1, 1)},
+		{.position = VEC3(-1, -1,  1), .uv = VEC2(0, 1)}
 	};
 
 	uint8_t indices[] = {
@@ -153,9 +153,7 @@ void vertexShader(SRPVertexShaderIn* in, SRPVertexShaderOut* out)
 
 	vec3* inPosition = &pVertex->position;
 	vec4* outPosition = (vec4*) out->clipPosition;
-	*outPosition = (vec4) {
-		inPosition->x, inPosition->y, inPosition->z, 1.0
-	};
+	*outPosition = VEC4_FROM_VEC3(*inPosition, 1.);
 	*outPosition = mat4MultiplyVec4(&pUniform->model, *outPosition);
 	*outPosition = mat4MultiplyVec4(&pUniform->view, *outPosition);
 	*outPosition = mat4MultiplyVec4(&pUniform->projection, *outPosition);
@@ -167,7 +165,7 @@ void vertexShader(SRPVertexShaderIn* in, SRPVertexShaderOut* out)
 void singleColor(SRPFragmentShaderIn* in, SRPFragmentShaderOut* out)
 {
 	vec4* outColor = (vec4*) out->color;
-    *outColor = (vec4) { 1, 0, 0, 1 };
+    *outColor = VEC4(1, 0, 0, 1);
 }
 
 void fragmentShader(SRPFragmentShaderIn* in, SRPFragmentShaderOut* out)

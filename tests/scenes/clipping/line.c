@@ -36,16 +36,16 @@ int main(int argc, char** argv)
     Vertex data[] = {
         // Cube
         // Bottom face (y = -1)
-        { .position = { -1, -1, -1 }, .color = { 1, 1, 1 } }, // 0: Front-Left-Bottom
-        { .position = {  1, -1, -1 }, .color = { 1, 1, 1 } }, // 1: Front-Right-Bottom
-        { .position = {  1, -1,  1 }, .color = { 1, 1, 1 } }, // 2: Back-Right-Bottom
-        { .position = { -1, -1,  1 }, .color = { 1, 1, 1 } }, // 3: Back-Left-Bottom
+        { .position = VEC3(-1, -1, -1), .color = VEC3(1, 1, 1) }, // 0: Front-Left-Bottom
+        { .position = VEC3( 1, -1, -1), .color = VEC3(1, 1, 1) }, // 1: Front-Right-Bottom
+        { .position = VEC3( 1, -1,  1), .color = VEC3(1, 1, 1) }, // 2: Back-Right-Bottom
+        { .position = VEC3(-1, -1,  1), .color = VEC3(1, 1, 1) }, // 3: Back-Left-Bottom
 
         // Top face (y = 1)
-        { .position = { -1,  1, -1 }, .color = { 1, 1, 1 } }, // 4: Front-Left-Top
-        { .position = {  1,  1, -1 }, .color = { 1, 1, 1 } }, // 5: Front-Right-Top
-        { .position = {  1,  1,  1 }, .color = { 1, 1, 1 } }, // 6: Back-Right-Top
-        { .position = { -1,  1,  1 }, .color = { 1, 1, 1 } }, // 7: Back-Left-Top
+        { .position = VEC3(-1,  1, -1), .color = VEC3(1, 1, 1) }, // 4: Front-Left-Top
+        { .position = VEC3( 1,  1, -1), .color = VEC3(1, 1, 1) }, // 5: Front-Right-Top
+        { .position = VEC3( 1,  1,  1), .color = VEC3(1, 1, 1) }, // 6: Back-Right-Top
+        { .position = VEC3(-1,  1,  1), .color = VEC3(1, 1, 1) }, // 7: Back-Left-Top
     };
 
     uint8_t indices[] = {
@@ -106,9 +106,7 @@ void vertexShader(SRPVertexShaderIn* in, SRPVertexShaderOut* out)
 
 	vec3* inPosition = &pVertex->position;
 	vec4* outPosition = (vec4*) out->clipPosition;
-	*outPosition = (vec4) {
-		inPosition->x, inPosition->y, inPosition->z, 1.0
-	};
+    *outPosition = VEC4_FROM_VEC3(*inPosition, 1.);
 	*outPosition = mat4MultiplyVec4(&pUniform->model, *outPosition);
 	*outPosition = mat4MultiplyVec4(&pUniform->view, *outPosition);
 	*outPosition = mat4MultiplyVec4(&pUniform->projection, *outPosition);

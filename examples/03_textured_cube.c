@@ -51,35 +51,35 @@ int main()
 	SRPFramebuffer* fb = srpNewFramebuffer(512, 512);
 
 	Vertex data[] = {
-		{.position = {-1, -1, -1}, .uv = {0, 0}},
-		{.position = { 1, -1, -1}, .uv = {1, 0}},
-		{.position = { 1,  1, -1}, .uv = {1, 1}},
-		{.position = {-1,  1, -1}, .uv = {0, 1}},
+		{.position = VEC3(-1, -1, -1), .uv = VEC2(0, 0)},
+		{.position = VEC3( 1, -1, -1), .uv = VEC2(1, 0)},
+		{.position = VEC3( 1,  1, -1), .uv = VEC2(1, 1)},
+		{.position = VEC3(-1,  1, -1), .uv = VEC2(0, 1)},
 
-		{.position = {-1,  1, -1}, .uv = {0, 0}},
-		{.position = { 1,  1, -1}, .uv = {1, 0}},
-		{.position = { 1,  1,  1}, .uv = {1, 1}},
-		{.position = {-1,  1,  1}, .uv = {0, 1}},
+		{.position = VEC3(-1,  1, -1), .uv = VEC2(0, 0)},
+		{.position = VEC3( 1,  1, -1), .uv = VEC2(1, 0)},
+		{.position = VEC3( 1,  1,  1), .uv = VEC2(1, 1)},
+		{.position = VEC3(-1,  1,  1), .uv = VEC2(0, 1)},
 
-		{.position = { 1, -1,  1}, .uv = {0, 0}},
-		{.position = {-1, -1,  1}, .uv = {1, 0}},
-		{.position = {-1,  1,  1}, .uv = {1, 1}},
-		{.position = { 1,  1,  1}, .uv = {0, 1}},
+		{.position = VEC3( 1, -1,  1), .uv = VEC2(0, 0)},
+		{.position = VEC3(-1, -1,  1), .uv = VEC2(1, 0)},
+		{.position = VEC3(-1,  1,  1), .uv = VEC2(1, 1)},
+		{.position = VEC3( 1,  1,  1), .uv = VEC2(0, 1)},
 
-		{.position = { 1, -1,  1}, .uv = {0, 0}},
-		{.position = { 1, -1, -1}, .uv = {1, 0}},
-		{.position = { 1,  1, -1}, .uv = {1, 1}},
-		{.position = { 1,  1,  1}, .uv = {0, 1}},
+		{.position = VEC3( 1, -1,  1), .uv = VEC2(0, 0)},
+		{.position = VEC3( 1, -1, -1), .uv = VEC2(1, 0)},
+		{.position = VEC3( 1,  1, -1), .uv = VEC2(1, 1)},
+		{.position = VEC3( 1,  1,  1), .uv = VEC2(0, 1)},
 
-		{.position = {-1, -1, -1}, .uv = {0, 0}},
-		{.position = {-1, -1,  1}, .uv = {1, 0}},
-		{.position = {-1,  1,  1}, .uv = {1, 1}},
-		{.position = {-1,  1, -1}, .uv = {0, 1}},
-		
-		{.position = {-1, -1, -1}, .uv = {0, 0}},
-		{.position = { 1, -1, -1}, .uv = {1, 0}},
-		{.position = { 1, -1,  1}, .uv = {1, 1}},
-		{.position = {-1, -1,  1}, .uv = {0, 1}}
+		{.position = VEC3(-1, -1, -1), .uv = VEC2(0, 0)},
+		{.position = VEC3(-1, -1,  1), .uv = VEC2(1, 0)},
+		{.position = VEC3(-1,  1,  1), .uv = VEC2(1, 1)},
+		{.position = VEC3(-1,  1, -1), .uv = VEC2(0, 1)},
+
+		{.position = VEC3(-1, -1, -1), .uv = VEC2(0, 0)},
+		{.position = VEC3( 1, -1, -1), .uv = VEC2(1, 0)},
+		{.position = VEC3( 1, -1,  1), .uv = VEC2(1, 1)},
+		{.position = VEC3(-1, -1,  1), .uv = VEC2(0, 1)}
 	};
 	uint8_t indices[] = {
 		 0,  1,  2,   0,  2,  3,
@@ -186,22 +186,19 @@ void vertexShader(SRPVertexShaderIn* in, SRPVertexShaderOut* out)
 
 	vec3* inPosition = &pVertex->position;
 	vec4* outPosition = (vec4*) out->clipPosition;
-	*outPosition = (vec4) { inPosition->x, inPosition->y, inPosition->z, 1. };
+	*outPosition = VEC4_FROM_VEC3(*inPosition, 1.);
 	*outPosition = mat4MultiplyVec4(&pUniform->model, *outPosition);
 	*outPosition = mat4MultiplyVec4(&pUniform->view, *outPosition);
 	*outPosition = mat4MultiplyVec4(&pUniform->projection, *outPosition);
 
-	pOutVars->uv.x = pVertex->uv.x;
-	pOutVars->uv.y = pVertex->uv.y;
+	pOutVars->uv = pVertex->uv;
 }
 
 void fragmentShader(SRPFragmentShaderIn* in, SRPFragmentShaderOut* out)
 {
 	VSOutput* interpolated = (VSOutput*) in->varyings;
 	Uniform* pUniform = (Uniform*) in->uniform;
-	vec3* outColor = (vec3*) out->color;
 
 	vec2 uv = interpolated->uv;
-	srpTextureGetFilteredColor(pUniform->texture, uv.x, uv.y, (float*) outColor);
+	srpTextureGetFilteredColor(pUniform->texture, uv.x, uv.y, out->color);
 }
-

@@ -22,10 +22,10 @@ int main(int argc, char** argv)
     const char* outputPath = argv[1];
 
     Vertex data[] = {
-        { .position = { -0.5, -0.5, 0. } },
-        { .position = { -0.5,  0.5, 0. } },
-        { .position = {  0.5,  0.5, 0. } },
-        { .position = {  0.5, -0.5, 0. } },
+        { .position = VEC3(-0.5, -0.5, 0.) },
+        { .position = VEC3(-0.5,  0.5, 0.) },
+        { .position = VEC3( 0.5,  0.5, 0.) },
+        { .position = VEC3( 0.5, -0.5, 0.) },
     };
 
     SRPShaderProgram shaderProgram = {
@@ -64,7 +64,7 @@ void vertexShader(SRPVertexShaderIn* in, SRPVertexShaderOut* out)
     Vertex* v = (Vertex*) in->vertex;
 	vec3* inPos = &v->position;
 	vec4* outPos = (vec4*) out->clipPosition;
-	*outPos = (vec4) { inPos->x, inPos->y, inPos->z, 1. };
+    *outPos = VEC4_FROM_VEC3(*inPos, 1.);
 }
 
 void fragmentShader(SRPFragmentShaderIn* in, SRPFragmentShaderOut* out)

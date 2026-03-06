@@ -75,7 +75,7 @@ int main()
 	srpVertexBufferCopyData(vb, sizeof(OBJVertex), mesh.vertexCount * sizeof(OBJVertex), mesh.vertices);
 	srpIndexBufferCopyData(ib, SRP_UINT32, mesh.indexCount * sizeof(uint32_t), mesh.indices);
 
-	vec3 viewPos = (vec3) { 0, 1.75, -7 };
+	vec3 viewPos = VEC3(0, 1.75, -7);
 	Uniform uniform = {
 		.model = mat4ConstructIdentity(),
 		.view = mat4ConstructView(
@@ -86,16 +86,16 @@ int main()
 		.projection = mat4ConstructPerspectiveProjection(-1, 1, -1, 1, 1, 10),
 		.frameCount = 0,
 		.material = (Material) {
-			.ambient  = (vec3) { 1,   0.5, 0.31 },
-			.diffuse  = (vec3) { 1,   0.5, 0.31 },
-			.specular = (vec3) { 0.5, 0.5, 0.5  },
+			.ambient  = VEC3(1,   0.5, 0.31),
+			.diffuse  = VEC3(1,   0.5, 0.31),
+			.specular = VEC3(0.5, 0.5, 0.5 ),
 			.shininess = 2
 		},
 		.light = (Light) {
-			.ambient  = (vec3) { 0.1, 0.1, 0.1 },
-			.diffuse  = (vec3) { 0.5, 0.5, 0.5 },
-			.specular = (vec3) { 0.3, 0.3, 0.3 },
-			.direction = (vec3) { -1, -1, 1 }
+			.ambient  = VEC3(0.1, 0.1, 0.1),
+			.diffuse  = VEC3(0.5, 0.5, 0.5),
+			.specular = VEC3(0.3, 0.3, 0.3),
+			.direction = VEC3(-1, -1, 1)
 		},
 		.viewPos = viewPos
 	};
@@ -183,19 +183,16 @@ void vertexShader(SRPVertexShaderIn* in, SRPVertexShaderOut* out)
 
 	vec3* inPosition = &pVertex->position;
 	vec4* outPosition = (vec4*) out->clipPosition;
-	*outPosition = (vec4) { inPosition->x, inPosition->y, inPosition->z, 1. };
+	*outPosition = VEC4_FROM_VEC3(*inPosition, 1.);
 	*outPosition = mat4MultiplyVec4(&pUniform->model, *outPosition);
-	v->fragPos = *(vec3*) outPosition;
+	v->fragPos = outPosition->xyz;
 	*outPosition = mat4MultiplyVec4(&pUniform->view, *outPosition);
 	*outPosition = mat4MultiplyVec4(&pUniform->projection, *outPosition);
 
 	vec4 worldNormal = mat4MultiplyVec4(
-		&pUniform->model,
-		(vec4) { pVertex->normal.x, pVertex->normal.y, pVertex->normal.z, 0.f }
+		&pUniform->model, VEC4_FROM_VEC3(pVertex->normal, 0)
 	);
-	v->normal.x = worldNormal.x;
-	v->normal.y = worldNormal.y;
-	v->normal.z = worldNormal.z;
+	v->normal = worldNormal.xyz;
 }
 
 void fragmentShader(SRPFragmentShaderIn* in, SRPFragmentShaderOut* out)
@@ -218,6 +215,5 @@ void fragmentShader(SRPFragmentShaderIn* in, SRPFragmentShaderOut* out)
 	vec3 specular = vec3MultiplyVec3(l->specular, vec3MultiplyScalar(m->specular, spec));
         
     vec3 result = vec3Add(vec3Add(ambient, diffuse), specular);
-	*(vec3*) out->color = result;
-	out->color[3] = 1.;
+	*(vec4*) out->color = VEC4_FROM_VEC3(result, 1.);
 }

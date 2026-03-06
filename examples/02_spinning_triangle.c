@@ -47,14 +47,14 @@ int main()
 
 	const float R = 0.8;
 	Vertex data[3] = {
-		{.position = {0., R, 0.}, .color = {1., 0., 0.}},
+		{.position = VEC3(0., R, 0.), .color = VEC3(1., 0., 0.)},
 		{
-			.position = {-cos(RAD(30)) * R, -sin(RAD(30)) * R, 0.},
-			.color = {0., 0., 1.}
+			.position = VEC3(-cos(RAD(30)) * R, -sin(RAD(30)) * R, 0.),
+			.color = VEC3(0., 0., 1.)
 		},
 		{
-			.position = { cos(RAD(30)) * R, -sin(RAD(30)) * R, 0.},
-			.color = {0., 1., 0.}
+			.position = VEC3( cos(RAD(30)) * R, -sin(RAD(30)) * R, 0.),
+			.color = VEC3(0., 1., 0.)
 		}
 	};
 
@@ -138,23 +138,23 @@ void vertexShader(SRPVertexShaderIn* in, SRPVertexShaderOut* out)
 
 	vec3* inPosition = &pVertex->position;
 	vec4* outPosition = (vec4*) out->clipPosition;
-	*outPosition = (vec4) { inPosition->x, inPosition->y, inPosition->z, 1. };
+	*outPosition = VEC4_FROM_VEC3(*inPosition, 1.);
 	// Transform the position vector by the rotation matrix from uniform
 	*outPosition = mat4MultiplyVec4(&pUniform->rotation, *outPosition);
 
 	// Transform the color values just for fun
-	pOutVars->color.x = pVertex->color.x + sin(pUniform->frameCount * 2.5e-3) * 0.3;
-	pOutVars->color.y = pVertex->color.y + sin(pUniform->frameCount * 0.5e-3) * 0.1;
-	pOutVars->color.z = pVertex->color.z + sin(pUniform->frameCount * 5e-3) * 0.5;
+	vec3 delta = VEC3(
+		sin(pUniform->frameCount * 2.5e-3) * 0.3,
+		sin(pUniform->frameCount * 0.5e-3) * 0.1,
+		sin(pUniform->frameCount * 5e-3) * 0.5
+	);
+	pOutVars->color = vec3Add(pVertex->color, delta);
 }
 
 void fragmentShader(SRPFragmentShaderIn* in, SRPFragmentShaderOut* out)
 {
 	VSOutput* interpolated = (VSOutput*) in->varyings;
 	vec4* outColor = (vec4*) out->color;
-	outColor->x = interpolated->color.x;
-	outColor->y = interpolated->color.y;
-	outColor->z = interpolated->color.z;
-	outColor->w = 1.;
+	*outColor = VEC4_FROM_VEC3(interpolated->color, 1.);
 }
 

@@ -14,17 +14,41 @@
 
 #pragma pack(push, 1)
 
-/** Represents a 2D vector of `float`s */
-typedef struct vec2 { float x, y; } vec2;
-#define VEC2_ZERO (vec2) {0, 0}
+/** Represents a 2-element vector of `float`s */
+typedef union vec2 {
+    struct { float x, y; };
+    float v[2];
+} vec2;
 
-/** Represents a 3D vector of `float`s */
-typedef struct vec3 { float x, y, z; } vec3;
-#define VEC3_ZERO (vec3) {0, 0, 0}
+/** Represents a 3-element vector of `float`s */
+typedef union vec3 {
+    struct { float x, y, z; };
+    struct { vec2 xy; float _z; };
+    struct { float _x; vec2 yz; };
+    float v[3];
+} vec3;
 
-/** Represents a 4D vector of `float`s */
-typedef struct vec4 { float x, y, z, w; } vec4;
-#define VEC4_ZERO (vec4) {0, 0, 0, 0}
+/** Represents a 4-element vector of `float`s */
+typedef union vec4 {
+    struct { float x, y, z, w; };
+    struct { vec2 xy; float _z, _w; };
+    struct { float _x; vec2 yz; float __w; };
+    struct { float __x, _y; vec2 zw; };
+    struct { vec3 xyz; float ___w; };
+    struct { float ___x; vec3 yzw; };
+    float v[4];
+} vec4;
+
+/** Instantiation macros */
+#define VEC2(x, y)           ((vec2) {{x, y}})
+#define VEC3(x, y, z)        ((vec3) {{x, y, z}})
+#define VEC4(x, y, z, w)     ((vec4) {{x, y, z, w}})
+#define VEC4_FROM_VEC3(v, a) ((vec4) {.xyz = (v), .___w = (a)})
+
+/** Swizzle macros */
+#define SWZ2(v, a, b)       ((vec2) {{(v).a, (v).b}})
+#define SWZ3(v, a, b, c)    ((vec3) {{(v).a, (v).b, (v).c}})
+#define SWZ4(v, a, b, c, d) ((vec4) {{(v).a, (v).b, (v).c, (v).d}})
 
 #pragma pack(pop)
 

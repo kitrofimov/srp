@@ -29,21 +29,21 @@ bool loadOBJMesh(const char* path, OBJMesh* mesh)
         {
             float x, y, z;
             sscanf(line, "v %f %f %f", &x, &y, &z);
-            tempPositions[posCount] = (vec3) {x, y, z};
+            tempPositions[posCount] = VEC3(x, y, z);
             posCount++;
         }
         else if (line[0] == 'v' && line[1] == 't' && uvCount < 65536)  // Texture coord
         {
             float u, v;
             sscanf(line, "vt %f %f", &u, &v);
-            tempUVs[uvCount] = (vec2) {u, v};
+            tempUVs[uvCount] = VEC2(u, v);
             uvCount++;
         }
         else if (line[0] == 'v' && line[1] == 'n' && normalCount < 65536) // Normals
         {
             float nx, ny, nz;
             sscanf(line, "vn %f %f %f", &nx, &ny, &nz);
-            tempNormals[normalCount] = (vec3) {nx, ny, nz};
+            tempNormals[normalCount] = VEC3(nx, ny, nz);
             normalCount++;
         }
         else if (line[0] == 'f')  // Face

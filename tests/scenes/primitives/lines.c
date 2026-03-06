@@ -11,11 +11,6 @@ typedef struct Vertex
     vec3 color;
 } Vertex;
 
-typedef struct VSOutput
-{
-    vec3 color;
-} VSOutput;
-
 typedef struct Uniform
 {
 	mat4 model;
@@ -36,16 +31,16 @@ int main(int argc, char** argv)
     Vertex data[] = {
         // Cube
         // Bottom face (y = -1)
-        { .position = { -1, -1, -1 }, .color = { 1, 1, 1 } }, // 0: Front-Left-Bottom
-        { .position = {  1, -1, -1 }, .color = { 1, 1, 1 } }, // 1: Front-Right-Bottom
-        { .position = {  1, -1,  1 }, .color = { 1, 1, 1 } }, // 2: Back-Right-Bottom
-        { .position = { -1, -1,  1 }, .color = { 1, 1, 1 } }, // 3: Back-Left-Bottom
+        { .position = VEC3(-1, -1, -1) }, // 0: Front-Left-Bottom
+        { .position = VEC3( 1, -1, -1) }, // 1: Front-Right-Bottom
+        { .position = VEC3( 1, -1,  1) }, // 2: Back-Right-Bottom
+        { .position = VEC3(-1, -1,  1) }, // 3: Back-Left-Bottom
 
         // Top face (y = 1)
-        { .position = { -1,  1, -1 }, .color = { 1, 1, 1 } }, // 4: Front-Left-Top
-        { .position = {  1,  1, -1 }, .color = { 1, 1, 1 } }, // 5: Front-Right-Top
-        { .position = {  1,  1,  1 }, .color = { 1, 1, 1 } }, // 6: Back-Right-Top
-        { .position = { -1,  1,  1 }, .color = { 1, 1, 1 } }, // 7: Back-Left-Top
+        { .position = VEC3(-1,  1, -1) }, // 4: Front-Left-Top
+        { .position = VEC3( 1,  1, -1) }, // 5: Front-Right-Top
+        { .position = VEC3( 1,  1,  1) }, // 6: Back-Right-Top
+        { .position = VEC3(-1,  1,  1) }, // 7: Back-Left-Top
     };
 
     uint8_t indices[] = {
@@ -64,13 +59,9 @@ int main(int argc, char** argv)
         .uniform = (SRPUniform*) &uniform,
         .vs = &(SRPVertexShader) {
             .shader = vertexShader,
-            .nVaryings = 1,
-			.varyingsInfo = (SRPVaryingInfo[]) {{
-				.nItems = 3,
-				.type = SRP_FLOAT,
-				.interpolationMode = SRP_INTERPOLATION_MODE_PERSPECTIVE
-			}},
-            .varyingsSize = sizeof(VSOutput)
+            .nVaryings = 0,
+			.varyingsInfo = NULL,
+            .varyingsSize = 0
         },
         .fs = &(SRPFragmentShader) {
             .shader = fragmentShader,
@@ -101,27 +92,17 @@ void vertexShader(SRPVertexShaderIn* in, SRPVertexShaderOut* out)
 {
 	Vertex* pVertex = (Vertex*) in->vertex;
 	Uniform* pUniform = (Uniform*) in->uniform;
-	VSOutput* pOutVars = (VSOutput*) out->varyings;
 
 	vec3* inPosition = &pVertex->position;
 	vec4* outPosition = (vec4*) out->clipPosition;
-	*outPosition = (vec4) {
-		inPosition->x, inPosition->y, inPosition->z, 1.0
-	};
+    *outPosition = VEC4_FROM_VEC3(*inPosition, 1.);
 	*outPosition = mat4MultiplyVec4(&pUniform->model, *outPosition);
 	*outPosition = mat4MultiplyVec4(&pUniform->view, *outPosition);
 	*outPosition = mat4MultiplyVec4(&pUniform->projection, *outPosition);
-
-	pOutVars->color = pVertex->color;
 }
 
 void fragmentShader(SRPFragmentShaderIn* in, SRPFragmentShaderOut* out)
 {
-    VSOutput* i = (VSOutput*) in->varyings;
-
     vec4* color = (vec4*) out->color;
-    color->x = i->color.x;
-    color->y = i->color.y;
-    color->z = i->color.z;
-    color->w = 1.;
+    *color = VEC4(1, 1, 1, 1);
 }

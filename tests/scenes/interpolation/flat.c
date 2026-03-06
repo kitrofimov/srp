@@ -32,9 +32,9 @@ int main(int argc, char** argv)
     const char* outputPath = argv[1];
 
     Vertex data[] = {
-        { .position = { -0.5, -0.5, 0. }, .color = 0 },
-        { .position = {  0.5, -0.5, 0. }, .color = 1 },
-        { .position = {  0. ,  0.5, 0. }, .color = 2 },
+        { .position = VEC3(-0.5, -0.5, 0.), .color = 0 },
+        { .position = VEC3( 0.5, -0.5, 0.), .color = 1 },
+        { .position = VEC3( 0. ,  0.5, 0.), .color = 2 },
     };
 
     Uniform uniform = {0};
@@ -89,7 +89,7 @@ void vertexShader(SRPVertexShaderIn* in, SRPVertexShaderOut* out)
 
 	vec3* inPos = &v->position;
 	vec4* outPos = (vec4*) out->clipPosition;
-	*outPos = (vec4) { inPos->x, inPos->y, inPos->z, 1. };
+	*outPos = VEC4_FROM_VEC3(*inPos, 1.);
 	*outPos = mat4MultiplyVec4(&u->model, *outPos);
     o->color = v->color;
 }
@@ -100,9 +100,9 @@ void fragmentShader(SRPFragmentShaderIn* in, SRPFragmentShaderOut* out)
     vec4* color = (vec4*) out->color;
 
     if (v->color == 0)
-        *color = (vec4) { 1, 0, 0, 1 };
+        *color = VEC4(1, 0, 0, 1);
     else if (v->color == 1)
-        *color = (vec4) { 0, 1, 0, 1 };
+        *color = VEC4(0, 1, 0, 1);
     else if (v->color == 2)
-        *color = (vec4) { 0, 0, 1, 1 };
+        *color = VEC4(0, 0, 1, 1);
 }

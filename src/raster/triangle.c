@@ -139,16 +139,16 @@ bool setupTriangle(SRPTriangle* tri, const SRPFramebuffer* fb)
 
 	// FP errors may lead to one of these being -1 => triangle not drawn
 	// Hence assuring it's at least 0 OR at most width/height of the framebuffer
-	tri->minBP = (vec2) {
+	tri->minBP = VEC2(
 		MAX(floor(MIN(tri->ss[0].x, MIN(tri->ss[1].x, tri->ss[2].x))), 0),
 		MAX(floor(MIN(tri->ss[0].y, MIN(tri->ss[1].y, tri->ss[2].y))), 0)
-	};
-	tri->maxBP = (vec2) {
+	);
+	tri->maxBP = VEC2(
 		MIN(ceil(MAX(tri->ss[0].x, MAX(tri->ss[1].x, tri->ss[2].x))), fb->width),
 		MIN(ceil(MAX(tri->ss[0].y, MAX(tri->ss[1].y, tri->ss[2].y))), fb->height)
-	};
+	);
 
-	calculateBarycentrics(tri, areaX2, (vec2) {tri->minBP.x + 0.5, tri->minBP.y + 0.5});
+	calculateBarycentrics(tri, areaX2, VEC2(tri->minBP.x + 0.5, tri->minBP.y + 0.5));
 
 	for (uint8_t i = 0; i < 3; i++)
 	{
@@ -196,21 +196,21 @@ static void triangleChangeWinding(SRPTriangle* tri)
 
 static void calculateBarycentrics(SRPTriangle* tri, float areaX2, vec2 point)
 {
-	vec3 AP = {
+	vec3 AP = VEC3(
 		point.x - tri->ss[0].x,
 		point.y - tri->ss[0].y,
 		0
-	};
-	vec3 BP = {
+	);
+	vec3 BP = VEC3(
 		point.x - tri->ss[1].x,
 		point.y - tri->ss[1].y,
 		0
-	};
-	vec3 CP = {
+	);
+	vec3 CP = VEC3(
 		point.x - tri->ss[2].x,
 		point.y - tri->ss[2].y,
 		0
-	};
+	);
 
 	tri->lambda[0] = signedAreaParallelogram(&BP, &tri->edge[1]) / areaX2;
 	tri->lambda[1] = signedAreaParallelogram(&CP, &tri->edge[2]) / areaX2;

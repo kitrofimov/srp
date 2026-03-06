@@ -33,13 +33,13 @@ int main(int argc, char** argv)
 
     // Two bounding triangles forming a square
     Vertex data[] = {
-        { .position = { -0.5, -0.5, 0. }, .color = { 1., 0., 0. } },
-        { .position = {  0.5,  0.5, 0. }, .color = { 0., 1., 0. } },
-        { .position = { -0.5,  0.5, 0. }, .color = { 0., 0., 1. } },
+        { .position = VEC3(-0.5, -0.5, 0.), .color = VEC3(1., 0., 0.) },
+        { .position = VEC3( 0.5,  0.5, 0.), .color = VEC3(0., 1., 0.) },
+        { .position = VEC3(-0.5,  0.5, 0.), .color = VEC3(0., 0., 1.) },
 
-        { .position = {  0.5,  0.5, 0. }, .color = { 1., 1., 0. } },
-        { .position = {  0.5, -0.5, 0. }, .color = { 1., 0., 1. } },
-        { .position = { -0.5, -0.5, 0. }, .color = { 0., 1., 1. } }
+        { .position = VEC3( 0.5,  0.5, 0.), .color = VEC3(1., 1., 0.) },
+        { .position = VEC3( 0.5, -0.5, 0.), .color = VEC3(1., 0., 1.) },
+        { .position = VEC3(-0.5, -0.5, 0.), .color = VEC3(0., 1., 1.) }
     };
 
     Uniform uniform = {
@@ -89,7 +89,7 @@ void vertexShader(SRPVertexShaderIn* in, SRPVertexShaderOut* out)
 
 	vec3* inPos = &v->position;
 	vec4* outPos = (vec4*) out->clipPosition;
-	*outPos = (vec4) { inPos->x, inPos->y, inPos->z, 1. };
+    *outPos = VEC4_FROM_VEC3(*inPos, 1.);
 	*outPos = mat4MultiplyVec4(&u->rotation, *outPos);
     o->color = v->color;
 }

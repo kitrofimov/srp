@@ -15,18 +15,12 @@
 
 SRP_FORCEINLINE vec2 vec2Add(vec2 a, vec2 b)
 {
-	return (vec2) {
-		a.x + b.x,
-		a.y + b.y
-	};
+	return VEC2(a.x + b.x, a.y + b.y);
 }
 
 SRP_FORCEINLINE vec2 vec2Subtract(vec2 a, vec2 b)
 {
-	return (vec2) {
-		a.x - b.x,
-		a.y - b.y
-	};
+	return VEC2(a.x - b.x, a.y - b.y);
 }
 
 SRP_FORCEINLINE float vec2DotProduct(vec2 a, vec2 b)
@@ -36,20 +30,17 @@ SRP_FORCEINLINE float vec2DotProduct(vec2 a, vec2 b)
 
 SRP_FORCEINLINE vec2 vec2MultiplyScalar(vec2 a, float b)
 {
-	return (vec2) {
-		a.x * b,
-		a.y * b
-	};
+	return VEC2(a.x * b, a.y * b);
 }
 
 SRP_FORCEINLINE vec2 vec2Negate(vec2 v) 
 { 
-    return (vec2) { -v.x, -v.y }; 
+    return VEC2(-v.x, -v.y); 
 }
 
 SRP_FORCEINLINE vec2 vec2MultiplyVec2(vec2 a, vec2 b) 
 { 
-    return (vec2) { a.x * b.x, a.y * b.y }; 
+    return VEC2(a.x * b.x, a.y * b.y); 
 }
 
 SRP_FORCEINLINE vec2 vec2Normalize(vec2 v) 
@@ -58,9 +49,9 @@ SRP_FORCEINLINE vec2 vec2Normalize(vec2 v)
     if (length > 0)
 	{
         float inv = 1.0f / length;
-        return (vec2) { v.x * inv, v.y * inv };
+        return VEC2(v.x * inv, v.y * inv);
     }
-    return (vec2) { 0, 0 };
+    return VEC2(0, 0);
 }
 
 SRP_FORCEINLINE vec2 vec2Reflect(vec2 i, vec2 n) 
@@ -73,20 +64,20 @@ SRP_FORCEINLINE vec2 vec2Reflect(vec2 i, vec2 n)
 
 SRP_FORCEINLINE vec3 vec3Add(vec3 a, vec3 b)
 {
-	return (vec3) {
+	return VEC3(
 		a.x + b.x,
 		a.y + b.y,
 		a.z + b.z
-	};
+	);
 }
 
 SRP_FORCEINLINE vec3 vec3Subtract(vec3 a, vec3 b)
 {
-	return (vec3) {
+	return VEC3(
 		a.x - b.x,
 		a.y - b.y,
 		a.z - b.z
-	};
+	);
 }
 
 SRP_FORCEINLINE float vec3DotProduct(vec3 a, vec3 b)
@@ -96,11 +87,11 @@ SRP_FORCEINLINE float vec3DotProduct(vec3 a, vec3 b)
 
 SRP_FORCEINLINE vec3 vec3MultiplyScalar(vec3 a, float b)
 {
-	return (vec3) {
+	return VEC3(
 		a.x * b,
 		a.y * b,
 		a.z * b
-	};
+	);
 }
 
 SRP_FORCEINLINE vec3 vec3Normalize(vec3 v)
@@ -109,9 +100,9 @@ SRP_FORCEINLINE vec3 vec3Normalize(vec3 v)
     if (length > 0)
 	{
 		float inv = 1 / length;
-        return (vec3) { v.x * inv, v.y * inv, v.z * inv };
+        return VEC3(v.x * inv, v.y * inv, v.z * inv);
     }
-    return (vec3) { 0, 0, 0 };
+    return VEC3(0, 0, 0);
 }
 
 SRP_FORCEINLINE vec3 vec3Reflect(vec3 i, vec3 n)
@@ -123,33 +114,33 @@ SRP_FORCEINLINE vec3 vec3Reflect(vec3 i, vec3 n)
 
 SRP_FORCEINLINE vec3 vec3MultiplyVec3(vec3 a, vec3 b)
 {
-    return (vec3) { a.x * b.x, a.y * b.y, a.z * b.z };
+    return VEC3(a.x * b.x, a.y * b.y, a.z * b.z);
 }
 
 SRP_FORCEINLINE vec3 vec3Negate(vec3 v)
 {
-    return (vec3) { -v.x, -v.y, -v.z };
+    return VEC3(-v.x, -v.y, -v.z);
 }
 
 
 SRP_FORCEINLINE vec4 vec4Add(vec4 a, vec4 b)
 {
-	return (vec4) {
+	return VEC4(
 		a.x + b.x,
 		a.y + b.y,
 		a.z + b.z,
 		a.w + b.w
-	};
+	);
 }
 
 SRP_FORCEINLINE vec4 vec4Subtract(vec4 a, vec4 b)
 {
-	return (vec4) {
+	return VEC4(
 		a.x - b.x,
 		a.y - b.y,
 		a.z - b.z,
 		a.w - b.w
-	};
+	);
 }
 
 SRP_FORCEINLINE float vec4DotProduct(vec4 a, vec4 b)
@@ -159,22 +150,22 @@ SRP_FORCEINLINE float vec4DotProduct(vec4 a, vec4 b)
 
 SRP_FORCEINLINE vec4 vec4MultiplyScalar(vec4 a, float b)
 {
-	return (vec4) {
+	return VEC4(
 		a.x * b,
 		a.y * b,
 		a.z * b,
 		a.w * b
-	};
+	);
 }
 
 SRP_FORCEINLINE vec4 vec4Negate(vec4 v) 
 { 
-    return (vec4) { -v.x, -v.y, -v.z, -v.w }; 
+    return VEC4(-v.x, -v.y, -v.z, -v.w);
 }
 
 SRP_FORCEINLINE vec4 vec4MultiplyVec4(vec4 a, vec4 b) 
 { 
-    return (vec4) { a.x * b.x, a.y * b.y, a.z * b.z, a.w * b.w }; 
+    return VEC4(a.x * b.x, a.y * b.y, a.z * b.z, a.w * b.w);
 }
 
 SRP_FORCEINLINE vec4 vec4Normalize(vec4 v) 
@@ -183,9 +174,9 @@ SRP_FORCEINLINE vec4 vec4Normalize(vec4 v)
     if (length > 0)
 	{
         float inv = 1.0f / length;
-        return (vec4) { v.x * inv, v.y * inv, v.z * inv, v.w * inv };
+        return VEC4(v.x * inv, v.y * inv, v.z * inv, v.w * inv);
     }
-    return (vec4) { 0, 0, 0, 0 };
+    return VEC4(0, 0, 0, 0);
 }
 
 SRP_FORCEINLINE vec4 vec4Reflect(vec4 i, vec4 n) 
