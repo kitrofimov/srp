@@ -26,6 +26,7 @@ typedef struct Uniform
 SRPContext srpContext;
 
 void vertexShader(SRPVertexShaderIn* in, SRPVertexShaderOut* out);
+void depthFS(SRPFragmentShaderIn* in, SRPFragmentShaderOut* out);
 void fragmentShader(SRPFragmentShaderIn* in, SRPFragmentShaderOut* out);
 
 int main(int argc, char** argv)
@@ -63,7 +64,7 @@ int main(int argc, char** argv)
     };
 
     Uniform uniform = {
-        .model = mat4ConstructTRS(0, 0,  0,   0, 0.3, 0,   0.5, 0.5, 0.5),
+        .model = mat4ConstructTRS(0, 0,  0,   0, 0., 0,   0.5, 0.5, 0.5),
 		.view = mat4ConstructView(0, 0, -2,   0, 0,   0,   1,   1,   1),
 		.projection = mat4ConstructPerspectiveProjection(-1, 1, -1, 1, 1, 10)
     };
@@ -97,7 +98,9 @@ int main(int argc, char** argv)
 
     srpFramebufferClear(fb);
     srpDrawIndexBuffer(ib, vb, fb, &shaderProgram, SRP_PRIM_LINES, 0, 24);
-    srpDrawVertexBuffer(vb, fb, &shaderProgram, SRP_PRIM_TRIANGLES, 8, 6);
+    srpDrawVertexBuffer(vb, fb, &shaderProgram, SRP_PRIM_TRIANGLES, 11, 3);
+    shaderProgram.fs->shader = depthFS;
+    srpDrawVertexBuffer(vb, fb, &shaderProgram, SRP_PRIM_TRIANGLES, 8, 3);
 
     int ok = saveFramebufferToImage(fb, outputPath);
 
@@ -121,6 +124,13 @@ void vertexShader(SRPVertexShaderIn* in, SRPVertexShaderOut* out)
 	*outPosition = mat4MultiplyVec4(&pUniform->projection, *outPosition);
 
 	pOutVars->color = pVertex->color;
+}
+
+void depthFS(SRPFragmentShaderIn* in, SRPFragmentShaderOut* out)
+{
+    float depth = (in->fragCoord[2] + 1) / 2;
+    vec4* color = (vec4*) out->color;
+    *color = VEC4(depth, depth, depth, 1);
 }
 
 void fragmentShader(SRPFragmentShaderIn* in, SRPFragmentShaderOut* out)

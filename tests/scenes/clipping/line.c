@@ -56,7 +56,7 @@ int main(int argc, char** argv)
 
     Uniform uniform = {
         .model = mat4ConstructTRS(0, 0,  0,     0, 0.4, 0,   0.5, 0.5, 0.5),
-		.view = mat4ConstructView(0, 0, -1.5,   0, 0,   0,   1,   1,   1),
+        .view = mat4LookAt(VEC3(0, 0, 1.5), VEC3(0, 0, 0), VEC3(0, 1, 0)),
 		.projection = mat4ConstructPerspectiveProjection(-1, 1, -1, 1, 1, 10)
     };
 

@@ -75,14 +75,10 @@ int main()
 	srpVertexBufferCopyData(vb, sizeof(OBJVertex), mesh.vertexCount * sizeof(OBJVertex), mesh.vertices);
 	srpIndexBufferCopyData(ib, SRP_UINT32, mesh.indexCount * sizeof(uint32_t), mesh.indices);
 
-	vec3 viewPos = VEC3(0, 1.75, -7);
+	vec3 viewPos = VEC3(0, 1.75, 7);
 	Uniform uniform = {
-		.model = mat4ConstructIdentity(),
-		.view = mat4ConstructView(
-			viewPos.x, viewPos.y, viewPos.z,
-			0, 0, 0,
-			1, 1, 1
-		),
+		.model = mat4Identity(),
+		.view = mat4LookAt(viewPos, VEC3(0, 0, 0), VEC3(0, 1, 0)),
 		.projection = mat4ConstructPerspectiveProjection(-1, 1, -1, 1, 1, 10),
 		.frameCount = 0,
 		.material = (Material) {
@@ -95,7 +91,7 @@ int main()
 			.ambient  = VEC3(0.1, 0.1, 0.1),
 			.diffuse  = VEC3(0.5, 0.5, 0.5),
 			.specular = VEC3(0.3, 0.3, 0.3),
-			.direction = VEC3(-1, -1, 1)
+			.direction = VEC3(-1, -1, -1)
 		},
 		.viewPos = viewPos
 	};
@@ -136,9 +132,9 @@ int main()
 
 		double renderTime = 0.;
 		TIME_SECTION(renderTime, {
-			uniform.model = mat4ConstructRotate(
-				RAD(-90), uniform.frameCount / 200., 0
-			);
+			// uniform.model = mat4ConstructRotate(
+			// 	RAD(-90), uniform.frameCount / 200., 0
+			// );
 			srpFramebufferClear(fb);
 			srpDrawIndexBuffer(ib, vb, fb, &shaderProgram, SRP_PRIM_TRIANGLES, 0, mesh.indexCount);
 		});

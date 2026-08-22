@@ -28,6 +28,11 @@ SRP_FORCEINLINE float vec2DotProduct(vec2 a, vec2 b)
 	return a.x * b.x + a.y * b.y;
 }
 
+SRP_FORCEINLINE float vec2CrossProduct(vec2 a, vec2 b)
+{
+    return a.x * b.y - a.y * b.x;
+}
+
 SRP_FORCEINLINE vec2 vec2MultiplyScalar(vec2 a, float b)
 {
 	return VEC2(a.x * b, a.y * b);
@@ -83,6 +88,15 @@ SRP_FORCEINLINE vec3 vec3Subtract(vec3 a, vec3 b)
 SRP_FORCEINLINE float vec3DotProduct(vec3 a, vec3 b)
 {
 	return a.x * b.x + a.y * b.y + a.z * b.z;
+}
+
+SRP_FORCEINLINE vec3 vec3CrossProduct(vec3 a, vec3 b)
+{
+    return VEC3(
+        a.y * b.z - a.z * b.y,
+        a.z * b.x - a.x * b.z,
+        a.x * b.y - a.y * b.x
+	);
 }
 
 SRP_FORCEINLINE vec3 vec3MultiplyScalar(vec3 a, float b)
@@ -146,6 +160,16 @@ SRP_FORCEINLINE vec4 vec4Subtract(vec4 a, vec4 b)
 SRP_FORCEINLINE float vec4DotProduct(vec4 a, vec4 b)
 {
 	return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w;
+}
+
+SRP_FORCEINLINE vec4 vec4CrossProduct(vec4 a, vec4 b)
+{
+    return VEC4(
+        a.y * b.z - a.z * b.y,
+        a.z * b.x - a.x * b.z,
+        a.x * b.y - a.y * b.x,
+        0.f
+	);
 }
 
 SRP_FORCEINLINE vec4 vec4MultiplyScalar(vec4 a, float b)

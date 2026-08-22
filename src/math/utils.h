@@ -17,6 +17,11 @@
 	#define M_PI 3.14159265358979323846
 #endif
 
+/** Convert the degree value to radians */
+#define RAD(x) ((float) (x) / 180.) * M_PI
+/** Convert the radian value to degrees */
+#define DEG(x) ((float) (x) / M_PI) * 180.
+
 /** Get the minimum of two values */
 #define MIN(a, b) ( (a) > (b) ? (b) : (a) )
 /** Get the maximum of two values */

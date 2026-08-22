@@ -31,7 +31,7 @@ void srpNewContext(SRPContext* pContext)
 	pContext->depth = (SRPDepthState) {
 		.testEnable = false,
 		.writeEnable = true,
-		.compareOp = SRP_COMPARE_GREATER,  /** @todo use LESS here? like OpenGL */
+		.compareOp = SRP_COMPARE_LESS,
 	};
 
 	SRPStencilFaceState temp = {

@@ -58,7 +58,7 @@ void srpFramebufferClear(const SRPFramebuffer* this)
 {
 	memset(this->color, 0x00, this->size * sizeof(uint32_t));
     for (size_t i = 0; i < this->size; i++)
-        this->depth[i] = -1.;
+        this->depth[i] = 1.;
 }
 
 /** @} */  // ingroup Framebuffer_internal

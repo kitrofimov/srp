@@ -58,6 +58,8 @@ vec2 vec2Add(vec2 a, vec2 b);
 vec2 vec2Subtract(vec2 a, vec2 b);
 /** Calculate the dot product of two vectors */
 float vec2DotProduct(vec2 a, vec2 b);
+/** Returns the magnitude of the cross product if these were 3D vectors */
+float vec2CrossProduct(vec2 a, vec2 b);
 /** Multiply a vector with a scalar value */
 vec2 vec2MultiplyScalar(vec2 a, float b);
 /** Normalize a vector to have a length of 1 */
@@ -75,6 +77,8 @@ vec3 vec3Add(vec3 a, vec3 b);
 vec3 vec3Subtract(vec3 a, vec3 b);
 /** Calculate the dot product of two vectors */
 float vec3DotProduct(vec3 a, vec3 b);
+/** Calculate the cross product of two vectors */
+vec3 vec3CrossProduct(vec3 a, vec3 b);
 /** Multiply a vector with a scalar value */
 vec3 vec3MultiplyScalar(vec3 a, float b);
 /** Normalize a vector to have a length of 1 */
@@ -92,6 +96,8 @@ vec4 vec4Add(vec4 a, vec4 b);
 vec4 vec4Subtract(vec4 a, vec4 b);
 /** Calculate the dot product of two vectors */
 float vec4DotProduct(vec4 a, vec4 b);
+/** Calculate the cross product of two vectors. Returned vector has .w = 0 */
+vec4 vec4CrossProduct(vec4 a, vec4 b);
 /** Multiply a vector with a scalar value */
 vec4 vec4MultiplyScalar(vec4 a, float b);
 /** Normalize a vector to have a length of 1 */

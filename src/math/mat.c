@@ -8,6 +8,7 @@
 #include <math.h>
 #include "utils/message_callback_p.h"
 #include "utils/defines.h"
+#include "math/utils.h"
 #include "srp/mat.h"
 
 /** @ingroup Math_internal
@@ -74,7 +75,7 @@ SRP_FORCEINLINE mat4 mat4MultiplyMat4(const mat4* restrict a, const mat4* restri
     return r;
 }
 
-SRP_FORCEINLINE mat4 mat4ConstructIdentity()
+SRP_FORCEINLINE mat4 mat4Identity()
 {
 	return (mat4) {{
 		{1, 0, 0, 0},
@@ -84,7 +85,7 @@ SRP_FORCEINLINE mat4 mat4ConstructIdentity()
 	}};
 }
 
-SRP_FORCEINLINE mat4 mat4ConstructScale(float x, float y, float z)
+SRP_FORCEINLINE mat4 mat4Scale(float x, float y, float z)
 {
 	return (mat4) {{
 		{x, 0, 0, 0},
@@ -94,7 +95,7 @@ SRP_FORCEINLINE mat4 mat4ConstructScale(float x, float y, float z)
 	}};
 }
 
-SRP_FORCEINLINE mat4 mat4ConstructTranslate(float x, float y, float z)
+SRP_FORCEINLINE mat4 mat4Translate(float x, float y, float z)
 {
 	return (mat4) {{
 		{1, 0, 0, x},
@@ -104,6 +105,30 @@ SRP_FORCEINLINE mat4 mat4ConstructTranslate(float x, float y, float z)
 	}};
 }
 
+mat4 mat4Rotate(float angle, vec3 axis)
+{
+    const float c = cosf(angle);
+    const float s = sinf(angle);
+    const float t = 1.f - c;
+    const vec3 a = vec3Normalize(axis);
+	const float x = a.x;
+	const float y = a.y;
+	const float z = a.z;
+
+    mat4 res = mat4Identity();
+    res.data[0][0] = t * x*x + c;
+    res.data[0][1] = t * x*y - s*z;
+    res.data[0][2] = t * x*z + s*y;
+    res.data[1][0] = t * x*y + s*z;
+    res.data[1][1] = t * y*y + c;
+    res.data[1][2] = t * y*z - s*x;
+    res.data[2][0] = t * x*z - s*y;
+    res.data[2][1] = t * y*z + s*x;
+    res.data[2][2] = t * z*z + c;
+    return res;
+}
+
+/** @todo get rid of this */
 SRP_FORCEINLINE mat4 mat4ConstructRotate(float x, float y, float z)
 {
 	mat4 res = {0};
@@ -132,9 +157,9 @@ SRP_FORCEINLINE mat4 mat4ConstructTRS(
 	float scaleX, float scaleY, float scaleZ
 )
 {
-	mat4 T = mat4ConstructTranslate(transX, transY, transZ);
+	mat4 T = mat4Translate(transX, transY, transZ);
 	mat4 R = mat4ConstructRotate(rotataionX, rotataionY, rotataionZ);
-	mat4 S = mat4ConstructScale(scaleX, scaleY, scaleZ);
+	mat4 S = mat4Scale(scaleX, scaleY, scaleZ);
 	mat4 RS = mat4MultiplyMat4(&R, &S);
 	return mat4MultiplyMat4(&T, &RS);
 }
@@ -152,27 +177,53 @@ SRP_FORCEINLINE mat4 mat4ConstructView(
 	);
 }
 
-// Construct matrix that transforms everything inside specified rectangular
-// parallelepiped to unit cube (min: (-1, -1, -1), max: (1, 1, 1))
+SRP_FORCEINLINE mat4 mat4LookAt(vec3 eye, vec3 target, vec3 up)
+{
+    vec3 f = vec3Normalize(vec3Subtract(eye, target));  // forward
+    vec3 l = vec3Normalize(vec3CrossProduct(up, f));    // right
+    vec3 u = vec3CrossProduct(f, l);                    // up
+
+    mat4 res = mat4Identity();
+    
+    // Rotation part
+    res.data[0][0] = l.x;  res.data[0][1] = l.y;  res.data[0][2] = l.z;
+    res.data[1][0] = u.x;  res.data[1][1] = u.y;  res.data[1][2] = u.z;
+    res.data[2][0] = f.x;  res.data[2][1] = f.y;  res.data[2][2] = f.z;
+
+    // Translation part
+    res.data[0][3] = -vec3DotProduct(l, eye);
+    res.data[1][3] = -vec3DotProduct(u, eye);
+    res.data[2][3] = -vec3DotProduct(f, eye);
+
+    return res;
+}
+
 SRP_FORCEINLINE mat4 mat4ConstructOrthogonalProjection(
 	float x_min, float x_max,
 	float y_min, float y_max,
 	float z_min, float z_max
 )
 {
+	const float l = x_min;  // left
+	const float r = x_max;  // right
+	const float b = y_min;  // bottom
+	const float t = y_max;  // top
+	const float n = z_min;  // near
+	const float f = z_max;  // far
+
 	mat4 res = {0};
-	res.data[0][0] = 2 / (x_max - x_min);
+	res.data[0][0] = 2 / (r-l);
 	res.data[0][1] = 0;
 	res.data[0][2] = 0;
-	res.data[0][3] = -(x_max + x_min) / (x_max - x_min);
+	res.data[0][3] = -(r+l) / (r-l);
 	res.data[1][0] = 0;
-	res.data[1][1] = 2 / (y_max - y_min);
+	res.data[1][1] = 2 / (t-b);
 	res.data[1][2] = 0;
-	res.data[1][3] = -(y_max + y_min) / (y_max - y_min);
+	res.data[1][3] = -(t+b) / (t-b);
 	res.data[2][0] = 0;
 	res.data[2][1] = 0;
-	res.data[2][2] = 2 / (z_max - z_min);
-	res.data[2][3] = -(z_max + z_min) / (z_max - z_min);
+	res.data[2][2] = -2 / (f-n);
+	res.data[2][3] = -(f+n) / (f-n);
 	res.data[3][0] = 0;
 	res.data[3][1] = 0;
 	res.data[3][2] = 0;
@@ -180,38 +231,47 @@ SRP_FORCEINLINE mat4 mat4ConstructOrthogonalProjection(
 	return res;
 }
 
-/** @todo Avoid matmul here? */
 SRP_FORCEINLINE mat4 mat4ConstructPerspectiveProjection(
 	float x_min_near, float x_max_near,
 	float y_min_near, float y_max_near,
 	float z_near, float z_far
 )
 {
+	const float l = x_min_near;  // left
+	const float r = x_max_near;  // right
+	const float b = y_min_near;  // bottom
+	const float t = y_max_near;  // top
+	const float n = z_near;      // near
+	const float f = z_far;       // far
+
 	mat4 perspective = {0};
-	perspective.data[0][0] = z_near;
+	perspective.data[0][0] = 2*n / (r-l);
 	perspective.data[0][1] = 0;
-	perspective.data[0][2] = 0;
+	perspective.data[0][2] = (r+l) / (r-l);
 	perspective.data[0][3] = 0;
 	perspective.data[1][0] = 0;
-	perspective.data[1][1] = z_near;
-	perspective.data[1][2] = 0;
+	perspective.data[1][1] = 2*n / (t-b);
+	perspective.data[1][2] = (t+b) / (t-b);
 	perspective.data[1][3] = 0;
 	perspective.data[2][0] = 0;
 	perspective.data[2][1] = 0;
-	perspective.data[2][2] = z_near + z_far;
-	perspective.data[2][3] = -z_near * z_far;
+	perspective.data[2][2] = -(f+n) / (f-n);
+	perspective.data[2][3] = -2*f*n / (f-n);
 	perspective.data[3][0] = 0;
 	perspective.data[3][1] = 0;
-	perspective.data[3][2] = 1;
+	perspective.data[3][2] = -1;
 	perspective.data[3][3] = 0;
+	return perspective;
+}
 
-	mat4 orthogonal = mat4ConstructOrthogonalProjection(
-		x_min_near, x_max_near,
-		y_min_near, y_max_near,
-		z_near, z_far
-	);
-
-	return mat4MultiplyMat4(&orthogonal, &perspective);
+mat4 mat4ConstructPerspectiveProjectionFOV(
+	float fovX, float aspectRatio, float z_near, float z_far
+)
+{
+    float tangent = tanf(RAD(fovX / 2));
+    float right = z_near * tangent;   // half width of near plane
+    float top = right / aspectRatio;  // half height of near plane
+	return mat4ConstructPerspectiveProjection(-right, right, -top, top, z_near, z_far);
 }
 
 /** @} */  // ingroup Math_internal

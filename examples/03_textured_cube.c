@@ -51,43 +51,50 @@ int main()
 	SRPFramebuffer* fb = srpNewFramebuffer(512, 512);
 
 	Vertex data[] = {
-		{.position = VEC3(-1, -1, -1), .uv = VEC2(0, 0)},
-		{.position = VEC3( 1, -1, -1), .uv = VEC2(1, 0)},
-		{.position = VEC3( 1,  1, -1), .uv = VEC2(1, 1)},
-		{.position = VEC3(-1,  1, -1), .uv = VEC2(0, 1)},
+		// Back (z = -1)
+		{.position = VEC3(-1, -1, -1), .uv = VEC2(0, 0)},  // 0
+		{.position = VEC3( 1, -1, -1), .uv = VEC2(1, 0)},  // 1
+		{.position = VEC3( 1,  1, -1), .uv = VEC2(1, 1)},  // 2
+		{.position = VEC3(-1,  1, -1), .uv = VEC2(0, 1)},  // 3
 
-		{.position = VEC3(-1,  1, -1), .uv = VEC2(0, 0)},
-		{.position = VEC3( 1,  1, -1), .uv = VEC2(1, 0)},
-		{.position = VEC3( 1,  1,  1), .uv = VEC2(1, 1)},
-		{.position = VEC3(-1,  1,  1), .uv = VEC2(0, 1)},
+		// Top (y = 1)
+		{.position = VEC3(-1,  1, -1), .uv = VEC2(0, 0)},  // 4
+		{.position = VEC3( 1,  1, -1), .uv = VEC2(1, 0)},  // 5
+		{.position = VEC3( 1,  1,  1), .uv = VEC2(1, 1)},  // 6
+		{.position = VEC3(-1,  1,  1), .uv = VEC2(0, 1)},  // 7
 
-		{.position = VEC3( 1, -1,  1), .uv = VEC2(0, 0)},
-		{.position = VEC3(-1, -1,  1), .uv = VEC2(1, 0)},
-		{.position = VEC3(-1,  1,  1), .uv = VEC2(1, 1)},
-		{.position = VEC3( 1,  1,  1), .uv = VEC2(0, 1)},
+		// Front (z = 1)
+		{.position = VEC3(-1, -1,  1), .uv = VEC2(0, 0)},  // 8
+		{.position = VEC3( 1, -1,  1), .uv = VEC2(1, 0)},  // 9
+		{.position = VEC3( 1,  1,  1), .uv = VEC2(1, 1)},  // 10
+		{.position = VEC3(-1,  1,  1), .uv = VEC2(0, 1)},  // 11
 
-		{.position = VEC3( 1, -1,  1), .uv = VEC2(0, 0)},
-		{.position = VEC3( 1, -1, -1), .uv = VEC2(1, 0)},
-		{.position = VEC3( 1,  1, -1), .uv = VEC2(1, 1)},
-		{.position = VEC3( 1,  1,  1), .uv = VEC2(0, 1)},
+		// Right (x = 1)
+		{.position = VEC3( 1, -1,  1), .uv = VEC2(0, 0)},  // 12
+		{.position = VEC3( 1, -1, -1), .uv = VEC2(1, 0)},  // 13
+		{.position = VEC3( 1,  1, -1), .uv = VEC2(1, 1)},  // 14
+		{.position = VEC3( 1,  1,  1), .uv = VEC2(0, 1)},  // 15
 
-		{.position = VEC3(-1, -1, -1), .uv = VEC2(0, 0)},
-		{.position = VEC3(-1, -1,  1), .uv = VEC2(1, 0)},
-		{.position = VEC3(-1,  1,  1), .uv = VEC2(1, 1)},
-		{.position = VEC3(-1,  1, -1), .uv = VEC2(0, 1)},
+		// Left (x = -1)
+		{.position = VEC3(-1, -1, -1), .uv = VEC2(0, 0)},  // 16
+		{.position = VEC3(-1, -1,  1), .uv = VEC2(1, 0)},  // 17
+		{.position = VEC3(-1,  1,  1), .uv = VEC2(1, 1)},  // 18
+		{.position = VEC3(-1,  1, -1), .uv = VEC2(0, 1)},  // 19
 
-		{.position = VEC3(-1, -1, -1), .uv = VEC2(0, 0)},
-		{.position = VEC3( 1, -1, -1), .uv = VEC2(1, 0)},
-		{.position = VEC3( 1, -1,  1), .uv = VEC2(1, 1)},
-		{.position = VEC3(-1, -1,  1), .uv = VEC2(0, 1)}
+		// Bottom (y = -1)
+		{.position = VEC3(-1, -1,  1), .uv = VEC2(0, 0)},  // 20
+		{.position = VEC3( 1, -1,  1), .uv = VEC2(1, 0)},  // 21
+		{.position = VEC3( 1, -1, -1), .uv = VEC2(1, 1)},  // 22
+		{.position = VEC3(-1, -1, -1), .uv = VEC2(0, 1)}   // 23
 	};
+
 	uint8_t indices[] = {
-		 0,  1,  2,   0,  2,  3,
-		 4,  5,  6,   4,  6,  7,
-		 8,  9, 10,   8, 10, 11,
-		12, 15, 14,  12, 14, 13,
-		16, 18, 17,  16, 19, 18,
-		20, 23, 22,  20, 22, 21
+		0,  2,  1,   0,  3,  2,   // back
+		4,  6,  5,   4,  7,  6,   // top
+		8,  9,  10,  8,  10, 11,  // front
+		12, 13, 14,  12, 14, 15,  // right
+		16, 17, 18,  16, 18, 19,  // left
+		20, 22, 21,  20, 23, 22   // bottom
 	};
 
 	// Create vertex and index buffers, these are similar to VBO and EBO
@@ -97,12 +104,8 @@ int main()
 	srpIndexBufferCopyData(ib, SRP_UINT8, sizeof(indices), indices);
 
 	Uniform uniform = {
-		.model = mat4ConstructIdentity(),
-		.view = mat4ConstructView(
-			0, 0, -3,
-			0, 0, 0,
-			1, 1, 1
-		),
+		.model = mat4Identity(),
+		.view = mat4LookAt(VEC3(0, 0, 0), VEC3(0, 0, 0), VEC3(0, 1, 0)),
 		.projection = mat4ConstructPerspectiveProjection(-1, 1, -1, 1, 1, 50),
 		.texture = srpNewTexture("./res/textures/stoneWall.png", TW_REPEAT, TW_REPEAT),
 		.frameCount = 0
@@ -136,11 +139,11 @@ int main()
 
 		float renderTime = 0.;
 		TIME_SECTION(renderTime, {
-			uniform.model = mat4ConstructRotate(
-				uniform.frameCount / 100.,
-				uniform.frameCount / 200.,
-				uniform.frameCount / 500.
-			);
+			// uniform.model = mat4ConstructRotate(
+			// 	uniform.frameCount / 100.,
+			// 	uniform.frameCount / 200.,
+			// 	uniform.frameCount / 500.
+			// );
 
 			srpFramebufferClear(fb);
 			srpDrawIndexBuffer(ib, vb, fb, &shaderProgram, SRP_PRIM_TRIANGLES, 0, 36);
